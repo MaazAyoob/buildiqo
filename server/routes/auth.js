@@ -15,19 +15,21 @@ function getJwtSecret() {
 }
 
 // Seed platform owner ONLY if configured via environment variables
-async function ensurePlatformOwner() {
+async function ensurePlatformOwner(options = {}) {
+  const { overwritePassword = false } = options;
   try {
     const ownerEmail = process.env.SEED_ADMIN_EMAIL;
     const ownerPassword = process.env.SEED_ADMIN_PASSWORD;
     if (!ownerEmail || !ownerPassword) {
-      return; // Do not seed with hardcoded credentials
+      return { seeded: false, reason: 'SEED_ADMIN_EMAIL or SEED_ADMIN_PASSWORD not configured' };
     }
-    let owner = await User.findOne({ email: ownerEmail.toLowerCase() });
-    const hashedPassword = await bcrypt.hash(ownerPassword, 10);
+    const normalizedEmail = ownerEmail.trim().toLowerCase();
+    let owner = await User.findOne({ email: normalizedEmail });
     if (!owner) {
+      const hashedPassword = await bcrypt.hash(ownerPassword, 10);
       owner = await User.create({
         name: 'Platform Administrator',
-        email: ownerEmail.toLowerCase(),
+        email: normalizedEmail,
         phone: '+91 99000 11223',
         password: hashedPassword,
         role: 'Platform Owner & Super Admin',
@@ -44,18 +46,24 @@ async function ensurePlatformOwner() {
         isPlanConfirmed: true,
         renewsAt: 'Lifetime Active'
       });
-      console.log('Platform owner account seeded from environment configuration.');
+      console.log(`Platform owner account (${normalizedEmail}) seeded successfully.`);
+      return { seeded: true, created: true, email: normalizedEmail };
     } else {
-      owner.password = hashedPassword;
-      owner.isAdmin = true;
-      await owner.save();
-      console.log('Platform owner credentials updated from environment configuration.');
+      if (overwritePassword) {
+        owner.password = await bcrypt.hash(ownerPassword, 10);
+        owner.isAdmin = true;
+        await owner.save();
+        console.log(`Platform owner credentials (${normalizedEmail}) updated from environment configuration.`);
+        return { seeded: true, updated: true, email: normalizedEmail };
+      }
+      console.log(`Platform owner account (${normalizedEmail}) already exists. Existing credentials preserved.`);
+      return { seeded: true, created: false, updated: false, email: normalizedEmail };
     }
   } catch (err) {
     console.error('Owner seed error:', err.message);
+    throw err;
   }
 }
-ensurePlatformOwner();
 
 // Register
 router.post('/register', async (req, res) => {

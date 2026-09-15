@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "seed:admin": "node scripts/seedAdmin.js",
+    "seed:materials": "node scripts/seedMaterials.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
