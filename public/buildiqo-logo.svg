@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 150" role="img" aria-label="Buildiqo logo">
+  <g fill="none" stroke="#10202b" stroke-width="9" stroke-linejoin="round">
+    <path d="M72 78V42L112 12l40 30v36"/>
+    <path d="M91 78V48M119 78V48c0-15 25-15 25 0v30"/>
+  </g>
+  <text x="210" y="83" text-anchor="middle" fill="#10202b" font-family="Arial, sans-serif" font-size="42" font-weight="700">Buildiqo</text>
+</svg>
