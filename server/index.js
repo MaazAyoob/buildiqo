@@ -61,15 +61,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/buildiqo';
+const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/buildiqo';
 
 async function startServer() {
   try {
-    // Attempt connecting to configured Mongo URI with 2s timeout
-    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
-    console.log('Connected to MongoDB successfully at:', mongoUri);
+    // Attempt connecting to configured Mongo URI (longer timeout in production for cloud clusters)
+    const timeoutMs = process.env.NODE_ENV === 'production' ? 10000 : 3000;
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: timeoutMs });
+    console.log('Connected to MongoDB successfully at:', mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@'));
   } catch (err) {
-    console.warn(`Direct MongoDB connection to ${mongoUri} failed (${err.message}).`);
+    console.warn(`Direct MongoDB connection failed (${err.message}).`);
     if (process.env.NODE_ENV !== 'production') {
       try {
         console.log('Starting internal in-memory MongoDB engine for local development...');

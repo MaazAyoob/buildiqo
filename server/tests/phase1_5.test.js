@@ -41,7 +41,7 @@ test.before(async () => {
     await mongoose.connect(uri);
     console.log('Connected to in-memory Mongo test server at:', uri);
   } catch (e) {
-    const localUri = process.env.MONGO_URI || 'mongodb://localhost:27017/buildiqo_test';
+    const localUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/buildiqo_test';
     try {
       await mongoose.connect(localUri);
       console.log('Connected to local MongoDB test instance');

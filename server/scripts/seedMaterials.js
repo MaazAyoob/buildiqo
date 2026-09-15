@@ -179,7 +179,7 @@ async function seedMaterials() {
 
 // Standalone execution support
 if (require.main === module) {
-  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/buildiqo';
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/buildiqo';
   mongoose.connect(mongoUri)
     .then(async () => {
       console.log('Connected to MongoDB. Running material seed...');
