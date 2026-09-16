@@ -34,10 +34,12 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../utils/apiClient';
 import { useEstimateStore, formatCurrency } from '../store/useEstimateStore';
+import { INDIAN_STATES } from '../data/states';
 
 export function AdminPage() {
   const { currentUser } = useEstimateStore();
   const [activeTab, setActiveTab] = useState('rates'); // 'rates' | 'research'
+  const [adminState, setAdminState] = useState('Karnataka');
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,10 +88,11 @@ export function AdminPage() {
   const [rejectReasonInput, setRejectReasonInput] = useState('');
   const [actionInProgress, setActionInProgress] = useState(false);
 
-  const fetchMaterials = async () => {
+  const fetchMaterials = async (targetState = adminState) => {
     try {
       setLoading(true);
-      const res = await apiRequest('/api/pricing/materials');
+      const url = targetState ? `/api/pricing/materials?state=${encodeURIComponent(targetState)}` : '/api/pricing/materials';
+      const res = await apiRequest(url);
       if (res.success && Array.isArray(res.materials)) {
         setMaterials(res.materials);
       } else {
@@ -129,14 +132,14 @@ export function AdminPage() {
 
   useEffect(() => {
     if (currentUser?.isAdmin) {
-      fetchMaterials();
+      fetchMaterials(adminState);
       fetchLocations();
       fetchCandidates();
     }
-  }, [currentUser]);
+  }, [currentUser, adminState]);
 
   // Current cities for selected state
-  const currentStateObj = locations.find(l => l.stateName.toLowerCase() === selectedState.toLowerCase() || l.stateId === selectedState);
+  const currentStateObj = locations.find(l => l.stateName?.toLowerCase() === selectedState?.toLowerCase() || l.stateId === selectedState);
   const availableCities = currentStateObj?.cities || [];
 
   // ==========================================
@@ -145,7 +148,7 @@ export function AdminPage() {
   const handleOpenRateUpdate = (mat) => {
     setSelectedMaterialForUpdate(mat);
     setNewRateValue(mat.currentApprovedRate || '');
-    setNewRateLocation(mat.rateLocation || 'National');
+    setNewRateLocation(adminState || 'Karnataka');
     setNewRateSource(mat.rateSource || 'Supplier Quote');
     setNewRateNotes('');
     setFeedback({ type: '', message: '' });
@@ -174,8 +177,9 @@ export function AdminPage() {
         body: JSON.stringify({
           materialCode: selectedMaterialForUpdate.materialCode,
           rate: rateNum,
+          state: newRateLocation,
           location: newRateLocation,
-          cityId: newRateLocation.toLowerCase() === 'national' ? 'all' : newRateLocation.toLowerCase(),
+          cityId: newRateLocation.toLowerCase() === 'national' ? 'all' : 'all',
           source: newRateSource,
           notes: newRateNotes
         })
@@ -184,10 +188,10 @@ export function AdminPage() {
       if (res.success) {
         setFeedback({ 
           type: 'success', 
-          message: `Approved rate for ${selectedMaterialForUpdate.materialCode} (${selectedMaterialForUpdate.name}) successfully updated to ₹${rateNum}. Previous rate marked superseded.` 
+          message: `Approved rate for ${selectedMaterialForUpdate.materialCode} (${selectedMaterialForUpdate.name}) in ${newRateLocation} successfully updated to ₹${rateNum}. Previous rate marked superseded.` 
         });
         handleCloseRateUpdate();
-        await fetchMaterials();
+        await fetchMaterials(adminState);
       } else {
         setFeedback({ type: 'error', message: res.error || 'Failed to submit rate revision.' });
       }
@@ -202,7 +206,10 @@ export function AdminPage() {
     setHistoryMaterial(mat);
     setLoadingHistory(true);
     try {
-      const res = await apiRequest(`/api/pricing/materials/${encodeURIComponent(mat.materialCode)}/history`);
+      const url = adminState
+        ? `/api/pricing/materials/${encodeURIComponent(mat.materialCode)}/history?state=${encodeURIComponent(adminState)}`
+        : `/api/pricing/materials/${encodeURIComponent(mat.materialCode)}/history`;
+      const res = await apiRequest(url);
       if (res.success && res.data) {
         setHistoryRecords(res.data.history || []);
       } else {
@@ -507,16 +514,34 @@ export function AdminPage() {
         <div className="space-y-4">
           {/* Controls Bar */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-            {/* Search */}
-            <div className="relative w-full md:w-80">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search code, material, or brand..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              />
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              {/* State Selector */}
+              <div className="flex items-center space-x-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 w-full sm:w-auto shrink-0">
+                <MapPin className="w-4 h-4 text-blue-600" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">State:</span>
+                <select
+                  value={adminState}
+                  onChange={(e) => setAdminState(e.target.value)}
+                  className="text-xs font-black text-slate-900 bg-transparent focus:outline-none cursor-pointer pr-2"
+                >
+                  <option value="National">National (Baseline)</option>
+                  {INDIAN_STATES.map(s => (
+                    <option key={s.id} value={s.name}>{s.name} ({s.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search */}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search code or material..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                />
+              </div>
             </div>
 
             {/* Category Pills */}
@@ -538,6 +563,15 @@ export function AdminPage() {
           </div>
 
           {/* Materials Table */}
+          {adminState === 'National' && (
+            <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 flex items-center space-x-3 text-xs text-blue-950">
+              <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0" />
+              <div>
+                <span className="font-extrabold">National Baseline Scope:</span> Showing all-India baseline rates. These rates serve as the fallback for states without approved state rates. Revisions here update the national fallback without altering state-specific rates.
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <div>
@@ -546,7 +580,7 @@ export function AdminPage() {
                   <span>Approved Production Procurement Rates</span>
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Showing {filteredMaterials.length} materials. Historical rates are append-only; revisions supersede older rates.
+                  Showing {filteredMaterials.length} materials for {adminState}. Historical rates are append-only; revisions supersede older rates.
                 </p>
               </div>
             </div>
@@ -568,7 +602,7 @@ export function AdminPage() {
                       <th className="py-3.5 px-5">Category & Unit</th>
                       <th className="py-3.5 px-5">Grade / Brand</th>
                       <th className="py-3.5 px-5">Current Approved Rate</th>
-                      <th className="py-3.5 px-5">Location</th>
+                      <th className="py-3.5 px-5">Location & Scope</th>
                       <th className="py-3.5 px-5">Source</th>
                       <th className="py-3.5 px-5">Last Revision</th>
                       <th className="py-3.5 px-5 text-right">Actions</th>
@@ -596,10 +630,19 @@ export function AdminPage() {
                           </div>
                         </td>
                         <td className="py-3.5 px-5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center space-x-1">
-                            <MapPin className="w-2.5 h-2.5 text-blue-600" />
-                            <span>{mat.rateLocation || 'National'}</span>
-                          </span>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center space-x-1">
+                              <MapPin className="w-2.5 h-2.5 text-blue-600" />
+                              <span>{mat.rateLocation || 'National'}</span>
+                            </span>
+                            <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
+                              mat.pricingScope === 'NATIONAL' || mat.rateStateId === 'all'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                              {mat.pricingScope === 'NATIONAL' || mat.rateStateId === 'all' ? 'National Baseline' : 'State Rate'}
+                            </span>
+                          </div>
                         </td>
                         <td className="py-3.5 px-5">
                           <span className="text-[11px] text-gray-600 font-semibold">{mat.rateSource || 'initial_seed'}</span>
@@ -1131,13 +1174,22 @@ export function AdminPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Location Scope</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Target State / Scope</label>
+                  <select
                     value={newRateLocation}
                     onChange={(e) => setNewRateLocation(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white"
-                  />
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white cursor-pointer"
+                  >
+                    <option value="National">National (All States Baseline)</option>
+                    {INDIAN_STATES.map(s => (
+                      <option key={s.id} value={s.name}>{s.name} ({s.code})</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {newRateLocation.toLowerCase() === 'national'
+                      ? '⚠️ National Baseline serves strictly as fallback for states without approved state rates. Will not overwrite state-specific rates.'
+                      : `✅ Applies exclusively to ${newRateLocation} and takes precedence over National Baseline.`}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Rate Source</label>

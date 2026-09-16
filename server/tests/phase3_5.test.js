@@ -570,8 +570,8 @@ test('CRITERIA 27 & 28 & 29: Existing project unchanged after research and appro
 // SECTION 6: REGIONAL HIERARCHY & BENCHMARK REJECTION (Criteria 30–34)
 // ==========================================
 
-test('CRITERIA 30, 31, 32, 33, 34: Regional Hierarchy (City -> State -> National -> UNAVAILABLE) and Benchmark Rejection', async () => {
-  // City rate preferred
+test('CRITERIA 30, 31, 32, 33, 34: Regional Hierarchy (State -> National -> UNAVAILABLE) and Benchmark Rejection', async () => {
+  // State rate applies to all cities within that state
   const cityRates = await pricingService.getCurrentApprovedRates({ cityId: 'varanasi', stateId: 'uttar_pradesh' });
   assert.equal(cityRates.rates['STEEL-TMT-500D'].unitRate, 92);
 
@@ -589,9 +589,11 @@ test('CRITERIA 30, 31, 32, 33, 34: Regional Hierarchy (City -> State -> National
 
   const stateRates = await pricingService.getCurrentApprovedRates({ cityId: 'unconfigured_city', stateId: 'uttar_pradesh' });
   assert.equal(stateRates.rates['SAND-M-SAND'].unitRate, 55);
+  assert.equal(stateRates.rates['STEEL-TMT-500D'].unitRate, 92);
 
-  // National fallback
-  assert.equal(stateRates.rates['STEEL-TMT-500D'].unitRate, 68);
+  // National fallback for states without approved state rate
+  const nationalRates = await pricingService.getCurrentApprovedRates({ cityId: 'amritsar', stateId: 'punjab' });
+  assert.equal(nationalRates.rates['STEEL-TMT-500D'].unitRate, 68);
 
   // When no rate exists: UNAVAILABLE (no silent benchmark fallback)
   await MaterialRate.deleteMany({ materialCode: 'SAND-M-SAND' });

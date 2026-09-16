@@ -144,10 +144,14 @@ async function seedMaterials() {
         createdMaterials++;
       }
 
-      // 2. Ensure initial National rate exists
+      // 2. Ensure initial approved NATIONAL baseline rate exists (stateId: 'all', cityId: 'all')
       const existingApprovedRate = await MaterialRate.findOne({
         materialCode: opt.code,
-        cityId: 'all',
+        $or: [
+          { stateId: 'all', cityId: 'all' },
+          { cityId: 'all', stateId: { $exists: false } },
+          { cityId: 'all', stateId: null }
+        ],
         status: 'approved'
       });
 
@@ -158,13 +162,23 @@ async function seedMaterials() {
           rate: opt.rate,
           unit: cat.unit,
           location: 'National',
+          stateId: 'all',
           cityId: 'all',
           effectiveFrom: new Date('2026-01-01T00:00:00Z'),
           source: 'initial_seed',
-          notes: 'Baseline IS benchmark rate',
-          status: 'approved'
+          sourceType: 'initial_seed',
+          notes: 'Baseline IS benchmark rate (National)',
+          status: 'approved',
+          currency: 'INR',
+          schemaVersion: 1
         });
         createdRates++;
+      } else if (existingApprovedRate.stateId !== 'all') {
+        // Ensure stateId is explicitly 'all'
+        await MaterialRate.updateOne(
+          { _id: existingApprovedRate._id },
+          { $set: { stateId: 'all', location: 'National' } }
+        );
       }
     }
   }

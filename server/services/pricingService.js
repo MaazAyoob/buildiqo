@@ -1,66 +1,83 @@
 const mongoose = require('mongoose');
 const Material = require('../models/Material');
 const MaterialRate = require('../models/MaterialRate');
+const { normalizeState } = require('../data/indianLocations');
 
 /**
- * Resolves current approved material rates for a given city/location.
- * Hierarchy for production:
- * 1. Exact city-approved rate (cityId === targetCityId && status === 'approved')
- * 2. State-approved rate (stateId === targetStateId && status === 'approved')
- * 3. National/default approved rate (cityId === 'all' && status === 'approved')
- * 4. Returns null (UNAVAILABLE) - NO SILENT BENCHMARK FALLBACK
+ * Resolves current approved material rates for a given state.
+ * Strict Production Hierarchy:
+ * 1. Approved STATE rate (stateId === targetStateId && status === 'approved')
+ * 2. Approved NATIONAL rate fallback (stateId === 'all' && status === 'approved')
+ * 3. UNAVAILABLE (pricingStatus = 'UNAVAILABLE' - NO city rate fallback, NO benchmark fallback)
  */
-async function getCurrentApprovedRates({ cityId = 'all', cityName = '', stateId = 'all' } = {}) {
+async function getCurrentApprovedRates({ state = '', stateId = '', city = '', cityId = '' } = {}) {
   const activeMaterials = await Material.find({ active: true }).lean();
+  
+  // Normalize to state location (city input only maps to its containing state for input resolution)
+  const norm = normalizeState(state || stateId || city || cityId);
+  const targetStateId = norm.stateId;
+  const targetStateName = norm.stateName;
+
   if (!activeMaterials || activeMaterials.length === 0) {
     return {
       pricingStatus: 'UNAVAILABLE',
-      cityId,
-      cityName,
-      stateId,
+      pricingScope: 'UNAVAILABLE',
+      pricingSource: 'UNAVAILABLE',
+      stateId: targetStateId,
+      stateName: targetStateName,
+      location: targetStateName,
       rates: {},
       missingMaterials: ['ALL_MATERIALS_EMPTY'],
       resolvedCount: 0,
-      totalCount: 0
+      totalCount: 0,
+      lastFetchedAt: new Date().toISOString()
     };
   }
 
-  const normalizedCityId = (cityId || 'all').toLowerCase().trim();
-  const normalizedStateId = (stateId || 'all').toLowerCase().trim();
   const ratesMap = {};
   const missingMaterials = [];
 
   for (const mat of activeMaterials) {
     let chosenRate = null;
+    let isStateRate = false;
 
-    // 1. Try exact city rate if specified
-    if (normalizedCityId !== 'all') {
+    // 1. Try approved STATE rate (must be production state rate with cityId === 'all')
+    if (targetStateId !== 'all') {
       chosenRate = await MaterialRate.findOne({
         materialCode: mat.materialCode,
-        cityId: normalizedCityId,
+        stateId: targetStateId,
+        cityId: 'all',
         status: 'approved'
       }).sort({ effectiveFrom: -1 }).lean();
+      if (chosenRate) {
+        isStateRate = true;
+      }
     }
 
-    // 2. Try state-level approved rate if city rate not found
-    if (!chosenRate && normalizedStateId !== 'all') {
-      chosenRate = await MaterialRate.findOne({
-        materialCode: mat.materialCode,
-        stateId: normalizedStateId,
-        status: 'approved'
-      }).sort({ effectiveFrom: -1 }).lean();
-    }
-
-    // 3. Try national/default approved rate
+    // 2. Try approved NATIONAL rate fallback (stateId === 'all' AND cityId === 'all')
     if (!chosenRate) {
       chosenRate = await MaterialRate.findOne({
         materialCode: mat.materialCode,
+        stateId: 'all',
         cityId: 'all',
         status: 'approved'
       }).sort({ effectiveFrom: -1 }).lean();
     }
 
+    // Also check legacy baseline seed where cityId was 'all' and stateId was unpopulated
+    if (!chosenRate) {
+      chosenRate = await MaterialRate.findOne({
+        materialCode: mat.materialCode,
+        cityId: 'all',
+        $or: [{ stateId: 'all' }, { stateId: { $exists: false } }, { stateId: null }],
+        status: 'approved'
+      }).sort({ effectiveFrom: -1 }).lean();
+    }
+
+    // 3. ZERO city-rate fallback. Old city-level records never become current production pricing.
+
     if (chosenRate) {
+      const isNational = !isStateRate;
       ratesMap[mat.materialCode] = {
         materialId: mat._id,
         materialCode: mat.materialCode,
@@ -69,8 +86,12 @@ async function getCurrentApprovedRates({ cityId = 'all', cityName = '', stateId 
         tier: mat.tier,
         unit: chosenRate.unit || mat.unit,
         unitRate: chosenRate.rate,
-        locationUsed: chosenRate.location || 'National',
-        cityId: chosenRate.cityId,
+        rate: chosenRate.rate,
+        locationUsed: isNational ? 'National' : (chosenRate.location || targetStateName),
+        stateId: isNational ? 'all' : (chosenRate.stateId || targetStateId),
+        cityId: 'all',
+        pricingScope: isNational ? 'NATIONAL' : 'STATE',
+        pricingSource: isNational ? 'APPROVED_NATIONAL_RATE' : 'APPROVED_STATE_RATE',
         effectiveFrom: chosenRate.effectiveFrom,
         source: chosenRate.source,
         rateRecordId: chosenRate._id
@@ -80,33 +101,68 @@ async function getCurrentApprovedRates({ cityId = 'all', cityName = '', stateId 
     }
   }
 
+  const resolvedKeys = Object.keys(ratesMap);
   const isComplete = missingMaterials.length === 0;
 
+  let overallScope = 'UNAVAILABLE';
+  let overallSource = 'UNAVAILABLE';
+
+  if (resolvedKeys.length > 0) {
+    const hasNational = resolvedKeys.some(k => ratesMap[k].pricingScope === 'NATIONAL');
+    const hasState = resolvedKeys.some(k => ratesMap[k].pricingScope === 'STATE');
+    if (hasState && !hasNational) {
+      overallScope = 'STATE';
+      overallSource = 'APPROVED_STATE_RATE';
+    } else if (hasNational && !hasState) {
+      overallScope = 'NATIONAL';
+      overallSource = 'APPROVED_NATIONAL_RATE';
+    } else {
+      overallScope = 'HYBRID';
+      overallSource = 'APPROVED_STATE_AND_NATIONAL_FALLBACK';
+    }
+  }
+
   return {
-    pricingStatus: isComplete ? 'APPROVED' : 'PARTIAL_UNAVAILABLE',
-    cityId: normalizedCityId,
-    cityName,
+    pricingStatus: isComplete ? 'APPROVED' : (resolvedKeys.length > 0 ? 'PARTIAL_UNAVAILABLE' : 'UNAVAILABLE'),
+    pricingScope: overallScope,
+    pricingSource: overallSource,
+    stateId: targetStateId,
+    stateName: targetStateName,
+    location: targetStateName,
     rates: ratesMap,
     missingMaterials,
-    resolvedCount: Object.keys(ratesMap).length,
+    resolvedCount: resolvedKeys.length,
     totalCount: activeMaterials.length,
     lastFetchedAt: new Date().toISOString()
   };
 }
 
 /**
- * Atomic update of material rate.
- * Supersedes previous approved rate for same material & cityId, inserts new approved rate.
+ * Atomic update of material rate for a STATE.
+ * Supersedes previous approved rate for same material & stateId, inserts new approved rate.
  * Uses MongoDB replica set transaction when supported, with resilient fallback for standalone deployments.
  */
-async function updateMaterialRate({ materialCode, rate, location = 'National', cityId = 'all', stateId = 'all', notes = '', source = 'admin_manual', userId = null }) {
+async function updateMaterialRate({
+  materialCode,
+  rate,
+  state = '',
+  stateId = '',
+  location = '',
+  cityId = 'all',
+  notes = '',
+  source = 'admin_manual',
+  sourceType = 'admin_manual',
+  userId = null
+}) {
   if (!materialCode || typeof rate !== 'number' || isNaN(rate) || rate <= 0) {
     throw new Error('Valid materialCode and positive numeric rate are required.');
   }
 
   const normalizedCode = materialCode.toUpperCase().trim();
-  const normalizedCityId = (cityId || 'all').toLowerCase().trim();
-  const normalizedStateId = (stateId || 'all').toLowerCase().trim();
+  const norm = normalizeState(state || stateId || location);
+  const targetStateId = norm.stateId;
+  const targetStateName = norm.stateName;
+
   const material = await Material.findOne({ materialCode: normalizedCode });
   if (!material) {
     throw new Error(`Material with code ${normalizedCode} does not exist.`);
@@ -134,12 +190,21 @@ async function updateMaterialRate({ materialCode, rate, location = 'National', c
   let newDocId = null;
 
   try {
-    // 1. Find currently approved rate
-    const currentApproved = await MaterialRate.findOne(
-      { materialCode: normalizedCode, cityId: normalizedCityId, status: 'approved' },
+    // 1. Find currently approved rate for this material & state
+    let currentApproved = await MaterialRate.findOne(
+      { materialCode: normalizedCode, stateId: targetStateId, status: 'approved' },
       null,
       sessionOpt
     ).sort({ effectiveFrom: -1 });
+
+    // If updating national rate and not found by stateId, check cityId: 'all'
+    if (!currentApproved && targetStateId === 'all') {
+      currentApproved = await MaterialRate.findOne(
+        { materialCode: normalizedCode, cityId: 'all', status: 'approved' },
+        null,
+        sessionOpt
+      ).sort({ effectiveFrom: -1 });
+    }
 
     const previousRateValue = currentApproved ? currentApproved.rate : null;
 
@@ -153,21 +218,25 @@ async function updateMaterialRate({ materialCode, rate, location = 'National', c
       supersededDocId = currentApproved._id;
     }
 
-    // 3. Insert new rate as approved
+    // 3. Insert new rate as approved STATE rate (cityId is 'all')
     const newRateDoc = new MaterialRate({
       materialId: material._id,
       materialCode: normalizedCode,
       rate,
       unit: material.unit,
-      location: location || 'National',
-      cityId: normalizedCityId,
-      stateId: normalizedStateId,
+      currency: 'INR',
+      location: targetStateName,
+      stateId: targetStateId,
+      cityId: 'all', // Production rates are strictly state-scoped
       effectiveFrom: new Date(),
       source: source || 'admin_manual',
+      sourceType: sourceType || 'admin_manual',
       notes: notes || '',
       updatedBy: userId || null,
+      approvedBy: userId || null,
       status: 'approved',
-      previousRate: previousRateValue
+      previousRate: previousRateValue,
+      schemaVersion: 1
     });
 
     await newRateDoc.save(sessionOpt);
@@ -224,16 +293,22 @@ async function updateMaterialRate({ materialCode, rate, location = 'National', c
 /**
  * Returns complete rate revision history for audit display (append-only).
  */
-async function getMaterialRateHistory(materialCode) {
+async function getMaterialRateHistory(materialCode, stateId = null) {
   const normalizedCode = (materialCode || '').toUpperCase().trim();
   const material = await Material.findOne({ materialCode: normalizedCode }).lean();
   if (!material) {
     throw new Error(`Material ${normalizedCode} not found.`);
   }
 
-  const history = await MaterialRate.find({ materialCode: normalizedCode })
+  const query = { materialCode: normalizedCode };
+  if (stateId && stateId !== 'all') {
+    query.$or = [{ stateId }, { stateId: 'all' }];
+  }
+
+  const history = await MaterialRate.find(query)
     .sort({ effectiveFrom: -1 })
     .populate('updatedBy', 'name email')
+    .populate('approvedBy', 'name email')
     .lean();
 
   return {
@@ -243,21 +318,27 @@ async function getMaterialRateHistory(materialCode) {
 }
 
 /**
- * Creates an authoritative server-trusted pricing snapshot for a project.
- * Preserves ALL pricing inputs capable of changing the final project estimate (Correction 4 & 5):
- * - snapshotId, createdAt, currency, cityId, cityName, regionalMultiplier
- * - materialRates (materialCode, materialName, unit, unitRate, selectedBrand, selectedGrade, rateRecordId, rateEffectiveDate, rateSource)
+ * Creates an authoritative server-trusted pricing snapshot for a project based on approved STATE pricing.
+ * Preserves ALL pricing inputs capable of changing the final project estimate:
+ * - snapshotId, createdAt, currency, stateId, stateName, location
+ * - materialRates (materialCode, materialName, unit, unitRate, rateRecordId, rateEffectiveDate, rateSource)
  * - laborRates, taxRates, overheadParameters, pricingSchemaVersion
+ * IMMUTABILITY GUARANTEE: Snapshot is saved once on estimate creation and remains unchanged.
  */
 async function createServerPricingSnapshot({
-  cityId = 'bangalore',
-  cityName = 'Bengaluru',
-  cityMultiplier = 1.0,
+  state = '',
+  stateId = '',
+  city = '',
+  cityId = '',
   isBenchmarkMode = false,
   benchmarkRates = null,
   stateSnapshot = null
 }) {
-  const regionalMultiplier = Number(cityMultiplier) || 1.0;
+  const locInput = state || stateId || stateSnapshot?.state || stateSnapshot?.stateId || city || cityId || stateSnapshot?.city || 'Karnataka';
+  const norm = normalizeState(locInput);
+  const targetStateId = norm.stateId;
+  const targetStateName = norm.stateName;
+
   const laborRates = stateSnapshot?.laborRates || {
     structure: 280,
     masonryPlaster: 180,
@@ -277,15 +358,17 @@ async function createServerPricingSnapshot({
   };
 
   if (isBenchmarkMode) {
-    // Explicit benchmark/demo mode only
     return {
       snapshotId: `snap_bm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       createdAt: new Date(),
       currency: 'INR',
-      cityId,
-      cityName,
-      regionalMultiplier,
-      cityMultiplier: regionalMultiplier,
+      stateId: targetStateId,
+      stateName: targetStateName,
+      location: targetStateName,
+      cityId: cityId || 'all',
+      cityName: city || targetStateName,
+      regionalMultiplier: 1.0,
+      cityMultiplier: 1.0,
       isBenchmark: true,
       ratesSource: 'BENCHMARK_DEMO_MODE',
       pricingSchemaVersion: 1,
@@ -298,12 +381,11 @@ async function createServerPricingSnapshot({
     };
   }
 
-  const approved = await getCurrentApprovedRates({ cityId, cityName });
+  const approved = await getCurrentApprovedRates({ state: targetStateName, stateId: targetStateId });
   if (approved.pricingStatus !== 'APPROVED') {
     throw new Error(`Cannot create production snapshot: approved rates missing for ${approved.missingMaterials.join(', ')}`);
   }
 
-  // Format material rates with full metadata required by Correction 4
   const formattedMaterialRates = {};
   for (const [code, rateInfo] of Object.entries(approved.rates)) {
     const customOptionId = stateSnapshot?.customMaterials?.[rateInfo.category?.toLowerCase()] || null;
@@ -320,7 +402,11 @@ async function createServerPricingSnapshot({
       selectedOptionId: customOptionId,
       rateRecordId: rateInfo.rateRecordId,
       rateEffectiveDate: rateInfo.effectiveFrom,
-      rateSource: rateInfo.source || 'approved_database'
+      rateSource: rateInfo.source || 'approved_database',
+      pricingScope: rateInfo.pricingScope || approved.pricingScope,
+      pricingSource: rateInfo.pricingSource || approved.pricingSource,
+      stateId: rateInfo.stateId,
+      locationUsed: rateInfo.locationUsed
     };
   }
 
@@ -328,12 +414,18 @@ async function createServerPricingSnapshot({
     snapshotId: `snap_prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     createdAt: new Date(),
     currency: 'INR',
-    cityId: approved.cityId,
-    cityName,
-    regionalMultiplier,
-    cityMultiplier: regionalMultiplier,
+    stateId: approved.stateId,
+    stateName: approved.stateName,
+    state: approved.stateName,
+    location: approved.location || approved.stateName,
+    cityId: cityId || city || 'all',
+    cityName: city || approved.stateName,
+    regionalMultiplier: 1.0,
+    cityMultiplier: 1.0,
     isBenchmark: false,
-    ratesSource: 'APPROVED_DATABASE_RATES',
+    ratesSource: approved.pricingScope === 'NATIONAL' ? 'APPROVED_NATIONAL_RATES' : 'APPROVED_STATE_RATES',
+    pricingScope: approved.pricingScope,
+    pricingSource: approved.pricingSource,
     pricingSchemaVersion: 1,
     schemaVersion: 1,
     materialRates: formattedMaterialRates,

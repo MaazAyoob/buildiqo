@@ -4,7 +4,7 @@ const materialRateSchema = new mongoose.Schema({
   materialId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Material', 
-    required: true,
+    required: true, 
     index: true 
   },
   materialCode: { 
@@ -22,20 +22,24 @@ const materialRateSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
+  currency: {
+    type: String,
+    default: 'INR'
+  },
   location: { 
     type: String, 
     default: 'National',
-    index: true 
-  },
-  cityId: { 
-    type: String, 
-    default: 'all', // 'all' represents national/default baseline
     index: true 
   },
   stateId: {
     type: String,
     default: 'all',
     index: true
+  },
+  cityId: { 
+    type: String, 
+    default: 'all', // Retained for compatibility / evidence context
+    index: true 
   },
   effectiveFrom: { 
     type: Date, 
@@ -46,6 +50,11 @@ const materialRateSchema = new mongoose.Schema({
     type: String, 
     default: 'admin_manual' 
   },
+  sourceType: {
+    type: String,
+    enum: ['admin_manual', 'research_approved', 'initial_seed', 'supplier_quote', 'other'],
+    default: 'admin_manual'
+  },
   notes: { 
     type: String, 
     default: '' 
@@ -53,6 +62,10 @@ const materialRateSchema = new mongoose.Schema({
   updatedBy: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
   status: { 
     type: String, 
@@ -63,10 +76,19 @@ const materialRateSchema = new mongoose.Schema({
   previousRate: { 
     type: Number, 
     default: null 
+  },
+  schemaVersion: {
+    type: Number,
+    default: 1
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   }
 }, { timestamps: true });
 
-// Compound index for fast approved rate resolution
+// Compound indexes for fast rate resolution
+materialRateSchema.index({ materialCode: 1, stateId: 1, status: 1, effectiveFrom: -1 });
 materialRateSchema.index({ materialCode: 1, cityId: 1, status: 1, effectiveFrom: -1 });
 
 module.exports = mongoose.models.MaterialRate || mongoose.model('MaterialRate', materialRateSchema);

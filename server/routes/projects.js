@@ -15,7 +15,8 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { id, name, city, tier, numFloors, totalCost, totalBua, ratePerSqFt, stateSnapshot, isBenchmarkMode, benchmarkRates } = req.body;
+    const { id, name, state, stateId, city, tier, numFloors, totalCost, totalBua, ratePerSqFt, stateSnapshot, isBenchmarkMode, benchmarkRates } = req.body;
+    const projectState = state || stateSnapshot?.state || 'Karnataka';
     let project = null;
 
     if (id && id.length === 24) {
@@ -25,6 +26,7 @@ router.post('/', requireAuth, async (req, res) => {
     if (project) {
       // Existing project: UPDATE metadata and state, but strictly PRESERVE original pricingSnapshot!
       project.name = name || project.name;
+      project.state = projectState;
       project.city = city || project.city;
       project.tier = tier || project.tier;
       project.numFloors = numFloors || project.numFloors;
@@ -35,13 +37,14 @@ router.post('/', requireAuth, async (req, res) => {
       // Do NOT replace pricingSnapshot!
       await project.save();
     } else {
-      // NEW project: Server determines authoritative current rates snapshot
+      // NEW project: Server determines authoritative current rates snapshot for STATE
       let authoritativeSnapshot = null;
       try {
         authoritativeSnapshot = await pricingService.createServerPricingSnapshot({
+          state: projectState,
+          stateId: stateId || stateSnapshot?.stateId,
+          city,
           cityId: city,
-          cityName: city,
-          cityMultiplier: stateSnapshot?.cityMultiplier || 1.0,
           isBenchmarkMode: Boolean(isBenchmarkMode),
           benchmarkRates: benchmarkRates || null,
           stateSnapshot: stateSnapshot || null
@@ -51,8 +54,10 @@ router.post('/', requireAuth, async (req, res) => {
           snapshotId: `snap_${Date.now()}`,
           createdAt: new Date(),
           currency: 'INR',
-          cityId: city,
-          cityName: city,
+          stateId: 'karnataka',
+          stateName: projectState,
+          cityId: city || 'all',
+          cityName: city || projectState,
           regionalMultiplier: 1.0,
           cityMultiplier: 1.0,
           isBenchmark: Boolean(isBenchmarkMode),
@@ -77,13 +82,14 @@ router.post('/', requireAuth, async (req, res) => {
       project = await Project.create({
         userId: req.user.id,
         name: name || 'My Construction Project',
-        city,
-        tier,
-        numFloors,
-        totalCost,
-        totalBua,
-        ratePerSqFt,
-        stateSnapshot,
+        state: projectState,
+        city: city || 'Bengaluru',
+        tier: tier || 'standard',
+        numFloors: numFloors || 2,
+        totalCost: totalCost || 0,
+        totalBua: totalBua || 0,
+        ratePerSqFt: ratePerSqFt || 0,
+        stateSnapshot: stateSnapshot || {},
         pricingSnapshot: authoritativeSnapshot
       });
     }

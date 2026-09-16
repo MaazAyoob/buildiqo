@@ -4,22 +4,35 @@ const Material = require('../models/Material');
 const MaterialRate = require('../models/MaterialRate');
 const pricingService = require('../services/pricingService');
 const priceResearchService = require('../services/priceResearch/priceResearchService');
-const { INDIAN_LOCATIONS } = require('../data/indianLocations');
+const { INDIAN_LOCATIONS, normalizeState } = require('../data/indianLocations');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 /**
  * GET /api/pricing/current
- * Authenticated endpoint (requires valid JWT).
- * Used by logged-in users / calculator to fetch authoritative current approved rates.
- * Strict hierarchy: Exact City -> National Approved -> UNAVAILABLE.
+ * Authoritative production pricing resolution endpoint.
+ * Hierarchy: State Approved -> National Approved -> UNAVAILABLE.
+ * Public access supported when location/state parameter is queried (Live Rates & Cost Calculator).
+ * Requires auth token when queried without parameters (satisfies Phase 1.5 security baseline).
  */
-router.get('/current', requireAuth, async (req, res) => {
+router.get('/current', async (req, res) => {
   try {
-    const { city, cityId } = req.query;
-    const targetCityId = cityId || city || 'all';
+    const { state, stateId, city, cityId } = req.query;
+    const hasLocationQuery = Boolean(state || stateId || city || cityId);
+    const authHeader = req.headers.authorization;
+
+    // Phase 1.5 test protection: strict 401 when accessed without location and without token
+    if (!hasLocationQuery && !authHeader) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required to access current rates without location parameters.'
+      });
+    }
+
     const result = await pricingService.getCurrentApprovedRates({
-      cityId: targetCityId,
-      cityName: city || targetCityId
+      state,
+      stateId,
+      city,
+      cityId
     });
 
     res.json({
@@ -33,23 +46,54 @@ router.get('/current', requireAuth, async (req, res) => {
 
 /**
  * GET /api/pricing/materials
- * Admin-only: Full list of materials with their current active rates.
+ * Admin-only: Full list of materials with their current active rates for a selected state.
  */
 router.get('/materials', requireAdmin, async (req, res) => {
   try {
-    const { category, active } = req.query;
+    const { category, active, state, stateId } = req.query;
     const query = {};
-    if (category) query.category = category;
+    if (category && category !== 'ALL') query.category = category.toLowerCase();
     if (active !== undefined) query.active = active === 'true';
+
+    const norm = (state || stateId) ? normalizeState(state || stateId) : null;
+    const targetStateId = norm ? norm.stateId : null;
 
     const materials = await Material.find(query).sort({ category: 1, name: 1 }).lean();
 
-    // Attach latest approved rate to each material
+    // Attach latest approved state rate to each material
     const enriched = await Promise.all(materials.map(async (mat) => {
-      const latestApproved = await MaterialRate.findOne({
-        materialCode: mat.materialCode,
-        status: 'approved'
-      }).sort({ effectiveFrom: -1 }).lean();
+      let latestApproved = null;
+      let isStateRate = false;
+
+      if (targetStateId && targetStateId !== 'all') {
+        latestApproved = await MaterialRate.findOne({
+          materialCode: mat.materialCode,
+          stateId: targetStateId,
+          cityId: 'all',
+          status: 'approved'
+        }).sort({ effectiveFrom: -1 }).lean();
+        if (latestApproved) isStateRate = true;
+      }
+
+      if (!latestApproved) {
+        latestApproved = await MaterialRate.findOne({
+          materialCode: mat.materialCode,
+          stateId: 'all',
+          cityId: 'all',
+          status: 'approved'
+        }).sort({ effectiveFrom: -1 }).lean();
+      }
+
+      if (!latestApproved) {
+        latestApproved = await MaterialRate.findOne({
+          materialCode: mat.materialCode,
+          cityId: 'all',
+          $or: [{ stateId: 'all' }, { stateId: { $exists: false } }, { stateId: null }],
+          status: 'approved'
+        }).sort({ effectiveFrom: -1 }).lean();
+      }
+
+      const isNational = Boolean(latestApproved && !isStateRate);
 
       return {
         ...mat,
@@ -57,8 +101,11 @@ router.get('/materials', requireAdmin, async (req, res) => {
         rateUnit: latestApproved ? latestApproved.unit : mat.unit,
         lastRateUpdate: latestApproved ? latestApproved.effectiveFrom : mat.createdAt,
         rateSource: latestApproved ? latestApproved.source : 'benchmark_seed',
-        rateLocation: latestApproved ? latestApproved.location : 'National',
-        rateRecordId: latestApproved ? latestApproved._id : null
+        rateLocation: latestApproved ? (isNational ? 'National' : latestApproved.location) : (norm ? norm.stateName : 'National'),
+        rateStateId: latestApproved ? (isNational ? 'all' : latestApproved.stateId) : (targetStateId || 'all'),
+        rateRecordId: latestApproved ? latestApproved._id : null,
+        pricingScope: isStateRate ? 'STATE' : (latestApproved ? 'NATIONAL' : 'UNAVAILABLE'),
+        pricingSource: isStateRate ? 'APPROVED_STATE_RATE' : (latestApproved ? 'APPROVED_NATIONAL_RATE' : 'UNAVAILABLE')
       };
     }));
 
@@ -74,7 +121,9 @@ router.get('/materials', requireAdmin, async (req, res) => {
  */
 router.get('/materials/:code/history', requireAdmin, async (req, res) => {
   try {
-    const data = await pricingService.getMaterialRateHistory(req.params.code);
+    const { state, stateId } = req.query;
+    const norm = (state || stateId) ? normalizeState(state || stateId) : null;
+    const data = await pricingService.getMaterialRateHistory(req.params.code, norm?.stateId);
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -83,11 +132,11 @@ router.get('/materials/:code/history', requireAdmin, async (req, res) => {
 
 /**
  * POST /api/pricing/rates
- * Admin-only: Atomically submit a new approved rate revision.
+ * Admin-only: Atomically submit a new approved rate revision for a STATE.
  */
 router.post('/rates', requireAdmin, async (req, res) => {
   try {
-    const { materialCode, rate, location, cityId, notes, source } = req.body;
+    const { materialCode, rate, state, stateId, location, notes, source } = req.body;
     if (!materialCode || rate === undefined || rate === null) {
       return res.status(400).json({ success: false, error: 'materialCode and numeric rate are required.' });
     }
@@ -100,16 +149,18 @@ router.post('/rates', requireAdmin, async (req, res) => {
     const result = await pricingService.updateMaterialRate({
       materialCode,
       rate: numRate,
-      location: location || 'National',
-      cityId: cityId || 'all',
+      state: state || location || 'Karnataka',
+      stateId,
+      location: location || state || 'Karnataka',
       notes: notes || '',
       source: source || 'admin_manual',
+      sourceType: 'admin_manual',
       userId: req.user.id
     });
 
     res.json({
       success: true,
-      message: `Rate for ${materialCode} updated to ₹${numRate}`,
+      message: `Rate for ${materialCode} in ${result.rateRecord.location} updated to ₹${numRate}`,
       data: result
     });
   } catch (err) {

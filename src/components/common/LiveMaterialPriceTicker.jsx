@@ -1,76 +1,139 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ChevronDown, 
   ChevronUp, 
   MapPin, 
-  TrendingUp, 
   ShieldCheck, 
-  Clock, 
-  Sparkles,
-  Layers
+  AlertCircle,
+  Clock
 } from 'lucide-react';
-import { CITIES } from '../../data/cities';
+import { INDIAN_STATES, normalizeStateName } from '../../data/states';
 import { formatCurrency } from '../../store/useEstimateStore';
+import { apiRequest } from '../../utils/apiClient';
 
-export function LiveMaterialPriceTicker({ selectedCity = 'bangalore', onCityChange }) {
+export function LiveMaterialPriceTicker({ 
+  selectedState, 
+  onStateChange,
+  // Backward compatibility props
+  selectedCity,
+  onCityChange 
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const city = CITIES.find(c => c.id === selectedCity) || CITIES[0];
-  const mult = city.multiplier || 1.0;
+  const [rates, setRates] = useState(null);
+  const [pricingStatus, setPricingStatus] = useState('LOADING');
+  const [pricingScope, setPricingScope] = useState('STATE');
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const activeState = normalizeStateName(selectedState || selectedCity || 'Karnataka');
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveRates() {
+      setPricingStatus('LOADING');
+      try {
+        const res = await apiRequest(`/api/pricing/current?state=${encodeURIComponent(activeState)}`);
+        if (!isMounted) return;
+        if (res.success && res.data && res.data.pricingStatus === 'APPROVED' && res.data.rates) {
+          setRates(res.data.rates);
+          setPricingStatus('APPROVED');
+          setPricingScope(res.data.pricingScope || 'STATE');
+          setLastUpdated(res.data.lastFetchedAt || new Date().toISOString());
+        } else {
+          setRates(null);
+          setPricingStatus('UNAVAILABLE');
+          setPricingScope('UNAVAILABLE');
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        setRates(null);
+        setPricingStatus('UNAVAILABLE');
+        setPricingScope('UNAVAILABLE');
+      }
+    }
+
+    loadLiveRates();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeState]);
+
+  const handleStateSelect = (e) => {
+    const newState = e.target.value;
+    if (onStateChange) onStateChange(newState);
+    if (onCityChange) onCityChange(newState);
+  };
+
+  // Helper to extract material rate by key or category
+  const getRate = (code, fallbackCategory) => {
+    if (!rates) return null;
+    if (rates[code]?.rate != null) return rates[code];
+    const found = Object.values(rates).find(r => 
+      r.category?.toLowerCase() === fallbackCategory?.toLowerCase()
+    );
+    return found || null;
+  };
+
+  const steelRate = getRate('st-jsw', 'steel');
+  const cementRate = getRate('cm-ultratech-std', 'cement');
+  const sandRate = getRate('sd-double', 'sand');
+  const masonryRate = getRate('ms-aac', 'masonry');
+  const flooringRate = getRate('fl-vitrified-gvt', 'flooring');
+  const paintRate = getRate('pt-asian', 'painting') || getRate('pt-acrylic', 'painting');
 
   const keyCommodities = [
     {
       id: 'steel',
-      name: 'JSW Fe 550D Rebar',
+      name: steelRate?.name || 'JSW Fe 550D Rebar',
       category: 'Steel',
-      baseRate: 74000,
-      unit: '₹ / Tonne',
+      rate: steelRate?.rate,
+      unit: steelRate?.unit || '₹ / Tonne',
       badge: 'IS 1786',
-      trend: '+1.2%'
+      pricingScope: steelRate?.pricingScope || pricingScope
     },
     {
       id: 'cement',
-      name: 'UltraTech PPC Cement',
+      name: cementRate?.name || 'UltraTech PPC Cement',
       category: 'Cement',
-      baseRate: 410,
-      unit: '₹ / Bag',
+      rate: cementRate?.rate,
+      unit: cementRate?.unit || '₹ / Bag',
       badge: 'Grade 53',
-      trend: 'Stable'
+      pricingScope: cementRate?.pricingScope || pricingScope
     },
     {
       id: 'sand',
-      name: 'VSI Washed M-Sand',
+      name: sandRate?.name || 'VSI Washed M-Sand',
       category: 'M-Sand',
-      baseRate: 68,
-      unit: '₹ / Cu.Ft',
+      rate: sandRate?.rate,
+      unit: sandRate?.unit || '₹ / Cu.Ft',
       badge: 'Zone II',
-      trend: '-0.8%'
+      pricingScope: sandRate?.pricingScope || pricingScope
     },
     {
       id: 'blocks',
-      name: 'AAC Light Blocks 6"',
+      name: masonryRate?.name || 'AAC Light Blocks 6"',
       category: 'Masonry',
-      baseRate: 98,
-      unit: '₹ / Sq.Ft',
+      rate: masonryRate?.rate,
+      unit: masonryRate?.unit || '₹ / Sq.Ft',
       badge: 'Thermal Mass',
-      trend: 'Stable'
+      pricingScope: masonryRate?.pricingScope || pricingScope
     },
     {
       id: 'tiles',
-      name: 'Kajaria 4x2 GVT Tiles',
+      name: flooringRate?.name || 'Kajaria 4x2 GVT Tiles',
       category: 'Flooring',
-      baseRate: 145,
-      unit: '₹ / Sq.Ft',
+      rate: flooringRate?.rate,
+      unit: flooringRate?.unit || '₹ / Sq.Ft',
       badge: 'Vitrified',
-      trend: '+0.5%'
+      pricingScope: flooringRate?.pricingScope || pricingScope
     },
     {
       id: 'paint',
-      name: 'Asian Paints Royale',
+      name: paintRate?.name || 'Asian Paints Royale',
       category: 'Paint',
-      baseRate: 38,
-      unit: '₹ / Sq.Ft',
+      rate: paintRate?.rate,
+      unit: paintRate?.unit || '₹ / Sq.Ft',
       badge: 'Emulsion',
-      trend: 'Stable'
+      pricingScope: paintRate?.pricingScope || pricingScope
     }
   ];
 
@@ -80,10 +143,10 @@ export function LiveMaterialPriceTicker({ selectedCity = 'bangalore', onCityChan
       {/* Compact Main Bar */}
       <div className="p-3 sm:p-3.5 flex flex-wrap items-center justify-between gap-3">
         
-        {/* Left: Title & City Dropdown */}
+        {/* Left: Title & State Dropdown */}
         <div className="flex items-center space-x-2.5">
           <div className="flex items-center space-x-1.5 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
+            <span className={`w-2 h-2 rounded-full ${pricingStatus === 'APPROVED' ? 'bg-green-500 animate-ping' : 'bg-amber-500'}`} />
             <span className="text-xs font-black text-gray-900 tracking-tight">
               Live Material Rates
             </span>
@@ -91,17 +154,18 @@ export function LiveMaterialPriceTicker({ selectedCity = 'bangalore', onCityChan
 
           <span className="text-gray-300 text-xs hidden sm:inline">•</span>
 
-          {/* City Selector Dropdown */}
+          {/* State Selector Dropdown */}
           <div className="flex items-center space-x-1 bg-gray-100/90 px-2 py-1 rounded-lg border border-gray-200 shrink-0">
             <MapPin className="w-3 h-3 text-blue-600" />
+            <span className="text-[10px] font-medium text-gray-500 hidden sm:inline">State:</span>
             <select
-              value={selectedCity}
-              onChange={(e) => onCityChange && onCityChange(e.target.value)}
+              value={activeState}
+              onChange={handleStateSelect}
               className="text-[11px] font-bold text-gray-900 bg-transparent focus:outline-none cursor-pointer pr-1"
             >
-              {CITIES.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name.split(' ')[0]} ({c.multiplier === 1.0 ? '1.0x' : `${c.multiplier.toFixed(2)}x`})
+              {INDIAN_STATES.map(s => (
+                <option key={s.id} value={s.name}>
+                  {s.name} ({s.code})
                 </option>
               ))}
             </select>
@@ -110,25 +174,75 @@ export function LiveMaterialPriceTicker({ selectedCity = 'bangalore', onCityChan
 
         {/* Middle: Horizontal Mini Ticker Pills (Desktop) */}
         <div className="hidden lg:flex items-center space-x-3 text-[11px] font-semibold text-gray-700">
-          <span className="flex items-center space-x-1">
-            <span className="text-gray-400">Steel:</span>
-            <span className="font-bold text-gray-900">{formatCurrency(Math.round(74000 * mult))}/T</span>
-          </span>
-          <span className="text-gray-200">|</span>
-          <span className="flex items-center space-x-1">
-            <span className="text-gray-400">Cement:</span>
-            <span className="font-bold text-gray-900">{formatCurrency(Math.round(410 * mult))}/bag</span>
-          </span>
-          <span className="text-gray-200">|</span>
-          <span className="flex items-center space-x-1">
-            <span className="text-gray-400">M-Sand:</span>
-            <span className="font-bold text-gray-900">{formatCurrency(Math.round(68 * mult))}/cft</span>
-          </span>
-          <span className="text-gray-200">|</span>
-          <span className="flex items-center space-x-1">
-            <span className="text-gray-400">Tiles:</span>
-            <span className="font-bold text-gray-900">{formatCurrency(Math.round(145 * mult))}/sft</span>
-          </span>
+          {pricingStatus === 'APPROVED' ? (
+            <>
+              <span className="flex items-center space-x-1">
+                <span className="text-gray-400">Steel:</span>
+                <span className="font-bold text-gray-900">
+                  {steelRate?.rate != null ? (
+                    <>
+                      {formatCurrency(steelRate.rate)}/{steelRate.unit?.includes('Tonne') ? 'T' : 'kg'}
+                      <span className="text-[10px] font-normal text-gray-400 ml-1">
+                        · {steelRate.pricingScope === 'NATIONAL' ? 'National' : activeState}
+                      </span>
+                    </>
+                  ) : 'Unavailable'}
+                </span>
+              </span>
+              <span className="text-gray-200">|</span>
+              <span className="flex items-center space-x-1">
+                <span className="text-gray-400">Cement:</span>
+                <span className="font-bold text-gray-900">
+                  {cementRate?.rate != null ? (
+                    <>
+                      {formatCurrency(cementRate.rate)}/bag
+                      <span className="text-[10px] font-normal text-gray-400 ml-1">
+                        · {cementRate.pricingScope === 'NATIONAL' ? 'National' : activeState}
+                      </span>
+                    </>
+                  ) : 'Unavailable'}
+                </span>
+              </span>
+              <span className="text-gray-200">|</span>
+              <span className="flex items-center space-x-1">
+                <span className="text-gray-400">M-Sand:</span>
+                <span className="font-bold text-gray-900">
+                  {sandRate?.rate != null ? (
+                    <>
+                      {formatCurrency(sandRate.rate)}/cft
+                      <span className="text-[10px] font-normal text-gray-400 ml-1">
+                        · {sandRate.pricingScope === 'NATIONAL' ? 'National' : activeState}
+                      </span>
+                    </>
+                  ) : 'Unavailable'}
+                </span>
+              </span>
+              <span className="text-gray-200">|</span>
+              <span className="flex items-center space-x-1">
+                <span className="text-gray-400">Tiles:</span>
+                <span className="font-bold text-gray-900">
+                  {flooringRate?.rate != null ? (
+                    <>
+                      {formatCurrency(flooringRate.rate)}/sft
+                      <span className="text-[10px] font-normal text-gray-400 ml-1">
+                        · {flooringRate.pricingScope === 'NATIONAL' ? 'National' : activeState}
+                      </span>
+                    </>
+                  ) : 'Unavailable'}
+                </span>
+              </span>
+            </>
+          ) : pricingStatus === 'LOADING' ? (
+            <span className="text-gray-400 text-xs flex items-center space-x-1">
+              <Clock className="w-3 h-3 animate-spin text-blue-600" />
+              <span>Fetching live {activeState} rates...</span>
+            </span>
+          ) : (
+            <span className="text-amber-700 text-xs flex items-center space-x-1">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+              <span>State pricing unavailable for {activeState}</span>
+            </span>
+          )}
         </div>
 
         {/* Right: Expand / Collapse Toggle Button */}
@@ -145,38 +259,66 @@ export function LiveMaterialPriceTicker({ selectedCity = 'bangalore', onCityChan
       {/* Expanded Dropdown Breakdown */}
       {isOpen && (
         <div className="p-4 bg-gray-50/70 border-t border-gray-200 space-y-3 animate-fadeIn">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-            {keyCommodities.map((item) => {
-              const livePrice = Math.round(item.baseRate * mult);
-              return (
-                <div
-                  key={item.id}
-                  className="p-2.5 rounded-xl border border-gray-200 bg-white space-y-1 shadow-2xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">{item.category}</span>
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-blue-50 text-blue-900">
-                      {item.badge}
-                    </span>
+          {pricingStatus === 'UNAVAILABLE' ? (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
+              <p className="text-xs font-bold text-amber-800">
+                Official approved production material rates are currently unavailable for {activeState}.
+              </p>
+              <p className="text-[11px] text-amber-700 mt-0.5">
+                Buildiqo strict single-source policy requires verified state or national rates before production quoting.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+              {keyCommodities.map((item) => {
+                const hasRate = item.rate != null;
+                return (
+                  <div
+                    key={item.id}
+                    className="p-2.5 rounded-xl border border-gray-200 bg-white space-y-1 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">{item.category}</span>
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-blue-50 text-blue-900">
+                        {item.badge}
+                      </span>
+                    </div>
+                    <div className="text-xs font-black text-gray-900 truncate" title={item.name}>
+                      {item.name}
+                    </div>
+                    <div className="text-sm font-black text-blue-700 flex items-baseline space-x-1">
+                      {hasRate ? (
+                        <>
+                          <span>{formatCurrency(item.rate)}</span>
+                          <span className="text-[9px] text-gray-400 font-semibold">{item.unit.replace(/^₹\s*\/?\s*/, '/ ')}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs font-semibold text-amber-600">Rate unavailable</span>
+                      )}
+                    </div>
+                    {hasRate && (
+                      <div className="text-[9px] font-bold text-gray-400 pt-0.5">
+                        · {item.pricingScope === 'NATIONAL' ? 'National baseline' : `${activeState} rate`}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-xs font-black text-gray-900 truncate" title={item.name}>
-                    {item.name}
-                  </div>
-                  <div className="text-sm font-black text-blue-700 flex items-baseline space-x-1">
-                    <span>{formatCurrency(livePrice)}</span>
-                    <span className="text-[9px] text-gray-400 font-semibold">{item.unit.split('₹ / ')[1]}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-[10px] text-gray-500 pt-1">
             <span className="flex items-center space-x-1">
               <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
-              <span>Indexed to IS 456 & local supplier market procurement rates</span>
+              <span>
+                {pricingScope === 'NATIONAL'
+                  ? `Indexed to IS 456 & National baseline rates (fallback for ${activeState})`
+                  : `Indexed to IS 456 & state-authorized procurement rates (${activeState})`}
+              </span>
             </span>
-            <span className="font-semibold text-gray-600">Updated Daily</span>
+            <span className="font-semibold text-gray-600">
+              {lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleDateString()}` : 'Live server synced'}
+            </span>
           </div>
         </div>
       )}

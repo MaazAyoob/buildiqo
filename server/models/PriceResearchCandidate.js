@@ -68,6 +68,14 @@ const priceResearchCandidateSchema = new mongoose.Schema({
     default: 'All',
     index: true
   },
+  researchLocation: {
+    type: String,
+    default: ''
+  },
+  evidenceLocation: {
+    type: String,
+    default: ''
+  },
   locationScope: {
     type: String,
     enum: ['city', 'state', 'national'],

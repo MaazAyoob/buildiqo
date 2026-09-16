@@ -109,29 +109,38 @@ let globalSub = getActiveSubscription();
 let globalPayments = getInitialPayments();
 let globalPricingRates = null;
 let globalPricingStatus = localStorage.getItem('buildiqo_benchmark_mode') === 'true' ? 'BENCHMARK' : 'CHECKING';
+let globalPricingScope = null;
+let globalPricingSource = null;
 let globalIsBenchmarkMode = localStorage.getItem('buildiqo_benchmark_mode') === 'true';
 let globalIsSnapshotMode = false;
 let globalActiveSnapshot = null;
 let listeners = [];
 
-async function fetchApprovedRates(cityId) {
+async function fetchApprovedRates(stateName) {
   if (globalIsSnapshotMode) {
     return false; // Preserve immutable historical snapshot rates
   }
   try {
-    const res = await apiRequest(`/api/pricing/current?city=${encodeURIComponent(cityId || 'bangalore')}`);
+    const targetState = stateName || globalState.state || 'Karnataka';
+    const res = await apiRequest(`/api/pricing/current?state=${encodeURIComponent(targetState)}`);
     if (res.success && res.data && res.data.pricingStatus === 'APPROVED') {
       globalPricingRates = res.data.rates;
       globalPricingStatus = 'APPROVED';
+      globalPricingScope = res.data.pricingScope || 'STATE';
+      globalPricingSource = res.data.pricingSource || 'APPROVED_STATE_RATE';
       notify();
       return true;
     } else {
       globalPricingStatus = globalIsBenchmarkMode ? 'BENCHMARK' : 'UNAVAILABLE';
+      globalPricingScope = 'UNAVAILABLE';
+      globalPricingSource = 'UNAVAILABLE';
       notify();
       return false;
     }
   } catch (err) {
     globalPricingStatus = globalIsBenchmarkMode ? 'BENCHMARK' : 'UNAVAILABLE';
+    globalPricingScope = 'UNAVAILABLE';
+    globalPricingSource = 'UNAVAILABLE';
     notify();
     return false;
   }
@@ -149,6 +158,8 @@ function notify() {
     payments: globalPayments,
     pricingRates: globalPricingRates,
     pricingStatus: globalPricingStatus,
+    pricingScope: globalPricingScope,
+    pricingSource: globalPricingSource,
     isBenchmarkMode: globalIsBenchmarkMode,
     isSnapshotMode: globalIsSnapshotMode,
     activeSnapshot: globalActiveSnapshot
@@ -183,6 +194,14 @@ export function useEstimateStore() {
   // Sync with backend on component mount
   useEffect(() => {
     const syncWithBackend = async () => {
+      // Always fetch approved live state rates, including for unauthenticated / guest visitors
+      try {
+        await fetchApprovedRates(globalState.state || 'Karnataka');
+      } catch (err) {
+        globalPricingStatus = globalIsBenchmarkMode ? 'BENCHMARK' : 'UNAVAILABLE';
+        notify();
+      }
+
       const token = localStorage.getItem('buildiqo_token');
       if (!token) return;
 
@@ -202,6 +221,7 @@ export function useEstimateStore() {
           const mapped = projRes.projects.map(p => ({
             id: p._id || p.id,
             name: p.name,
+            state: p.state || p.stateSnapshot?.state || 'Karnataka',
             city: p.city,
             tier: p.tier,
             totalCost: p.totalCost,
@@ -239,12 +259,8 @@ export function useEstimateStore() {
             notify();
           }
         }
-        // Fetch current approved pricing
-        await fetchApprovedRates(globalState.city);
       } catch (err) {
-        // Backend offline or local fallback - continue smoothly
-        globalPricingStatus = globalIsBenchmarkMode ? 'BENCHMARK' : 'UNAVAILABLE';
-        notify();
+        // Continue smoothly on network/local offline
       }
     };
 
@@ -255,7 +271,9 @@ export function useEstimateStore() {
     rates: globalPricingRates,
     isBenchmark: globalIsBenchmarkMode,
     isSnapshot: globalIsSnapshotMode,
-    snapshot: globalActiveSnapshot
+    snapshot: globalActiveSnapshot,
+    pricingScope: globalPricingScope,
+    pricingSource: globalPricingSource
   });
 
   const updateState = (updater) => {
@@ -267,9 +285,12 @@ export function useEstimateStore() {
     }
     notify();
 
-    // If city changed and not in snapshot mode, fetch new city's approved rates
-    if (globalState.city !== prevState.city && !globalIsSnapshotMode && !globalIsBenchmarkMode) {
-      fetchApprovedRates(globalState.city);
+    // If state changed and not in snapshot mode, fetch new state's approved rates
+    const stateChanged = (globalState.state && globalState.state !== prevState.state) ||
+      (!globalState.state && globalState.city !== prevState.city);
+
+    if (stateChanged && !globalIsSnapshotMode && !globalIsBenchmarkMode) {
+      fetchApprovedRates(globalState.state || globalState.city);
     }
   };
 
@@ -294,7 +315,7 @@ export function useEstimateStore() {
         }
         notify();
         // Fetch approved rates for current user session
-        fetchApprovedRates(globalState.city);
+        fetchApprovedRates(globalState.state || 'Karnataka');
         return { success: true, user: res.user };
       }
       return { success: false, error: res.error || 'Invalid credentials' };
@@ -639,6 +660,7 @@ export function useEstimateStore() {
     const summary = {
       id: globalState.id || `proj_${Date.now()}`,
       name,
+      state: globalState.state || 'Karnataka',
       city: globalState.city,
       tier: globalState.tier,
       totalCost: estimation.grandTotalCost,
@@ -665,6 +687,7 @@ export function useEstimateStore() {
         body: JSON.stringify({
           id: summary.id,
           name: summary.name,
+          state: summary.state,
           city: summary.city,
           tier: summary.tier,
           numFloors: summary.numFloors,
@@ -706,7 +729,7 @@ export function useEstimateStore() {
       } else {
         globalActiveSnapshot = null;
         globalIsSnapshotMode = false;
-        fetchApprovedRates(globalState.city);
+        fetchApprovedRates(globalState.state || 'Karnataka');
       }
       notify();
       return true;
@@ -735,7 +758,7 @@ export function useEstimateStore() {
       projectName: 'New Construction Project'
     };
     if (!globalIsBenchmarkMode) {
-      fetchApprovedRates(INITIAL_PROJECT_STATE.city);
+      fetchApprovedRates(INITIAL_PROJECT_STATE.state || 'Karnataka');
     }
     notify();
   };
@@ -770,6 +793,8 @@ export function useEstimateStore() {
     resetToNewProject,
     pricingRates: globalPricingRates,
     pricingStatus: globalPricingStatus,
+    pricingScope: globalPricingScope,
+    pricingSource: globalPricingSource,
     isBenchmarkMode: globalIsBenchmarkMode,
     isSnapshotMode: globalIsSnapshotMode,
     activeSnapshot: globalActiveSnapshot,

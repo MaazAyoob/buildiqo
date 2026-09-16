@@ -82,7 +82,7 @@ export function StepMaterials({ state, updateState, estimation }) {
             <div>
               <span className="font-extrabold uppercase tracking-wide">Production Pricing Unavailable</span>
               <p className="text-[11px] text-red-700 font-medium mt-0.5">
-                Approved rates for one or more materials are unavailable in {state.city || 'Bangalore'}. Production estimates will not silently fall back to benchmark rates.
+                Approved rates for one or more materials are unavailable in {state.state || 'Karnataka'}. Production estimates will not silently fall back to benchmark rates.
               </p>
             </div>
           </div>
@@ -98,9 +98,15 @@ export function StepMaterials({ state, updateState, estimation }) {
           <div className="flex items-center space-x-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
             <div>
-              <span className="font-extrabold uppercase tracking-wide">Live Approved Rates Applied</span>
+              <span className="font-extrabold uppercase tracking-wide">
+                {estimation.pricingScope === 'NATIONAL'
+                  ? 'Live Approved Rates Applied (National Baseline Fallback)'
+                  : 'Live Approved Rates Applied'}
+              </span>
               <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
-                All material pricing resolved from authoritative approved database rates for {state.city || 'Bengaluru'}.
+                {estimation.pricingScope === 'NATIONAL'
+                  ? `Material pricing resolved from approved National Baseline rates (fallback for ${state.state || 'Karnataka'}).`
+                  : `All material pricing resolved from authoritative approved database rates for ${state.state || 'Karnataka'}.`}
               </p>
             </div>
           </div>

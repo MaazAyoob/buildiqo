@@ -137,8 +137,8 @@ export function LandingPage({ setRoute }) {
       {/* Live Regional Material Market Rates on Landing Page (User Requirement) */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <LiveMaterialPriceTicker
-          selectedCity={state.city || 'bangalore'}
-          onCityChange={(newCity) => updateState({ city: newCity })}
+          selectedState={state.state || 'Karnataka'}
+          onStateChange={(newState) => updateState({ state: newState })}
         />
       </section>
 

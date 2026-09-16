@@ -17,6 +17,7 @@ import {
   HardHat
 } from 'lucide-react';
 import { CITIES, SOIL_TYPES } from '../../data/cities';
+import { INDIAN_STATES, normalizeStateName } from '../../data/states';
 import { TIER_BENCHMARKS } from '../../data/materials';
 import { BUILDING_TYPES, CONSTRUCTION_TYPES, AREA_UNITS } from '../../data/defaults';
 import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useEstimateStore';
@@ -143,19 +144,48 @@ export function StepPlotDetails({ state, updateState, estimation }) {
             />
           </div>
 
-          {/* Location Selector (Physical Custom Input) */}
+          {/* State Selector (Authoritative Pricing Scope) */}
           <div className="sm:col-span-1">
             <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
               <span className="flex items-center space-x-1.5">
                 <MapPin className="w-3.5 h-3.5 text-blue-800" />
-                <span>Project Location / City *</span>
+                <span>State (Pricing Authority) *</span>
               </span>
-              <span className="text-[10px] text-blue-800 font-semibold">Physical Entry</span>
+              <span className="text-[10px] text-green-700 font-semibold bg-green-50 px-1.5 py-0.2 rounded">Live Verified</span>
+            </label>
+            <select
+              value={state.state || 'Karnataka'}
+              onChange={(e) => updateState({ state: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-white cursor-pointer"
+            >
+              {INDIAN_STATES.map(s => (
+                <option key={s.id} value={s.name}>
+                  {s.name} ({s.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Location Selector (Physical Custom Input) */}
+          <div className="sm:col-span-1">
+            <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center space-x-1.5">
+                <Building className="w-3.5 h-3.5 text-gray-500" />
+                <span>City / Site Location</span>
+              </span>
+              <span className="text-[10px] text-gray-500 font-semibold">Physical Entry</span>
             </label>
             <input
               type="text"
               value={state.city || 'Bengaluru'}
-              onChange={(e) => updateState({ city: e.target.value })}
+              onChange={(e) => {
+                const cityVal = e.target.value;
+                const autoState = normalizeStateName(cityVal);
+                updateState({ 
+                  city: cityVal, 
+                  ...(autoState && !state.hasCustomState ? { state: autoState } : {}) 
+                });
+              }}
               placeholder="Enter your city (e.g. Bengaluru, Mumbai, Pune)"
               className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-slate-50/50"
             />

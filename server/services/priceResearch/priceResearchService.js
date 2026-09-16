@@ -11,6 +11,7 @@ const GoogleSearchResearchProvider = require('./GoogleSearchResearchProvider');
 const OpenAIResearchProvider = require('./OpenAIResearchProvider');
 const MockResearchProvider = require('./MockResearchProvider');
 const pricingService = require('../pricingService');
+const { normalizeState } = require('../../data/indianLocations');
 
 class PriceResearchService {
   constructor() {
@@ -103,14 +104,25 @@ class PriceResearchService {
       const promises = chunk.map(async (mat) => {
         try {
           // Fetch current approved rate and revision ID for stale protection
-          const cityKey = locationScope === 'city' && city && city !== 'All' ? city.toLowerCase().trim() : 'all';
-          let currentRateDoc = await MaterialRate.findOne({
-            materialCode: mat.materialCode,
-            cityId: cityKey,
-            status: 'approved'
-          }).sort({ effectiveFrom: -1 }).lean();
+          const normState = normalizeState(state);
+          let currentRateDoc = null;
+          if (normState.stateId !== 'all') {
+            currentRateDoc = await MaterialRate.findOne({
+              materialCode: mat.materialCode,
+              stateId: normState.stateId,
+              status: 'approved'
+            }).sort({ effectiveFrom: -1 }).lean();
+          }
 
-          if (!currentRateDoc && cityKey !== 'all') {
+          if (!currentRateDoc) {
+            currentRateDoc = await MaterialRate.findOne({
+              materialCode: mat.materialCode,
+              stateId: 'all',
+              status: 'approved'
+            }).sort({ effectiveFrom: -1 }).lean();
+          }
+
+          if (!currentRateDoc) {
             currentRateDoc = await MaterialRate.findOne({
               materialCode: mat.materialCode,
               cityId: 'all',
@@ -145,7 +157,7 @@ class PriceResearchService {
             materialSpecification: mat.grade || mat.name
           });
 
-          // Candidate Object Construction
+          // Candidate Object Construction (City preserved as research context, State is production scope)
           const candidateData = {
             runId,
             materialId: mat._id,
@@ -153,8 +165,10 @@ class PriceResearchService {
             materialName: mat.name,
             category: mat.category,
             requestedLocation: locationScope === 'city' && city && city !== 'All' ? `${city}, ${state}` : state,
-            state,
+            state: normState.stateName || state,
             city,
+            researchLocation: city && city !== 'All' ? city : normState.stateName,
+            evidenceLocation: locationScope === 'city' && city && city !== 'All' ? `${city}, ${normState.stateName}` : normState.stateName,
             locationScope,
             sourceName: result.sourceName,
             sourceUrl: result.sourceUrl,
@@ -322,14 +336,14 @@ class PriceResearchService {
       throw new Error('Candidate requires manual unit normalization or rate adjustment before approval. Use "Edit & Approve".');
     }
 
-    // Stale-Candidate Protection
-    const cityKey = candidate.locationScope === 'city' && candidate.city && candidate.city !== 'All'
-      ? candidate.city.toLowerCase().trim()
-      : 'all';
+    // Stale-Candidate Protection against active state rate
+    const norm = normalizeState(candidate.state || candidate.requestedLocation);
+    const targetStateId = norm.stateId;
+    const targetStateName = norm.stateName;
 
     const currentApproved = await MaterialRate.findOne({
       materialCode: candidate.materialCode,
-      cityId: cityKey,
+      stateId: targetStateId,
       status: 'approved'
     }).sort({ effectiveFrom: -1 });
 
@@ -344,27 +358,31 @@ class PriceResearchService {
     }
 
     const finalRate = candidate.normalizedRate;
-    const locationName = candidate.requestedLocation || candidate.city || candidate.state || 'National';
 
-    // Commit to authoritative production MaterialRate
+    // Commit to authoritative production MaterialRate as STATE rate (cityId is 'all')
     const updateResult = await pricingService.updateMaterialRate({
       materialCode: candidate.materialCode,
       rate: finalRate,
-      location: locationName,
-      cityId: cityKey,
+      state: targetStateName,
+      stateId: targetStateId,
+      location: targetStateName,
+      cityId: 'all',
       source: `AI Price Research — ${candidate.sourceName || 'Verified Citation'}`,
-      notes: notes || `Approved by admin from Research Run ${candidate.runId}. Source: ${candidate.sourceUrl || 'N/A'}`,
+      sourceType: 'research_approved',
+      notes: notes || `Approved by admin from Research Run ${candidate.runId}. Researched in: ${candidate.city || candidate.requestedLocation}. Source: ${candidate.sourceUrl || 'N/A'}`,
       userId
     });
 
-    // Mark previous candidates for same material & location as superseded
+    // Mark previous candidates for same material & state as superseded
     await PriceResearchCandidate.updateMany(
-      { materialCode: candidate.materialCode, city: candidate.city, state: candidate.state, status: 'approved' },
+      { materialCode: candidate.materialCode, state: candidate.state, status: 'approved' },
       { $set: { status: 'superseded' } }
     );
 
-    // Update candidate status to approved
+    // Update candidate status to approved while preserving city research context
     candidate.status = 'approved';
+    candidate.researchLocation = candidate.city || targetStateName;
+    candidate.evidenceLocation = candidate.requestedLocation || `${candidate.city}, ${targetStateName}`;
     candidate.reviewedAt = new Date();
     candidate.reviewedBy = userId;
     candidate.approvalNotes = notes;
@@ -382,7 +400,7 @@ class PriceResearchService {
    * Preserves the original researched rate in candidate while publishing admin-edited rate to MaterialRate.
    */
   async approveCandidateWithEdit({ candidateId, editedRate, userId, notes = '' }) {
-    if (!candidateId) throw new Error('Candidate ID is required.');
+    if (!candidateId) throw new Error('Candidate ID ID is required.');
     const numRate = Number(editedRate);
     if (isNaN(numRate) || numRate <= 0) {
       throw new Error('Edited rate must be a positive number.');
@@ -395,14 +413,14 @@ class PriceResearchService {
       throw new Error(`Cannot approve candidate with status '${candidate.status}'. Only pending candidates can be approved.`);
     }
 
-    const cityKey = candidate.locationScope === 'city' && candidate.city && candidate.city !== 'All'
-      ? candidate.city.toLowerCase().trim()
-      : 'all';
+    // Stale protection against active state rate
+    const norm = normalizeState(candidate.state || candidate.requestedLocation);
+    const targetStateId = norm.stateId;
+    const targetStateName = norm.stateName;
 
-    // Stale protection
     const currentApproved = await MaterialRate.findOne({
       materialCode: candidate.materialCode,
-      cityId: cityKey,
+      stateId: targetStateId,
       status: 'approved'
     }).sort({ effectiveFrom: -1 });
 
@@ -415,28 +433,31 @@ class PriceResearchService {
       }
     }
 
-    const locationName = candidate.requestedLocation || candidate.city || candidate.state || 'National';
-
-    // Commit edited rate to production MaterialRate
+    // Commit edited rate to production MaterialRate as STATE rate
     const updateResult = await pricingService.updateMaterialRate({
       materialCode: candidate.materialCode,
       rate: numRate,
-      location: locationName,
-      cityId: cityKey,
+      state: targetStateName,
+      stateId: targetStateId,
+      location: targetStateName,
+      cityId: 'all',
       source: `AI Price Research (Edited) — ${candidate.sourceName || 'Verified Citation'}`,
-      notes: notes || `Admin adjusted rate from ₹${candidate.normalizedRate || candidate.sourcePrice} to ₹${numRate}. Run: ${candidate.runId}`,
+      sourceType: 'research_approved',
+      notes: notes || `Admin adjusted rate from ₹${candidate.normalizedRate || candidate.sourcePrice} to ₹${numRate}. Researched in: ${candidate.city || candidate.requestedLocation}. Run: ${candidate.runId}`,
       userId
     });
 
     // Mark previous approved candidates as superseded
     await PriceResearchCandidate.updateMany(
-      { materialCode: candidate.materialCode, city: candidate.city, state: candidate.state, status: 'approved' },
+      { materialCode: candidate.materialCode, state: candidate.state, status: 'approved' },
       { $set: { status: 'superseded' } }
     );
 
     // Save candidate with adminEditedRate, leaving normalizedRate and sourcePrice INTACT
     candidate.adminEditedRate = numRate;
     candidate.status = 'approved';
+    candidate.researchLocation = candidate.city || targetStateName;
+    candidate.evidenceLocation = candidate.requestedLocation || `${candidate.city}, ${targetStateName}`;
     candidate.reviewedAt = new Date();
     candidate.reviewedBy = userId;
     candidate.approvalNotes = notes || `Admin edited from ₹${candidate.normalizedRate || candidate.sourcePrice} to ₹${numRate}`;

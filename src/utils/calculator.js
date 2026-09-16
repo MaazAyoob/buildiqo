@@ -30,9 +30,11 @@ export function calculateEstimation(state, pricingContext = null) {
   const snap = pricingContext?.snapshot || null;
   const isSnapshot = pricingContext?.isSnapshot === true || Boolean(snap);
 
+  // In production pricing, geographic multiplier is strictly 1.0 (rates are direct State-Wise rates).
+  // For historical snapshots created under legacy schema versions, preserve the saved multiplier.
   const cityMult = (isSnapshot && (snap?.regionalMultiplier !== undefined || snap?.cityMultiplier !== undefined))
     ? Number(snap.regionalMultiplier ?? snap.cityMultiplier)
-    : (city.multiplier || 1.0);
+    : 1.0;
   const soilMult = soil.footingCostMult || 1.0;
   const bldgMult = buildingType.costMult || 1.0;
   const constrMult = constructionType.costMult || 1.0;
@@ -103,6 +105,8 @@ export function calculateEstimation(state, pricingContext = null) {
 
     let resolvedRate = null;
     let rateSource = 'benchmark';
+    let pricingScope = 'STATE';
+    let pricingSource = 'APPROVED_STATE_RATE';
 
     if (providedRates) {
       const codeKey = option.id ? option.id.toUpperCase() : '';
@@ -113,20 +117,28 @@ export function calculateEstimation(state, pricingContext = null) {
       if (match) {
         resolvedRate = typeof match === 'number' ? match : (match.unitRate ?? match.rate);
         rateSource = typeof match === 'object' && match.source ? match.source : (isSnapshot ? 'historical_snapshot' : 'database_approved');
+        pricingScope = typeof match === 'object' && match.pricingScope ? match.pricingScope : (pricingContext?.pricingScope || 'STATE');
+        pricingSource = typeof match === 'object' && match.pricingSource ? match.pricingSource : (pricingContext?.pricingSource || 'APPROVED_STATE_RATE');
       }
     }
 
     if (resolvedRate !== null && resolvedRate !== undefined && !isNaN(resolvedRate)) {
       option.unitRate = Number(resolvedRate);
       option.rateSource = rateSource;
+      option.pricingScope = pricingScope;
+      option.pricingSource = pricingSource;
     } else if (isBenchmark) {
       // Explicit user-chosen benchmark mode only
       option.unitRate = foundOption.unitRate;
       option.rateSource = 'benchmark_mode';
+      option.pricingScope = 'BENCHMARK';
+      option.pricingSource = 'BENCHMARK_DEMO';
     } else {
       // Production rate unavailable: DO NOT SILENTLY USE BENCHMARK
       option.unitRate = 0;
       option.rateSource = 'UNAVAILABLE';
+      option.pricingScope = 'UNAVAILABLE';
+      option.pricingSource = 'UNAVAILABLE';
       missingRates.push(option.id || cat.id);
     }
 
@@ -144,27 +156,28 @@ export function calculateEstimation(state, pricingContext = null) {
   }
 
   // Structural Quantities & Cost (RCC, Foundation, Columns, Beams, Slabs)
+  // Authoritative State-Wise Production Pricing: approved rates are used directly without secret geographic multipliers.
   const steelKgPerSqFt = 3.85;
   const steelWastagePct = 5;
   const steelTonne = ((totalBuiltupArea * steelKgPerSqFt * (1 + steelWastagePct / 100)) / 1000);
   const footingDepthFt = Number(state.footingDepthFt) || 5;
   const footingType = state.footingType || 'Isolated RCC footings';
-  const steelCost = Math.round(steelTonne * selectedMaterials.steel.unitRate * cityMult * soilMult * constrMult);
+  const steelCost = Math.round(steelTonne * selectedMaterials.steel.unitRate * soilMult * constrMult);
 
   const cementBags = Math.round(totalBuiltupArea * 0.42);
-  const cementCost = Math.round(cementBags * selectedMaterials.cement.unitRate * cityMult * constrMult);
+  const cementCost = Math.round(cementBags * selectedMaterials.cement.unitRate * constrMult);
 
   const sandCuFt = Math.round(totalBuiltupArea * 1.9);
-  const sandCost = Math.round(sandCuFt * selectedMaterials.sand.unitRate * cityMult);
+  const sandCost = Math.round(sandCuFt * selectedMaterials.sand.unitRate);
 
   const aggregateCuFt = Math.round(totalBuiltupArea * 1.35);
-  const aggregateCost = Math.round(aggregateCuFt * 48 * cityMult);
+  const aggregateCost = Math.round(aggregateCuFt * 48);
 
   const masonryWallArea = Math.round(totalBuiltupArea * 0.85);
-  const masonryCost = Math.round(masonryWallArea * selectedMaterials.masonry.unitRate * cityMult * bldgMult);
+  const masonryCost = Math.round(masonryWallArea * selectedMaterials.masonry.unitRate * bldgMult);
 
   const flooringArea = Math.round(totalCarpetArea * 1.07);
-  const flooringCost = Math.round(flooringArea * selectedMaterials.flooring.unitRate * cityMult);
+  const flooringCost = Math.round(flooringArea * selectedMaterials.flooring.unitRate);
 
   let totalBaths = 0;
   let totalKitchens = 0;
@@ -177,9 +190,9 @@ export function calculateEstimation(state, pricingContext = null) {
   totalBaths = Math.max(1, totalBaths);
   totalKitchens = Math.max(1, totalKitchens);
 
-  const bathroomCost = Math.round(totalBaths * selectedMaterials.bathroom.unitRate * cityMult);
-  const kitchenCost = Math.round(totalKitchens * 150 * selectedMaterials.kitchen.unitRate * cityMult);
-  const electricalCost = Math.round(totalBuiltupArea * selectedMaterials.electrical.unitRate * cityMult);
+  const bathroomCost = Math.round(totalBaths * selectedMaterials.bathroom.unitRate);
+  const kitchenCost = Math.round(totalKitchens * 150 * selectedMaterials.kitchen.unitRate);
+  const electricalCost = Math.round(totalBuiltupArea * selectedMaterials.electrical.unitRate);
   const roomCountForPoints = floorDetails.reduce((sum, floor) => sum + floor.roomCount, 0);
   const bedroomCount = floors.reduce((sum, floor) => sum + (floor.rooms || []).filter(r => r.type === 'master_bed' || r.type === 'regular_bed').reduce((roomSum, room) => roomSum + (Number(room.count) || 1), 0), 0);
   const electricalPoints = {
@@ -189,12 +202,12 @@ export function calculateEstimation(state, pricingContext = null) {
     db: Math.max(1, floors.length)
   };
   const openingsArea = Math.round(totalBuiltupArea * 0.15);
-  const doorsWindowsCost = Math.round(openingsArea * selectedMaterials.doors_windows.unitRate * cityMult);
+  const doorsWindowsCost = Math.round(openingsArea * selectedMaterials.doors_windows.unitRate);
   const paintingSurfaceArea = Math.round(totalBuiltupArea * 3.7);
-  const paintingCost = Math.round(paintingSurfaceArea * selectedMaterials.painting.unitRate * cityMult);
+  const paintingCost = Math.round(paintingSurfaceArea * selectedMaterials.painting.unitRate);
 
   const waterproofingBase = selectedMaterials.waterproofing.unitRate;
-  const waterproofingCost = Math.round(waterproofingBase * (totalBuiltupArea / 2000) * cityMult);
+  const waterproofingCost = Math.round(waterproofingBase * (totalBuiltupArea / 2000));
 
   // Labor Costs
   const laborRates = (isSnapshot && snap?.laborRates) ? snap.laborRates : {
@@ -205,12 +218,12 @@ export function calculateEstimation(state, pricingContext = null) {
     electrical: 55,
     painting: 14
   };
-  const laborStructure = Math.round(totalBuiltupArea * (laborRates.structure || 280) * cityMult * constrMult);
-  const laborMasonryPlaster = Math.round(totalBuiltupArea * (laborRates.masonryPlaster || 180) * cityMult);
-  const laborFlooringTiling = Math.round(flooringArea * (laborRates.flooringTiling || 45) * cityMult);
-  const laborPlumbingMEP = Math.round(totalBuiltupArea * (laborRates.plumbingMEP || 65) * cityMult);
-  const laborElectrical = Math.round(totalBuiltupArea * (laborRates.electrical || 55) * cityMult);
-  const laborPainting = Math.round(paintingSurfaceArea * (laborRates.painting || 14) * cityMult);
+  const laborStructure = Math.round(totalBuiltupArea * (laborRates.structure || 280) * constrMult);
+  const laborMasonryPlaster = Math.round(totalBuiltupArea * (laborRates.masonryPlaster || 180));
+  const laborFlooringTiling = Math.round(flooringArea * (laborRates.flooringTiling || 45));
+  const laborPlumbingMEP = Math.round(totalBuiltupArea * (laborRates.plumbingMEP || 65));
+  const laborElectrical = Math.round(totalBuiltupArea * (laborRates.electrical || 55));
+  const laborPainting = Math.round(paintingSurfaceArea * (laborRates.painting || 14));
 
   const totalLaborCost = laborStructure + laborMasonryPlaster + laborFlooringTiling + laborPlumbingMEP + laborElectrical + laborPainting;
 
@@ -485,6 +498,8 @@ export function calculateEstimation(state, pricingContext = null) {
     constructionType,
     unitDef,
     pricingStatus,
+    pricingScope: pricingContext?.pricingScope || (isBenchmark ? 'BENCHMARK' : 'STATE'),
+    pricingSource: pricingContext?.pricingSource || (isBenchmark ? 'BENCHMARK_DEMO' : 'APPROVED_STATE_RATE'),
     missingRates,
     isBenchmarkMode: isBenchmark,
     isSnapshotMode: isSnapshot

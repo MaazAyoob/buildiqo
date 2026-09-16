@@ -39,6 +39,7 @@ export const DEFAULT_ROOM_TYPES = [
 
 export const INITIAL_PROJECT_STATE = {
   projectName: 'My Dream Residence',
+  state: 'Karnataka',
   city: 'Bengaluru',
   tier: 'standard', // standard, premium, luxury
   buildingType: 'villa_duplex', // villa_duplex, bungalow, multi_family, commercial_res
