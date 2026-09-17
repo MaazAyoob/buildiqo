@@ -36,3 +36,20 @@ services:
         sync: false
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      - key: FLOORPLAN_SERVICE_URL
+        value: https://buildiqo-ai-floorplan.onrender.com
+      - key: FLOORPLAN_SERVICE_TIMEOUT_MS
+        value: 30000
+
+  # Python FastAPI Floor Plan Extraction Microservice (Phase 1)
+  - type: web
+    name: buildiqo-ai-floorplan
+    runtime: python
+    plan: free
+    rootDir: floorplan-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
