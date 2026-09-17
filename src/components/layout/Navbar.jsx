@@ -234,6 +234,14 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
                   </button>
 
                   <button
+                    onClick={() => { setRoute('commercial-boq'); setManagementDropdownOpen(false); }}
+                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-700 flex items-center space-x-2.5 transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                    <span>Commercial BOQ Editor</span>
+                  </button>
+
+                  <button
                     onClick={() => { setRoute('pricing'); setManagementDropdownOpen(false); }}
                     className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-700 flex items-center space-x-2.5 transition-colors"
                   >
@@ -283,6 +291,19 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
             >
               <Crown className="w-3.5 h-3.5 text-blue-600" />
               <span>Pricing</span>
+            </button>
+
+            {/* 5. Commercial BOQ */}
+            <button
+              onClick={() => setRoute('commercial-boq')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                currentRoute === 'commercial-boq' 
+                  ? 'bg-blue-600 text-white font-black shadow-xs' 
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <FileSpreadsheet className={`w-3.5 h-3.5 ${currentRoute === 'commercial-boq' ? 'text-white' : 'text-blue-600'}`} />
+              <span>Commercial BOQ</span>
             </button>
 
           </nav>
@@ -474,6 +495,14 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
           >
             <Crown className="w-4 h-4 text-blue-600" />
             <span>Subscription Pricing</span>
+          </button>
+
+          <button
+            onClick={() => { setRoute('commercial-boq'); setMobileMenuOpen(false); }}
+            className="w-full text-left px-3 py-2 rounded-xl text-sm font-bold text-slate-800 hover:bg-slate-100 flex items-center space-x-2"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+            <span>Commercial BOQ Editor</span>
           </button>
 
           <button

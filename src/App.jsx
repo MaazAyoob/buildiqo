@@ -13,13 +13,14 @@ import { PricingPage } from './pages/PricingPage';
 import { AdminLeadsPage } from './pages/AdminLeadsPage';
 import { AuthPage } from './pages/AuthPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { CommercialBOQPage } from './pages/CommercialBOQPage';
 import { PaymentProcessingScreen } from './components/common/PaymentProcessingScreen';
 import { useEstimateStore } from './store/useEstimateStore';
 
 export function App() {
   const getInitialRoute = () => {
     const hash = window.location.hash.replace('#', '').trim();
-    const validRoutes = ['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads'];
+    const validRoutes = ['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
     return validRoutes.includes(hash) ? hash : 'home';
   };
 
@@ -38,7 +39,7 @@ export function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '').trim();
-      const validRoutes = ['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads'];
+      const validRoutes = ['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
       if (validRoutes.includes(hash)) {
         setCurrentRouteState(hash);
       }
@@ -83,13 +84,14 @@ export function App() {
 
   // Gating condition: If customer has NOT yet selected/confirmed a subscription in this session, show ONLY Pricing page (no navbar)
   const isSubscriptionMandatory = !currentUser.isAdmin && !subscription?.isPlanConfirmed;
-  const effectiveRoute = isSubscriptionMandatory ? 'pricing' : currentRoute;
+  const effectiveRoute = (isSubscriptionMandatory && currentRoute !== 'commercial-boq') ? 'pricing' : currentRoute;
+  const hideNavbar = isSubscriptionMandatory && currentRoute !== 'commercial-boq';
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
       
-      {/* Navigation Header: ONLY show after customer selects subscription plan (Hidden during mandatory onboarding) */}
-      {!isSubscriptionMandatory && (
+      {/* Navigation Header */}
+      {!hideNavbar && (
         <Navbar 
           currentRoute={effectiveRoute} 
           setRoute={setRoute} 
@@ -108,7 +110,8 @@ export function App() {
         {effectiveRoute === 'report' && <ReportPage setRoute={setRoute} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
         {effectiveRoute === 'pricing' && <PricingPage setRoute={setRoute} isMandatoryGate={isSubscriptionMandatory} />}
         {effectiveRoute === 'leads' && <AdminLeadsPage setRoute={setRoute} />}
-        {!['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads'].includes(effectiveRoute) && (
+        {effectiveRoute === 'commercial-boq' && <CommercialBOQPage setRoute={setRoute} />}
+        {!['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'].includes(effectiveRoute) && (
           <NotFoundPage setRoute={setRoute} />
         )}
       </main>

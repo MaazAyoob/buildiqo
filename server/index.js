@@ -20,6 +20,7 @@ const leadRoutes = require('./routes/leads');
 const paymentRoutes = require('./routes/payments');
 const subscriptionRoutes = require('./routes/subscriptions');
 const pricingRoutes = require('./routes/pricing');
+const commercialBoqRoutes = require('./routes/commercialBoq');
 const { seedMaterials } = require('./scripts/seedMaterials');
 
 const app = express();
@@ -69,6 +70,7 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/pricing', pricingRoutes);
+app.use('/api/commercial-boq', commercialBoqRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
