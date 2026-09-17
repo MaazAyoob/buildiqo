@@ -21,6 +21,7 @@ const paymentRoutes = require('./routes/payments');
 const subscriptionRoutes = require('./routes/subscriptions');
 const pricingRoutes = require('./routes/pricing');
 const commercialBoqRoutes = require('./routes/commercialBoq');
+const floorplanRoutes = require('./routes/floorplan');
 const { seedMaterials } = require('./scripts/seedMaterials');
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/commercial-boq', commercialBoqRoutes);
+app.use('/api/floorplan', floorplanRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

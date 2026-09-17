@@ -7,27 +7,34 @@ import {
   PlusCircle, 
   Check, 
   Copy, 
-  Info,
-  ShieldAlert,
-  Building,
-  BedDouble,
-  Bed,
-  Sofa,
-  UtensilsCrossed,
-  ChefHat,
-  WashingMachine,
-  Bath,
-  Sun,
-  Flame,
-  Tv,
-  Briefcase,
-  Car,
-  Footprints,
-  Sparkles,
-  Edit2
+  Info, 
+  ShieldAlert, 
+  Building, 
+  BedDouble, 
+  Bed, 
+  Sofa, 
+  UtensilsCrossed, 
+  ChefHat, 
+  WashingMachine, 
+  Bath, 
+  Sun, 
+  Flame, 
+  Tv, 
+  Briefcase, 
+  Car, 
+  Footprints, 
+  Sparkles, 
+  Edit2,
+  FileCode,
+  UploadCloud,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  X
 } from 'lucide-react';
 import { DEFAULT_ROOM_TYPES } from '../../data/defaults';
 import { formatNumber } from '../../store/useEstimateStore';
+import { extractFloorPlanDXF } from '../../services/floorplanService';
 
 const ICON_MAP = {
   BedDouble,
@@ -52,6 +59,15 @@ export function StepSpaces({ state, updateState, estimation }) {
   const [customRoomName, setCustomRoomName] = useState('');
   const [customWidth, setCustomWidth] = useState(12);
   const [customLength, setCustomLength] = useState(14);
+
+  // DXF Floor Plan Extractor State
+  const [isDxfUploadModalOpen, setIsDxfUploadModalOpen] = useState(false);
+  const [isDxfReviewModalOpen, setIsDxfReviewModalOpen] = useState(false);
+  const [dxfLoading, setDxfLoading] = useState(false);
+  const [dxfError, setDxfError] = useState(null);
+  const [dxfResult, setDxfResult] = useState(null);
+  const [reviewedRooms, setReviewedRooms] = useState([]);
+  const [targetFloorIndex, setTargetFloorIndex] = useState(0);
 
   const activeFloor = state.floors[activeFloorIndex] || state.floors[0];
 
@@ -180,6 +196,93 @@ export function StepSpaces({ state, updateState, estimation }) {
     setActiveFloorIndex(Math.max(0, idxToRemove - 1));
   };
 
+  // DXF Floor Plan Extractor Handlers
+  const handleDxfFileUpload = async (file) => {
+    if (!file) return;
+    setDxfLoading(true);
+    setDxfError(null);
+    try {
+      const result = await extractFloorPlanDXF(file);
+      if (result && result.success) {
+        setDxfResult(result);
+        const initialReviewed = (result.rooms || []).map((r, idx) => ({
+          id: r.id || `ext-${Date.now()}-${idx}`,
+          name: r.name || `Room ${idx + 1}`,
+          type: r.type || 'living',
+          width: Number(r.width_ft) || 12,
+          length: Number(r.length_ft) || 14,
+          count: Number(r.count) || 1,
+          area_sqft: r.area_sqft,
+          area_method: r.area_method || 'POLYGON_AREA',
+          dimension_method: r.dimension_method || 'MIN_ROTATED_BOUNDING_BOX',
+          confidence: r.confidence || 'HIGH',
+          source: r.source || 'DXF_EXTRACTION',
+          warnings: r.warnings || [],
+          geometry: r.geometry || null
+        }));
+        setReviewedRooms(initialReviewed);
+        setTargetFloorIndex(activeFloorIndex);
+        setIsDxfUploadModalOpen(false);
+        setIsDxfReviewModalOpen(true);
+      } else {
+        setDxfError(result?.error || 'Failed to extract floor plan.');
+      }
+    } catch (err) {
+      setDxfError(err.message || 'Error uploading DXF file. Please check authentication and try again.');
+    } finally {
+      setDxfLoading(false);
+    }
+  };
+
+  const handleUpdateReviewedRoom = (id, field, value) => {
+    setReviewedRooms(prev => prev.map(r => {
+      if (r.id !== id) return r;
+      if (field === 'width' || field === 'length' || field === 'count') {
+        return { ...r, [field]: Number(value) || 0 };
+      }
+      return { ...r, [field]: value };
+    }));
+  };
+
+  const handleDeleteReviewedRoom = (id) => {
+    setReviewedRooms(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleAddReviewedRoom = () => {
+    const newRoom = {
+      id: `ext-custom-${Date.now()}`,
+      name: 'New Room',
+      type: 'living',
+      width: 12,
+      length: 14,
+      count: 1,
+      area_sqft: 168,
+      area_method: 'POLYGON_AREA',
+      dimension_method: 'MANUAL',
+      confidence: 'MANUAL',
+      source: 'MANUAL',
+      warnings: [],
+      geometry: null
+    };
+    setReviewedRooms(prev => [...prev, newRoom]);
+  };
+
+  const handleApplyDxfRooms = () => {
+    if (!reviewedRooms || reviewedRooms.length === 0) return;
+
+    const updatedFloors = state.floors.map((floor, fIdx) => {
+      if (fIdx !== targetFloorIndex) return floor;
+      return {
+        ...floor,
+        rooms: reviewedRooms
+      };
+    });
+
+    updateState({ floors: updatedFloors });
+    setIsDxfReviewModalOpen(false);
+    setActiveFloorIndex(targetFloorIndex);
+  };
+
   const currentFloorDetail = estimation.floorDetails[activeFloorIndex] || { carpetArea: 0, builtupArea: 0, roomCount: 0 };
   const plotArea = (state.plotWidth || 30) * (state.plotLength || 40);
   const groundBua = estimation.groundFloorBua;
@@ -285,13 +388,24 @@ export function StepSpaces({ state, updateState, estimation }) {
             </p>
           </div>
 
-          <button
-            onClick={() => setIsAddRoomModalOpen(true)}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-slate-900 flex items-center space-x-1.5 shadow-sm transition-all"
-          >
-            <Plus className="w-4 h-4 text-amber-200" />
-            <span>Add Space / Room</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => { setIsDxfUploadModalOpen(true); setDxfError(null); }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 flex items-center space-x-1.5 shadow-sm transition-all"
+              id="upload-dxf-btn"
+            >
+              <FileCode className="w-4 h-4 text-cyan-400" />
+              <span>Upload CAD Plan (.DXF)</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddRoomModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-slate-900 flex items-center space-x-1.5 shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4 text-amber-200" />
+              <span>Add Space / Room</span>
+            </button>
+          </div>
         </div>
 
         {/* Room Grid / Cards List with Edit & Remove */}
@@ -319,13 +433,26 @@ export function StepSpaces({ state, updateState, estimation }) {
                     />
                   </div>
 
-                  <button
-                    onClick={() => handleDeleteRoom(room.id)}
-                    className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                    title="Remove space"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center space-x-1.5">
+                    {room.confidence && (
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                        room.confidence === 'HIGH'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : room.confidence === 'MEDIUM'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}>
+                        {room.confidence}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDeleteRoom(room.id)}
+                      className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      title="Remove space"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Dimension Inputs */}
@@ -366,8 +493,12 @@ export function StepSpaces({ state, updateState, estimation }) {
                 </div>
 
                 <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-gray-500">Calculated Area:</span>
-                  <span className="font-extrabold text-blue-700">{formatNumber(roomArea)} sq.ft</span>
+                  <span className="text-[11px] text-gray-500">
+                    {room.area_sqft ? 'True Polygon Area:' : 'Calculated Area:'}
+                  </span>
+                  <span className="font-extrabold text-blue-700">
+                    {formatNumber(room.area_sqft || roomArea)} sq.ft
+                  </span>
                 </div>
 
               </div>
@@ -484,6 +615,305 @@ export function StepSpaces({ state, updateState, estimation }) {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DXF Upload Modal */}
+      {isDxfUploadModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-fadeIn">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-slate-900 text-cyan-400 flex items-center justify-center">
+                  <FileCode className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Upload CAD Floor Plan</h3>
+                  <span className="text-[11px] text-slate-500 font-medium">AutoCAD DXF Format (.dxf)</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setIsDxfUploadModalOpen(false); setDxfError(null); }}
+                className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Upload an AutoCAD DXF floor plan to automatically detect rooms, dimensions, and spatial geometry.
+              </p>
+
+              {dxfError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{dxfError}</span>
+                </div>
+              )}
+
+              {/* Upload Dropzone */}
+              <div 
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleDxfFileUpload(e.dataTransfer.files[0]);
+                  }
+                }}
+                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
+                  dxfLoading 
+                    ? 'border-blue-400 bg-blue-50/40' 
+                    : 'border-slate-300 hover:border-slate-800 bg-slate-50/50 hover:bg-slate-50'
+                }`}
+              >
+                {dxfLoading ? (
+                  <div className="flex flex-col items-center justify-center space-y-3 py-4">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                    <span className="text-xs font-bold text-slate-900">Parsing CAD layers, geometry & labels...</span>
+                    <span className="text-[10px] text-slate-500">Normalizing dimensions and computing spatial boundaries</span>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer flex flex-col items-center justify-center space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
+                      <UploadCloud className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-900">Click to select DXF file or drag & drop</span>
+                    <span className="text-[10px] text-slate-500">AutoCAD R12 to 2018 ASCII DXF • Maximum 25 MB</span>
+                    <input
+                      type="file"
+                      accept=".dxf"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleDxfFileUpload(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-[11px] text-slate-500 space-y-1">
+                <span className="font-bold text-slate-700 block">CAD Preparation Tips:</span>
+                <span>• Ensure room boundaries are drawn as closed polylines (LWPOLYLINE).</span>
+                <span className="block">• Place room name labels (TEXT/MTEXT) inside room polygons.</span>
+                <span className="block">• Drawings with set $INSUNITS (feet, meters, mm, inches) extract with HIGH confidence.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DXF Review & Confirmation Modal */}
+      {isDxfReviewModalOpen && dxfResult && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fadeIn space-y-5 max-h-[90vh] flex flex-col">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 shrink-0">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider border border-emerald-200">
+                    CAD Extraction Review
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900">Review Detected Floor Spaces</h3>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Rooms detected from {dxfResult.source?.filename} — please review and adjust before applying.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setIsDxfReviewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-gray-500 block">Detected Spaces</span>
+                <span className="text-base font-extrabold text-slate-900 mt-0.5 block">{reviewedRooms.length}</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-gray-500 block">Total Carpet Area</span>
+                <span className="text-base font-extrabold text-blue-700 mt-0.5 block">
+                  {formatNumber(reviewedRooms.filter(r => !r.is_container).reduce((sum, r) => sum + (r.area_sqft || (r.width * r.length * (r.count || 1))), 0))} sq.ft
+                </span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-gray-500 block">Drawing Units</span>
+                <span className="text-base font-extrabold text-slate-900 mt-0.5 block capitalize">{dxfResult.source?.units || 'Feet'}</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-gray-500 block">Unit Confidence</span>
+                <span className={`text-xs font-black px-2 py-0.5 rounded-full inline-block mt-1 uppercase border ${
+                  dxfResult.source?.unit_confidence === 'HIGH'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {dxfResult.source?.unit_confidence || 'HIGH'}
+                </span>
+              </div>
+            </div>
+
+            {/* Target Floor Selector */}
+            <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+              <div>
+                <span className="text-xs font-extrabold text-slate-900 block">Target Floor Assignment:</span>
+                <span className="text-[11px] text-slate-500">Floor assignment was not in the DXF; select which floor to populate:</span>
+              </div>
+              <select
+                value={targetFloorIndex}
+                onChange={(e) => setTargetFloorIndex(Number(e.target.value))}
+                className="px-3 py-2 text-xs font-bold rounded-xl border border-blue-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                {state.floors.map((fl, idx) => (
+                  <option key={fl.id} value={idx}>{fl.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Warnings Alert Box */}
+            {dxfResult.warnings && dxfResult.warnings.length > 0 && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1 shrink-0">
+                <span className="font-bold flex items-center space-x-1.5 text-amber-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>CAD Extraction Notes & Warnings:</span>
+                </span>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-800 pl-1">
+                  {dxfResult.warnings.map((w, wIdx) => (
+                    <li key={wIdx}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Editable Rooms Table */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-2 border border-slate-200 rounded-2xl p-3 bg-slate-50/50">
+              <div className="flex items-center justify-between px-1 pb-1">
+                <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Detected Room Items</span>
+                <button
+                  onClick={handleAddReviewedRoom}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Room</span>
+                </button>
+              </div>
+
+              {reviewedRooms.map((room) => (
+                <div key={room.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center space-x-2 flex-1">
+                      <input
+                        type="text"
+                        value={room.name}
+                        onChange={(e) => handleUpdateReviewedRoom(room.id, 'name', e.target.value)}
+                        className="text-xs font-bold text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-slate-800 flex-1 max-w-xs"
+                      />
+                      <select
+                        value={room.type}
+                        onChange={(e) => handleUpdateReviewedRoom(room.id, 'type', e.target.value)}
+                        className="text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-200 bg-white"
+                      >
+                        {DEFAULT_ROOM_TYPES.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                        room.confidence === 'HIGH'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : room.confidence === 'MEDIUM'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}>
+                        {room.confidence}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteReviewedRoom(room.id)}
+                        className="text-gray-400 hover:text-red-600 p-1 rounded-md"
+                        title="Delete room"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1 border-t border-slate-100">
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-semibold block">Width (ft)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={room.width || ''}
+                        onChange={(e) => handleUpdateReviewedRoom(room.id, 'width', e.target.value)}
+                        className="w-full px-2 py-1 rounded-md border border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-semibold block">Length (ft)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={room.length || ''}
+                        onChange={(e) => handleUpdateReviewedRoom(room.id, 'length', e.target.value)}
+                        className="w-full px-2 py-1 rounded-md border border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-semibold block">True Polygon Area</span>
+                      <span className="text-xs font-extrabold text-blue-700 block mt-1">
+                        {formatNumber(room.area_sqft || (room.width * room.length))} sq.ft
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-semibold block">Qty</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={room.count || 1}
+                        onChange={(e) => handleUpdateReviewedRoom(room.id, 'count', e.target.value)}
+                        className="w-full px-2 py-1 rounded-md border border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {room.warnings && room.warnings.length > 0 && (
+                    <div className="text-[10px] text-amber-700 bg-amber-50/80 px-2 py-1 rounded border border-amber-100">
+                      {room.warnings.join(' • ')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Action Footer */}
+            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200 shrink-0">
+              <button
+                onClick={() => setIsDxfReviewModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-100 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApplyDxfRooms}
+                className="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all flex items-center space-x-1.5"
+                id="apply-dxf-btn"
+              >
+                <Check className="w-4 h-4 text-amber-200" />
+                <span>Apply {reviewedRooms.length} Rooms to {state.floors[targetFloorIndex]?.name || 'Step 2'}</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}
