@@ -228,7 +228,7 @@ export function StepSpaces({ state, updateState, estimation }) {
         setDxfError(result?.error || 'Failed to extract floor plan.');
       }
     } catch (err) {
-      setDxfError(err.message || 'Error uploading DXF file. Please check authentication and try again.');
+      setDxfError(err.message || 'Error uploading CAD file. Please check authentication and try again.');
     } finally {
       setDxfLoading(false);
     }
@@ -395,7 +395,7 @@ export function StepSpaces({ state, updateState, estimation }) {
               id="upload-dxf-btn"
             >
               <FileCode className="w-4 h-4 text-cyan-400" />
-              <span>Upload CAD Plan (.DXF)</span>
+              <span>Upload CAD Plan (DXF / DWG)</span>
             </button>
 
             <button
@@ -630,7 +630,7 @@ export function StepSpaces({ state, updateState, estimation }) {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900">Upload CAD Floor Plan</h3>
-                  <span className="text-[11px] text-slate-500 font-medium">AutoCAD DXF Format (.dxf)</span>
+                  <span className="text-[11px] text-slate-500 font-medium">AutoCAD DXF or DWG Format (.dxf, .dwg)</span>
                 </div>
               </div>
               <button 
@@ -643,7 +643,7 @@ export function StepSpaces({ state, updateState, estimation }) {
 
             <div className="mt-4 space-y-4">
               <p className="text-xs text-slate-600 leading-relaxed">
-                Upload an AutoCAD DXF floor plan to automatically detect rooms, dimensions, and spatial geometry.
+                Upload an AutoCAD DXF or DWG floor plan to automatically detect rooms, dimensions, and spatial geometry.
               </p>
 
               {dxfError && (
@@ -679,11 +679,11 @@ export function StepSpaces({ state, updateState, estimation }) {
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
                       <UploadCloud className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-bold text-slate-900">Click to select DXF file or drag & drop</span>
-                    <span className="text-[10px] text-slate-500">AutoCAD R12 to 2018 ASCII DXF • Maximum 25 MB</span>
+                    <span className="text-xs font-bold text-slate-900">Click to select CAD file or drag & drop</span>
+                    <span className="text-[10px] text-slate-500">AutoCAD DXF or DWG • Maximum 25 MB</span>
                     <input
                       type="file"
-                      accept=".dxf"
+                      accept=".dxf,.dwg"
                       className="hidden"
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {

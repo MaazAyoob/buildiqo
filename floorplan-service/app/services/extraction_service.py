@@ -116,7 +116,7 @@ def extract_dxf_floorplan(file_path: str, original_filename: str) -> ExtractionR
 
     source_meta = SourceMetadata(
         filename=original_filename,
-        file_type="DXF",
+        file_type="DWG" if original_filename.lower().endswith(".dwg") else "DXF",
         units=parsed.get("unit_name", "feet"),
         unit_confidence=unit_conf
     )

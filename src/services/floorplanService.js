@@ -1,10 +1,10 @@
 import { apiRequest } from '../utils/apiClient';
 
 /**
- * Uploads an AutoCAD DXF floor plan file to the backend extraction endpoint.
+ * Uploads an AutoCAD DXF or DWG floor plan file to the backend extraction endpoint.
  * Requires an authenticated user session.
  * 
- * @param {File} file - DXF File object
+ * @param {File} file - DXF or DWG File object
  * @returns {Promise<Object>} Normalized extraction response { success, source, rooms, warnings, total_usable_carpet_sqft }
  */
 export async function extractFloorPlanDXF(file) {
@@ -12,10 +12,10 @@ export async function extractFloorPlanDXF(file) {
     throw new Error('No file selected.');
   }
 
-  // File extension validation
-  const isDxf = /\.dxf$/i.test(file.name);
-  if (!isDxf) {
-    throw new Error('Invalid file format. Please upload an AutoCAD .dxf floor plan file.');
+  // File extension validation: supports both DXF and DWG
+  const isCad = /\.(dxf|dwg)$/i.test(file.name);
+  if (!isCad) {
+    throw new Error('Invalid file format. Please upload an AutoCAD .dxf or .dwg floor plan file.');
   }
 
   // File size validation (25 MB)
@@ -33,3 +33,6 @@ export async function extractFloorPlanDXF(file) {
 
   return response;
 }
+
+// Export alias for semantic clarity
+export const extractFloorPlanCAD = extractFloorPlanDXF;

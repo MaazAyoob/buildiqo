@@ -4,7 +4,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { v4: uuidv4 } = require('uuid');
 const { requireAuth } = require('../middleware/auth');
 
 // Multer storage in memory for streaming to Python service, with 25MB limit
@@ -14,26 +13,35 @@ const upload = multer({
     fileSize: 25 * 1024 * 1024 // 25 MB
   },
   fileFilter: (req, file, cb) => {
-    // 1. Extension validation (.dxf)
-    const isDxfExt = /\.dxf$/i.test(file.originalname || '');
-    if (!isDxfExt) {
-      return cb(new Error('Invalid file format. Only AutoCAD .dxf files are supported.'), false);
+    const originalName = file.originalname || '';
+    const isDxfExt = /\.dxf$/i.test(originalName);
+    const isDwgExt = /\.dwg$/i.test(originalName);
+
+    // 1. Extension validation (.dxf and .dwg)
+    if (!isDxfExt && !isDwgExt) {
+      return cb(new Error('Invalid file format. Only AutoCAD .dxf and .dwg files are supported.'), false);
     }
 
-    // 2. Relaxed MIME validation (accept generic octet-stream, text/plain, etc.)
+    // 2. Relaxed CAD MIME validation
     const allowedMimes = [
       'application/dxf',
       'application/x-dxf',
       'image/vnd.dxf',
-      'application/octet-stream',
       'text/plain',
-      'text/x-dxf'
+      'text/x-dxf',
+      'application/acad',
+      'application/x-acad',
+      'application/autocad_dwg',
+      'image/vnd.dwg',
+      'application/dwg',
+      'application/x-dwg',
+      'application/octet-stream'
     ];
 
     if (!file.mimetype || allowedMimes.includes(file.mimetype.toLowerCase())) {
       cb(null, true);
     } else {
-      // If MIME is completely unrecognized but extension is .dxf, allow ezdxf to be authoritative
+      // Allow CAD extensions to be authoritative
       cb(null, true);
     }
   }
@@ -61,16 +69,20 @@ router.post('/extract', requireAuth, (req, res, next) => {
     next();
   });
 }, async (req, res) => {
-  if (!req.file || !req.file.buffer) {
+  if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
     return res.status(400).json({
       success: false,
-      error: 'No DXF file uploaded.'
+      error: 'Uploaded CAD file is empty.'
     });
   }
 
+  const originalName = req.file.originalname || 'plan.dxf';
+  const isDwg = /\.dwg$/i.test(originalName);
+  const ext = isDwg ? '.dwg' : '.dxf';
+
   // Target Python service URL (configurable for production and local development)
   const floorplanServiceUrl = (process.env.FLOORPLAN_SERVICE_URL || 'http://127.0.0.1:5001').replace(/\/+$/, '');
-  const timeoutMs = parseInt(process.env.FLOORPLAN_SERVICE_TIMEOUT_MS, 10) || 15000;
+  const timeoutMs = parseInt(process.env.FLOORPLAN_SERVICE_TIMEOUT_MS, 10) || 30000;
 
   // Safe isolated temporary directory outside public web root
   const tempDir = path.join(os.tmpdir(), 'buildiqo_cad_uploads');
@@ -81,7 +93,7 @@ router.post('/extract', requireAuth, (req, res, next) => {
   }
 
   // Safe UUID-based filename (never trust original filename on the filesystem)
-  const safeRandomName = `cad_${Date.now()}_${Math.random().toString(36).substring(2, 10)}.dxf`;
+  const safeRandomName = `cad_${Date.now()}_${Math.random().toString(36).substring(2, 10)}${ext}`;
   const tempFilePath = path.join(tempDir, safeRandomName);
 
   try {
@@ -89,18 +101,26 @@ router.post('/extract', requireAuth, (req, res, next) => {
     fs.writeFileSync(tempFilePath, req.file.buffer);
 
     // Prepare multipart form data for Python service
-    const fileBlob = new Blob([req.file.buffer], { type: 'application/dxf' });
+    const fileBlob = new Blob([req.file.buffer], { type: isDwg ? 'application/acad' : 'application/dxf' });
     const formData = new FormData();
-    formData.append('file', fileBlob, req.file.originalname || 'plan.dxf');
+    formData.append('file', fileBlob, originalName);
 
     // Call Python FastAPI service with timeout
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+    const headers = {};
+    if (process.env.FLOORPLAN_SERVICE_TOKEN) {
+      headers['X-Floorplan-Service-Token'] = process.env.FLOORPLAN_SERVICE_TOKEN;
+    }
+
+    const endpoint = isDwg ? `${floorplanServiceUrl}/extract/dwg` : `${floorplanServiceUrl}/extract/dxf`;
+
     let pyResponse;
     try {
-      pyResponse = await fetch(`${floorplanServiceUrl}/extract/dxf`, {
+      pyResponse = await fetch(endpoint, {
         method: 'POST',
+        headers,
         body: formData,
         signal: controller.signal
       });

@@ -13,6 +13,9 @@ let baseUrl = '';
 const JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret_min_32_characters_long_for_security';
 process.env.JWT_SECRET = JWT_SECRET;
 
+// Service-to-service authentication secret
+process.env.FLOORPLAN_SERVICE_TOKEN = process.env.FLOORPLAN_SERVICE_TOKEN || 'secure_service_token_xyz';
+
 const validToken = jwt.sign(
   { id: 'usr_test_123', email: 'architect@buildiqo.ai', role: 'Architect', isAdmin: false },
   JWT_SECRET,
@@ -67,7 +70,7 @@ test('2. Invalid bearer token returns 401', async () => {
   assert.equal(res.status, 401);
 });
 
-test('3. Non-DXF file extension rejected with 400', async () => {
+test('3. Non-CAD file extension (.pdf) rejected with 400', async () => {
   const form = new FormData();
   form.append('file', new Blob(['not cad'], { type: 'application/pdf' }), 'floorplan.pdf');
 
@@ -82,7 +85,7 @@ test('3. Non-DXF file extension rejected with 400', async () => {
   assert.equal(res.status, 400);
   const data = await res.json();
   assert.equal(data.success, false);
-  assert.match(data.error, /\.dxf/i);
+  assert.match(data.error, /\.dxf and \.dwg/i);
 });
 
 test('4. Empty DXF file rejected with 400', async () => {
@@ -102,9 +105,58 @@ test('4. Empty DXF file rejected with 400', async () => {
   assert.match(data.error, /empty/i);
 });
 
-test('5. Valid DXF upload with valid token returns normalized room extraction', async () => {
+test('5. Empty DWG file rejected with 400', async () => {
+  const form = new FormData();
+  form.append('file', new Blob([], { type: 'application/acad' }), 'empty.dwg');
+
+  const res = await fetch(`${baseUrl}/api/floorplan/extract`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${validToken}`
+    },
+    body: form
+  });
+
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.match(data.error, /empty/i);
+});
+
+test('6. Unsupported extension (.png) rejected with 400', async () => {
+  const form = new FormData();
+  form.append('file', new Blob(['fake image'], { type: 'image/png' }), 'plan.png');
+
+  const res = await fetch(`${baseUrl}/api/floorplan/extract`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${validToken}`
+    },
+    body: form
+  });
+
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.success, false);
+});
+
+test('7. Valid DXF upload with valid token returns normalized room extraction', async () => {
   if (!fs.existsSync(SAMPLE_DXF_PATH)) {
     test.skip('sample_floorplan.dxf fixture not found');
+    return;
+  }
+
+  // If python service is reachable, test full flow, else skip
+  const serviceUrl = process.env.FLOORPLAN_SERVICE_URL || 'http://127.0.0.1:5001';
+  let serviceLive = false;
+  try {
+    const ping = await fetch(`${serviceUrl}/health`, { signal: AbortSignal.timeout(1000) });
+    serviceLive = ping.ok;
+  } catch (e) {
+    serviceLive = false;
+  }
+
+  if (!serviceLive) {
+    test.skip('Floorplan python microservice not running on port 5001');
     return;
   }
 
@@ -141,9 +193,23 @@ test('5. Valid DXF upload with valid token returns normalized room extraction', 
   assert.equal(living.geometry.length, 18);
 });
 
-test('6. Valid DXF with generic MIME (application/octet-stream) accepted', async () => {
+test('8. Valid DXF with generic MIME (application/octet-stream) accepted', async () => {
   if (!fs.existsSync(SAMPLE_DXF_PATH)) {
     test.skip('sample_floorplan.dxf fixture not found');
+    return;
+  }
+
+  const serviceUrl = process.env.FLOORPLAN_SERVICE_URL || 'http://127.0.0.1:5001';
+  let serviceLive = false;
+  try {
+    const ping = await fetch(`${serviceUrl}/health`, { signal: AbortSignal.timeout(1000) });
+    serviceLive = ping.ok;
+  } catch (e) {
+    serviceLive = false;
+  }
+
+  if (!serviceLive) {
+    test.skip('Floorplan python microservice not running on port 5001');
     return;
   }
 

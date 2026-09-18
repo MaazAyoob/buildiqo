@@ -40,6 +40,8 @@ services:
         value: https://buildiqo-ai-floorplan.onrender.com
       - key: FLOORPLAN_SERVICE_TIMEOUT_MS
         value: 30000
+      - key: FLOORPLAN_SERVICE_TOKEN
+        sync: false
 
   # Python FastAPI Floor Plan Extraction Microservice (Phase 1)
   - type: web
@@ -53,3 +55,9 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: FLOORPLAN_SERVICE_TOKEN
+        sync: false
+      - key: ODA_FILE_CONVERTER_PATH
+        sync: false
+      - key: ODA_CONVERSION_TIMEOUT_SEC
+        value: 30
