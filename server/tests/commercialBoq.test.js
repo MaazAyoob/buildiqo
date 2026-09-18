@@ -52,9 +52,11 @@ test.before(async () => {
     role: 'customer'
   });
 
-  // Generate TWC Kasthuri Nagar BOQ fixture
+  // Generate TWC Kasthuri Nagar BOQ fixture only if not present
   fixturePath = path.join(__dirname, 'fixtures', 'TWC_KASTHURI_NAGAR_BOQ_Final_3-2-26.xlsx');
-  await createTWCWorkbook(fixturePath);
+  if (!fs.existsSync(fixturePath)) {
+    await createTWCWorkbook(fixturePath);
+  }
   fixtureBuffer = fs.readFileSync(fixturePath);
 });
 

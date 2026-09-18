@@ -131,6 +131,17 @@ async def process_cad_extraction(file: UploadFile) -> ExtractionResponse:
             except Exception:
                 pass
 
+from fastapi.responses import Response
+from .generator import (
+    FloorplanGenerationRequest,
+    GeneratedFloorplanResponse,
+    DeterministicFloorplanSolver,
+    SolverException,
+    validate_generated_geometry,
+    render_floorplan_svg,
+    render_floorplan_dxf
+)
+
 @app.post("/extract/dxf", response_model=ExtractionResponse)
 async def extract_dxf_endpoint(
     file: UploadFile = File(...),
@@ -151,6 +162,75 @@ async def extract_dwg_endpoint(
     """
     return await process_cad_extraction(file)
 
+@app.post("/generate-layout", response_model=GeneratedFloorplanResponse)
+async def generate_layout_endpoint(
+    request: FloorplanGenerationRequest,
+    _: Optional[str] = Depends(verify_service_token)
+):
+    """
+    Generates a deterministic, Vastu-aware, multi-floor architectural layout from requirements.
+    Uses recursive space partitioning and Shapely geometry validation.
+    """
+    try:
+        solver = DeterministicFloorplanSolver(request)
+        response = solver.solve()
+
+        # Run Shapely invariant validation
+        validation = validate_generated_geometry(response)
+        if not validation.is_valid:
+            error_msg = "; ".join(validation.errors)
+            logger.error("Generated geometry failed validation: %s", error_msg)
+            raise HTTPException(
+                status_code=422,
+                detail=f"Generated layout failed geometric constraints: {error_msg}"
+            )
+
+        # Attach architectural SVG
+        response.svg = render_floorplan_svg(response, active_floor_idx=0)
+        return response
+
+    except SolverException as se:
+        logger.warning("Solver failed: %s (%s)", se.code, se.message)
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": se.code,
+                "message": se.message,
+                "suggestions": se.suggestions
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Unexpected error during layout generation: %s", str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate floor plan: {str(e)}"
+        )
+
+@app.post("/export/dxf")
+async def export_dxf_endpoint(
+    response_data: GeneratedFloorplanResponse,
+    floor: int = 0,
+    _: Optional[str] = Depends(verify_service_token)
+):
+    """
+    Exports generated floor plan layout as an AutoCAD R2018 DXF file.
+    """
+    try:
+        dxf_stream = render_floorplan_dxf(response_data, active_floor_idx=floor)
+        return Response(
+            content=dxf_stream.getvalue(),
+            media_type="application/dxf",
+            headers={
+                "Content-Disposition": f"attachment; filename=buildiqo_plan_floor_{floor}.dxf"
+            }
+        )
+    except Exception as e:
+        logger.exception("DXF export failed: %s", str(e))
+        raise HTTPException(status_code=500, detail=f"DXF export failed: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=5001)
+

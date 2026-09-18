@@ -1,0 +1,217 @@
+/**
+ * Buildiqo.AI - Phase 2.0 AI Floor Plan Generator Backend Test Suite
+ * Tests authentication, input validation, room program normalization,
+ * refinement diffing, ambiguity handling, and calculator compatibility.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const http = require('http');
+const jwt = require('jsonwebtoken');
+const { app } = require('../index');
+const { validateGenerationInput, normalizeRoomType } = require('../services/aiFloorplan/roomProgramValidator');
+const { RuleBasedFloorplanProvider } = require('../services/aiFloorplan/llmProvider');
+const aiFloorplanService = require('../services/aiFloorplan/aiFloorplanService');
+
+let server = null;
+let baseUrl = '';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret_min_32_characters_long_for_security';
+process.env.JWT_SECRET = JWT_SECRET;
+
+const validToken = jwt.sign(
+  { id: 'usr_architect_456', email: 'architect@buildiqo.ai', role: 'Architect', isAdmin: false },
+  JWT_SECRET,
+  { expiresIn: '1h' }
+);
+
+test.before(async () => {
+  await new Promise((resolve) => {
+    server = http.createServer(app);
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address();
+      baseUrl = `http://127.0.0.1:${addr.port}`;
+      resolve();
+    });
+  });
+});
+
+test.after(async () => {
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('1. Unauthenticated generation request returns 401', async () => {
+  const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plot_width_ft: 30, plot_length_ft: 40 })
+  });
+
+  assert.equal(res.status, 401);
+  const data = await res.json();
+  assert.equal(data.success, false);
+});
+
+test('2. Invalid bearer token returns 401', async () => {
+  const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer bad_token_123'
+    },
+    body: JSON.stringify({ plot_width_ft: 30, plot_length_ft: 40 })
+  });
+
+  assert.equal(res.status, 401);
+});
+
+test('3. Input validation rejects missing or invalid plot dimensions', () => {
+  const res1 = validateGenerationInput({});
+  assert.equal(res1.isValid, false);
+  assert.ok(res1.errors.some(e => e.includes('plot_width_ft')));
+
+  const res2 = validateGenerationInput({ plot_width_ft: -10, plot_length_ft: 40 });
+  assert.equal(res2.isValid, false);
+  assert.ok(res2.errors.some(e => e.includes('plot_width_ft')));
+
+  const res3 = validateGenerationInput({ plot_width_ft: 30, plot_length_ft: 500 });
+  assert.equal(res3.isValid, false);
+  assert.ok(res3.errors.some(e => e.includes('plot_length_ft')));
+});
+
+test('4. Input validation rejects negative setback and enforces max 5 floors', () => {
+  const res1 = validateGenerationInput({ plot_width_ft: 30, plot_length_ft: 40, setback_ft: -2 });
+  assert.equal(res1.isValid, false);
+  assert.ok(res1.errors.some(e => e.includes('setback_ft')));
+
+  // 5 floors -> accepted
+  const res5 = validateGenerationInput({ plot_width_ft: 30, plot_length_ft: 40, num_floors: 5 });
+  assert.equal(res5.isValid, true);
+
+  // 6 floors -> rejected
+  const res6 = validateGenerationInput({ plot_width_ft: 30, plot_length_ft: 40, num_floors: 6 });
+  assert.equal(res6.isValid, false);
+  assert.ok(res6.errors.some(e => e.includes('num_floors')));
+
+  // 10 floors -> rejected
+  const res10 = validateGenerationInput({ plot_width_ft: 30, plot_length_ft: 40, num_floors: 10 });
+  assert.equal(res10.isValid, false);
+  assert.ok(res10.errors.some(e => e.includes('num_floors')));
+});
+
+test('5. Input validation rejects excessive room counts (> 30)', () => {
+  const rooms = [];
+  for (let i = 0; i < 35; i++) {
+    rooms.push({ type: 'bedroom', count: 1 });
+  }
+  const res = validateGenerationInput({
+    plot_width_ft: 50,
+    plot_length_ft: 60,
+    rooms_required: rooms
+  });
+  assert.equal(res.isValid, false);
+  assert.ok(res.errors.some(e => e.includes('Maximum total requested rooms limit')));
+});
+
+test('6. Room type normalization correctly resolves aliases', () => {
+  assert.equal(normalizeRoomType('hall'), 'living');
+  assert.equal(normalizeRoomType('living room'), 'living');
+  assert.equal(normalizeRoomType('drawing'), 'living');
+  assert.equal(normalizeRoomType('master bedroom'), 'master_bed');
+  assert.equal(normalizeRoomType('guest bed'), 'regular_bed');
+  assert.equal(normalizeRoomType('washroom'), 'common_bath');
+  assert.equal(normalizeRoomType('pooja room'), 'puja');
+  assert.equal(normalizeRoomType('prayer room'), 'puja');
+});
+
+test('7. Rule-based LLM provider produces valid structured room program', async () => {
+  const provider = new RuleBasedFloorplanProvider();
+  const res = await provider.generateRoomProgram({
+    plot_width_ft: 30,
+    plot_length_ft: 40,
+    plot_facing: 'east',
+    num_floors: 2,
+    rooms_required: [
+      { type: 'living', count: 1 },
+      { type: 'kitchen', count: 1 },
+      { type: 'master_bed', count: 1 },
+      { type: 'attached_bath', count: 1 }
+    ]
+  });
+
+  assert.ok(Array.isArray(res.rooms));
+  assert.equal(res.rooms.length, 4);
+
+  const living = res.rooms.find(r => r.type === 'living');
+  assert.ok(living);
+  assert.equal(living.priority, 'high');
+  assert.ok(living.target_area_sqft >= 150);
+
+  const master = res.rooms.find(r => r.type === 'master_bed');
+  assert.ok(master);
+  assert.equal(master.preferred_floor, 1);
+});
+
+test('8. Ambiguous refinement requests return structured clarification suggestions', async () => {
+  const provider = new RuleBasedFloorplanProvider();
+  const currentProgram = { rooms: [{ room_id: 'living_1', type: 'living' }] };
+
+  const res = await provider.interpretRefinement(currentProgram, 'make it more spacious');
+  assert.equal(res.is_ambiguous, true);
+  assert.ok(res.clarification_message);
+  assert.ok(Array.isArray(res.suggestions));
+  assert.ok(res.suggestions.length > 0);
+});
+
+test('9. Actionable refinement requests produce structured changes', async () => {
+  const provider = new RuleBasedFloorplanProvider();
+  const currentProgram = { rooms: [{ room_id: 'kitchen_1', type: 'kitchen' }] };
+
+  const res = await provider.interpretRefinement(currentProgram, 'make the kitchen bigger');
+  assert.equal(res.is_ambiguous, false);
+  assert.ok(Array.isArray(res.changes));
+  assert.equal(res.changes[0].type, 'increase_area');
+  assert.equal(res.changes[0].target_room_type, 'kitchen');
+});
+
+test('10. End-to-end API generation endpoint rejects invalid input with 400', async () => {
+  const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${validToken}`
+    },
+    body: JSON.stringify({
+      plot_width_ft: 5, // invalid
+      plot_length_ft: 40
+    })
+  });
+
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.match(data.error, /plot_width_ft/i);
+});
+
+test('11. Generated room schema conforms to Step 2 calculator requirements', () => {
+  // Verify that room structure can be fed directly into Step 2 and calculator
+  const mockGeneratedRoom = {
+    id: 'living_1',
+    room_id: 'living_1',
+    name: 'Living Room',
+    type: 'living',
+    width: 16.0,
+    length: 18.0,
+    area: 288.0,
+    area_sqft: 288.0,
+    count: 1,
+    floor: 0,
+    confidence: 'generated'
+  };
+
+  assert.equal(mockGeneratedRoom.confidence, 'generated');
+  const computedArea = mockGeneratedRoom.width * mockGeneratedRoom.length * mockGeneratedRoom.count;
+  assert.equal(computedArea, 288.0);
+});

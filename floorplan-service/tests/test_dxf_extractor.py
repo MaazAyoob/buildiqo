@@ -39,8 +39,9 @@ def create_sample_dxf():
     
     doc.saveas(SAMPLE_DXF_PATH)
 
-# Ensure sample exists
-create_sample_dxf()
+# Ensure sample exists only if not present on disk
+if not os.path.exists(SAMPLE_DXF_PATH):
+    create_sample_dxf()
 
 def test_clean_fixture_extraction():
     """Test 1: Clean DXF fixture with 3 rooms and container plot boundary."""

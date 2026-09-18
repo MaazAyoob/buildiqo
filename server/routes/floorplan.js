@@ -175,4 +175,128 @@ router.post('/extract', requireAuth, (req, res, next) => {
   }
 });
 
+const aiFloorplanService = require('../services/aiFloorplan/aiFloorplanService');
+
+/**
+ * POST /api/floorplan/generate
+ * Generates an AI-assisted architectural floor plan with deterministic geometry.
+ * Protected by requireAuth.
+ */
+router.post('/generate', requireAuth, async (req, res) => {
+  try {
+    const result = await aiFloorplanService.generateFloorplan(req.body);
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Floor plan generation failed.',
+      details: err.details || null
+    });
+  }
+});
+
+// Alias for spec compatibility
+router.post('/generate-floorplan', requireAuth, async (req, res) => {
+  try {
+    const result = await aiFloorplanService.generateFloorplan(req.body);
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Floor plan generation failed.',
+      details: err.details || null
+    });
+  }
+});
+
+/**
+ * POST /api/floorplan/regenerate
+ * Re-runs solver with alternative deterministic seed on identical requirements.
+ * Protected by requireAuth.
+ */
+router.post('/regenerate', requireAuth, async (req, res) => {
+  try {
+    const { generation_id, seed } = req.body || {};
+    const result = await aiFloorplanService.regenerateFloorplan(generation_id, seed);
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Regeneration failed.'
+    });
+  }
+});
+
+router.post('/generate-floorplan/regenerate', requireAuth, async (req, res) => {
+  try {
+    const { generation_id, seed } = req.body || {};
+    const result = await aiFloorplanService.regenerateFloorplan(generation_id, seed);
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Regeneration failed.'
+    });
+  }
+});
+
+/**
+ * POST /api/floorplan/refine
+ * Converts natural-language instruction to structured diff and updates layout.
+ * Protected by requireAuth.
+ */
+router.post('/refine', requireAuth, async (req, res) => {
+  try {
+    const { generation_id, instruction } = req.body || {};
+    const result = await aiFloorplanService.refineFloorplan(generation_id, instruction);
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Refinement failed.'
+    });
+  }
+});
+
+router.post('/generate-floorplan/refine', requireAuth, async (req, res) => {
+  try {
+    const { generation_id, instruction } = req.body || {};
+    const result = await aiFloorplanService.refineFloorplan(generation_id, instruction);
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Refinement failed.'
+    });
+  }
+});
+
+/**
+ * GET /api/floorplan/download-dxf/:generationId
+ * Downloads generated floor plan as standard AutoCAD DXF file.
+ * Protected by requireAuth.
+ */
+router.get('/download-dxf/:generationId', requireAuth, async (req, res) => {
+  try {
+    const floor = parseInt(req.query.floor, 10) || 0;
+    const dxfBuffer = await aiFloorplanService.getFloorplanDxf(req.params.generationId, floor);
+    res.setHeader('Content-Type', 'application/dxf');
+    res.setHeader('Content-Disposition', `attachment; filename=buildiqo_plan_${req.params.generationId}_floor_${floor}.dxf`);
+    res.send(dxfBuffer);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'Failed to download DXF.'
+    });
+  }
+});
+
 module.exports = router;
+

@@ -35,6 +35,7 @@ import {
 import { DEFAULT_ROOM_TYPES } from '../../data/defaults';
 import { formatNumber } from '../../store/useEstimateStore';
 import { extractFloorPlanDXF } from '../../services/floorplanService';
+import { AiFloorplanModal } from './AiFloorplanModal';
 
 const ICON_MAP = {
   BedDouble,
@@ -68,6 +69,9 @@ export function StepSpaces({ state, updateState, estimation }) {
   const [dxfResult, setDxfResult] = useState(null);
   const [reviewedRooms, setReviewedRooms] = useState([]);
   const [targetFloorIndex, setTargetFloorIndex] = useState(0);
+
+  // Phase 2.0 AI Floor Plan Generator State
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const activeFloor = state.floors[activeFloorIndex] || state.floors[0];
 
@@ -389,6 +393,15 @@ export function StepSpaces({ state, updateState, estimation }) {
           </div>
 
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsAiModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 flex items-center space-x-1.5 shadow-sm transition-all"
+              id="generate-ai-floorplan-btn"
+            >
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>Generate Floor Plan (AI)</span>
+            </button>
+
             <button
               onClick={() => { setIsDxfUploadModalOpen(true); setDxfError(null); }}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 flex items-center space-x-1.5 shadow-sm transition-all"
@@ -917,6 +930,16 @@ export function StepSpaces({ state, updateState, estimation }) {
           </div>
         </div>
       )}
+
+      {/* Phase 2.0 AI Floor Plan Generator Modal */}
+      <AiFloorplanModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        state={state}
+        onApplyToStep2={(updatedFloors) => {
+          updateState({ floors: updatedFloors });
+        }}
+      />
 
     </div>
   );
