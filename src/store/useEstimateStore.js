@@ -387,17 +387,21 @@ export function useEstimateStore() {
       name: 'Guest Builder',
       email: 'guest@buildiqo.ai',
       phone: '+91 Guest',
-      role: 'Homeowner / Individual Builder',
+      role: 'Architect / Builder',
       firmName: '',
       avatar: 'GB',
       isGuest: true,
       isAdmin: false,
-      hasSelectedPlan: false
+      hasSelectedPlan: true
     };
     globalAuth = guestUser;
     globalSub = {
-      ...globalSub,
-      isPlanConfirmed: false
+      planId: 'pro',
+      name: 'Professional (Guest Preview)',
+      billingCycle: 'monthly',
+      status: 'active',
+      renewsAt: 'Active Demo',
+      isPlanConfirmed: true
     };
     notify();
     return { success: true, user: guestUser };

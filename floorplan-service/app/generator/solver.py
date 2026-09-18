@@ -380,7 +380,7 @@ class DeterministicFloorplanSolver:
         cy = round(oy + sl, 1)
         cl = 4.0
         has_other_rooms = len(rooms) > (1 if stairs else 0)
-        has_north_wing = bool(publics or floor_idx == 0 or beds or (baths and not masters))
+        has_north_wing = bool(publics or floor_idx == 0 or any(r.type == "regular_bed" for r in rooms))
         if has_other_rooms and has_north_wing:
             circ_corridors.append({"x": ox, "y": cy, "width": bw, "length": cl})
         elif has_other_rooms:

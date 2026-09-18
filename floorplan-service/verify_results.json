@@ -1,0 +1,385 @@
+{
+  "cases": [
+    {
+      "case": "CASE 1 (30x40 ft, 2 floors)",
+      "success": true,
+      "error_code": null,
+      "error_message": null,
+      "plot_w": 30.0,
+      "plot_l": 40.0,
+      "setback": 3.0,
+      "buildable_w": 24.0,
+      "buildable_l": 34.0,
+      "buildable_area": 816.0,
+      "requested_rooms_count": 10,
+      "generated_rooms_count": 11,
+      "total_carpet": 1136.4,
+      "circulation_area": 231.6,
+      "unused_area": 264.0,
+      "target_deviations": {
+        "Staircase_0": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Kitchen_0": {
+          "type": "kitchen",
+          "target": 95.0,
+          "generated": 115.0,
+          "dev_pct": 21.1
+        },
+        "Common Bathroom_0": {
+          "type": "common_bath",
+          "target": 42.0,
+          "generated": 69.0,
+          "dev_pct": 64.3
+        },
+        "Puja Room_0": {
+          "type": "puja",
+          "target": 30.0,
+          "generated": 27.5,
+          "dev_pct": -8.3
+        },
+        "Dining Room_0": {
+          "type": "dining",
+          "target": 120.0,
+          "generated": 75.8,
+          "dev_pct": -36.8
+        },
+        "Living Room_0": {
+          "type": "living",
+          "target": 180.0,
+          "generated": 180.7,
+          "dev_pct": 0.4
+        },
+        "Staircase_1": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Master Bedroom_1": {
+          "type": "master_bed",
+          "target": 165.0,
+          "generated": 132.2,
+          "dev_pct": -19.9
+        },
+        "Attached Bathroom_1": {
+          "type": "attached_bath",
+          "target": 42.0,
+          "generated": 63.2,
+          "dev_pct": 50.5
+        },
+        "Bedroom 1_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 156.0,
+          "dev_pct": 20.0
+        },
+        "Bedroom 2_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 156.0,
+          "dev_pct": 20.0
+        }
+      },
+      "max_aspect_ratio": 2.09,
+      "inaccessible_rooms": [],
+      "door_count": 12,
+      "invalid_doors": [],
+      "ext_windows_count": 11,
+      "int_windows_count": 0,
+      "vastu_warnings": [],
+      "plumbing_warnings": [],
+      "overlap_violations": [],
+      "setback_violations": [],
+      "min_dim_violations": [],
+      "duration_ms": 7.55,
+      "floors_data": []
+    },
+    {
+      "case": "CASE 2 (40x60 ft, 2 floors)",
+      "success": true,
+      "error_code": null,
+      "error_message": null,
+      "plot_w": 40.0,
+      "plot_l": 60.0,
+      "setback": 5.0,
+      "buildable_w": 30.0,
+      "buildable_l": 50.0,
+      "buildable_area": 1500.0,
+      "requested_rooms_count": 10,
+      "generated_rooms_count": 11,
+      "total_carpet": 1316.5,
+      "circulation_area": 393.5,
+      "unused_area": 1290.0,
+      "target_deviations": {
+        "Staircase_0": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Kitchen_0": {
+          "type": "kitchen",
+          "target": 95.0,
+          "generated": 115.0,
+          "dev_pct": 21.1
+        },
+        "Common Bathroom_0": {
+          "type": "common_bath",
+          "target": 42.0,
+          "generated": 69.0,
+          "dev_pct": 64.3
+        },
+        "Puja Room_0": {
+          "type": "puja",
+          "target": 30.0,
+          "generated": 27.5,
+          "dev_pct": -8.3
+        },
+        "Dining Room_0": {
+          "type": "dining",
+          "target": 120.0,
+          "generated": 90.0,
+          "dev_pct": -25.0
+        },
+        "Living Room_0": {
+          "type": "living",
+          "target": 180.0,
+          "generated": 234.0,
+          "dev_pct": 30.0
+        },
+        "Staircase_1": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Master Bedroom_1": {
+          "type": "master_bed",
+          "target": 165.0,
+          "generated": 161.0,
+          "dev_pct": -2.4
+        },
+        "Attached Bathroom_1": {
+          "type": "attached_bath",
+          "target": 42.0,
+          "generated": 69.0,
+          "dev_pct": 64.3
+        },
+        "Bedroom 1_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 195.0,
+          "dev_pct": 50.0
+        },
+        "Bedroom 2_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 195.0,
+          "dev_pct": 50.0
+        }
+      },
+      "max_aspect_ratio": 1.92,
+      "inaccessible_rooms": [],
+      "door_count": 12,
+      "invalid_doors": [],
+      "ext_windows_count": 11,
+      "int_windows_count": 0,
+      "vastu_warnings": [],
+      "plumbing_warnings": [],
+      "overlap_violations": [],
+      "setback_violations": [],
+      "min_dim_violations": [],
+      "duration_ms": 9.79,
+      "floors_data": []
+    },
+    {
+      "case": "CASE 3 (20x30 ft, 1 floor small plot)",
+      "success": false,
+      "error_code": "LAYOUT_INFEASIBLE",
+      "error_message": "Floor 0 requires at least 375 sq.ft minimum carpet area, which exceeds the buildable envelope (336 sq.ft).",
+      "plot_w": 20.0,
+      "plot_l": 30.0,
+      "setback": 3.0,
+      "buildable_w": 14.0,
+      "buildable_l": 24.0,
+      "buildable_area": 336.0,
+      "requested_rooms_count": 4,
+      "generated_rooms_count": 0,
+      "total_carpet": 0.0,
+      "circulation_area": 0.0,
+      "unused_area": 0.0,
+      "target_deviations": {},
+      "max_aspect_ratio": 0.0,
+      "inaccessible_rooms": [],
+      "door_count": 0,
+      "invalid_doors": [],
+      "ext_windows_count": 0,
+      "int_windows_count": 0,
+      "vastu_warnings": [],
+      "plumbing_warnings": [],
+      "overlap_violations": [],
+      "setback_violations": [],
+      "min_dim_violations": [],
+      "duration_ms": 0.13,
+      "floors_data": []
+    },
+    {
+      "case": "CASE 4 (30x40 ft, 5 floors)",
+      "success": true,
+      "error_code": null,
+      "error_message": null,
+      "plot_w": 30.0,
+      "plot_l": 40.0,
+      "setback": 3.0,
+      "buildable_w": 24.0,
+      "buildable_l": 34.0,
+      "buildable_area": 816.0,
+      "requested_rooms_count": 9,
+      "generated_rooms_count": 14,
+      "total_carpet": 1406.5,
+      "circulation_area": 2145.5,
+      "unused_area": 528.0,
+      "target_deviations": {
+        "Staircase_0": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Kitchen_0": {
+          "type": "kitchen",
+          "target": 95.0,
+          "generated": 115.0,
+          "dev_pct": 21.1
+        },
+        "Puja Room_0": {
+          "type": "puja",
+          "target": 30.0,
+          "generated": 27.5,
+          "dev_pct": -8.3
+        },
+        "Dining Room_0": {
+          "type": "dining",
+          "target": 120.0,
+          "generated": 75.8,
+          "dev_pct": -36.8
+        },
+        "Living Room_0": {
+          "type": "living",
+          "target": 180.0,
+          "generated": 180.7,
+          "dev_pct": 0.4
+        },
+        "Staircase_1": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Master Bedroom_1": {
+          "type": "master_bed",
+          "target": 165.0,
+          "generated": 161.0,
+          "dev_pct": -2.4
+        },
+        "Bedroom 1_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 111.0,
+          "dev_pct": -14.6
+        },
+        "Bedroom 2_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 111.0,
+          "dev_pct": -14.6
+        },
+        "Bedroom 3_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 111.0,
+          "dev_pct": -14.6
+        },
+        "Bedroom 4_1": {
+          "type": "regular_bed",
+          "target": 130.0,
+          "generated": 111.0,
+          "dev_pct": -14.6
+        },
+        "Staircase_2": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Staircase_3": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        },
+        "Staircase_4": {
+          "type": "staircase",
+          "target": 80.0,
+          "generated": 80.5,
+          "dev_pct": 0.6
+        }
+      },
+      "max_aspect_ratio": 3.08,
+      "inaccessible_rooms": [],
+      "door_count": 15,
+      "invalid_doors": [],
+      "ext_windows_count": 14,
+      "int_windows_count": 0,
+      "vastu_warnings": [],
+      "plumbing_warnings": [],
+      "overlap_violations": [],
+      "setback_violations": [],
+      "min_dim_violations": [],
+      "duration_ms": 11.3,
+      "floors_data": []
+    },
+    {
+      "case": "CASE 5 (30x30 ft, 5 ft setback overconstrained)",
+      "success": false,
+      "error_code": "LAYOUT_INFEASIBLE",
+      "error_message": "Floor 0 requires at least 1070 sq.ft minimum carpet area, which exceeds the buildable envelope (400 sq.ft).",
+      "plot_w": 30.0,
+      "plot_l": 30.0,
+      "setback": 5.0,
+      "buildable_w": 20.0,
+      "buildable_l": 20.0,
+      "buildable_area": 400.0,
+      "requested_rooms_count": 9,
+      "generated_rooms_count": 0,
+      "total_carpet": 0.0,
+      "circulation_area": 0.0,
+      "unused_area": 0.0,
+      "target_deviations": {},
+      "max_aspect_ratio": 0.0,
+      "inaccessible_rooms": [],
+      "door_count": 0,
+      "invalid_doors": [],
+      "ext_windows_count": 0,
+      "int_windows_count": 0,
+      "vastu_warnings": [],
+      "plumbing_warnings": [],
+      "overlap_violations": [],
+      "setback_violations": [],
+      "min_dim_violations": [],
+      "duration_ms": 0.16,
+      "floors_data": []
+    }
+  ],
+  "determinism": {
+    "123_vs_123_identical": true,
+    "123_vs_456_different": true,
+    "123_vs_789_different": false
+  },
+  "svg_len": 6649,
+  "dxf_bytes_len": 60824
+}

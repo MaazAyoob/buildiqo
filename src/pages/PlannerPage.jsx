@@ -26,13 +26,13 @@ import { StepReport } from '../components/planner/StepReport';
 import { PaymentModal } from '../components/common/PaymentModal';
 
 export function PlannerPage({ setRoute, onOpenSavedModal }) {
-  const { state, updateState, estimation, saveCurrentProject, subscription } = useEstimateStore();
+  const { state, updateState, estimation, saveCurrentProject, subscription, currentUser } = useEstimateStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState(null);
 
-  const isFreePlan = subscription?.planId === 'free';
+  const isFreePlan = subscription?.planId === 'free' && !currentUser?.isGuest && !currentUser?.isAdmin;
 
   const allSteps = [
     { id: 1, name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
