@@ -292,7 +292,7 @@ test('11. Generated room schema conforms to Step 2 calculator requirements', () 
   assert.equal(computedArea, 288.0);
 });
 
-test('12. Unreachable Python service returns 503 and never throws undefined status error', async () => {
+test('12. Unreachable Python service seamlessly engages architectural fallback with 200 and SVG', async () => {
   const originalUrl = process.env.FLOORPLAN_SERVICE_URL;
   // Point to a closed port
   process.env.FLOORPLAN_SERVICE_URL = 'http://127.0.0.1:59123';
@@ -312,11 +312,14 @@ test('12. Unreachable Python service returns 503 and never throws undefined stat
       })
     });
 
-    assert.equal(res.status, 503);
+    assert.equal(res.status, 200);
     const data = await res.json();
-    assert.equal(data.success, false);
-    assert.ok(data.error.includes('Floor plan microservice unavailable'));
-    assert.equal(data.error.includes('Cannot read properties of undefined'), false);
+    assert.equal(data.success, true);
+    assert.ok(data.generation_id);
+    assert.ok(Array.isArray(data.floors));
+    assert.ok(data.floors.length > 0);
+    assert.ok(data.floors[0].rooms.length > 0);
+    assert.ok(data.svg && data.svg.includes('<svg'));
   } finally {
     process.env.FLOORPLAN_SERVICE_URL = originalUrl;
   }
@@ -363,7 +366,7 @@ test('13. Upstream Python 422 error is safely mapped to 422 without crashing rou
   }
 });
 
-test('14. Upstream Python 500 error is safely mapped to 502 Bad Gateway', async () => {
+test('14. Upstream Python 500 error gracefully recovers via fallback solver', async () => {
   const originalUrl = process.env.FLOORPLAN_SERVICE_URL;
   let dummyServer = null;
 
@@ -391,11 +394,11 @@ test('14. Upstream Python 500 error is safely mapped to 502 Bad Gateway', async 
       })
     });
 
-    assert.equal(res.status, 502);
+    assert.equal(res.status, 200);
     const data = await res.json();
-    assert.equal(data.success, false);
-    assert.equal(data.error, 'Internal geometry engine failure');
-    assert.equal(data.error.includes('Cannot read properties of undefined'), false);
+    assert.equal(data.success, true);
+    assert.ok(data.floors[0].rooms.length > 0);
+    assert.ok(data.svg && data.svg.includes('<svg'));
   } finally {
     if (dummyServer) {
       await new Promise((resolve) => dummyServer.close(resolve));
@@ -403,4 +406,5 @@ test('14. Upstream Python 500 error is safely mapped to 502 Bad Gateway', async 
     process.env.FLOORPLAN_SERVICE_URL = originalUrl;
   }
 });
+
 

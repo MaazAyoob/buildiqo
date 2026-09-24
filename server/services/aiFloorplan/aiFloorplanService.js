@@ -68,7 +68,9 @@ class AIFloorplanService {
     const timeoutMs = parseInt(process.env.FLOORPLAN_SERVICE_TIMEOUT_MS, 10) || 30000;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    let pyRes;
+    let pyData = null;
+    let pyRes = null;
+
     try {
       pyRes = await fetch(pyUrl, {
         method: 'POST',
@@ -76,35 +78,34 @@ class AIFloorplanService {
         body: JSON.stringify(solverPayload),
         signal: controller.signal
       });
-    } catch (fetchErr) {
-      if (fetchErr.name === 'AbortError') {
-        const err = new Error(`Floor plan geometry solver timed out after ${timeoutMs / 1000} seconds.`);
-        err.statusCode = 504;
-        throw err;
+
+      if (pyRes && pyRes.ok) {
+        pyData = await pyRes.json().catch(() => null);
+        console.log(`[Floorplan Service] Upstream Python solver response status: ${pyRes.status}`);
+      } else if (pyRes) {
+        const errorBody = await pyRes.json().catch(() => ({}));
+        // If Python returned input constraint rejection (400 / 422), propagate user error
+        if (pyRes.status === 400 || pyRes.status === 422) {
+          const err = new Error(errorBody.detail?.message || (typeof errorBody.detail === 'string' ? errorBody.detail : null) || `Geometry constraints could not be satisfied (HTTP ${pyRes.status}).`);
+          err.statusCode = pyRes.status;
+          err.details = errorBody.detail || null;
+          throw err;
+        }
+        console.warn(`[Floorplan Service] Upstream Python solver returned HTTP ${pyRes.status}. Engaging architectural solver fallback.`);
       }
-      const err = new Error(`Floor plan microservice unavailable (${fetchErr.message || 'connection failed'}).`);
-      err.statusCode = 503;
-      throw err;
+    } catch (fetchErr) {
+      if (fetchErr.statusCode === 400 || fetchErr.statusCode === 422) {
+        throw fetchErr;
+      }
+      console.warn(`[Floorplan Service] Upstream Python solver unavailable (${fetchErr.message || 'connection failed'}). Engaging architectural solver fallback.`);
     } finally {
       clearTimeout(timer);
     }
 
-    if (!pyRes) {
-      const err = new Error('Floor plan microservice did not return a response.');
-      err.statusCode = 503;
-      throw err;
-    }
-
-    const pyStatus = pyRes.status || 500;
-    console.log(`[Floorplan Service] Upstream Python solver response status: ${pyStatus}`);
-    const pyData = await pyRes.json().catch(() => ({}));
-
-    if (!pyRes.ok) {
-      const errorMsg = pyData.detail?.message || (typeof pyData.detail === 'string' ? pyData.detail : null) || `Geometry solver failed (HTTP ${pyStatus}).`;
-      const err = new Error(errorMsg);
-      err.statusCode = pyStatus === 400 || pyStatus === 422 ? pyStatus : (pyStatus >= 500 ? 502 : pyStatus);
-      err.details = pyData.detail || null;
-      throw err;
+    // If upstream Python solver was unavailable or returned non-constraint error, use built-in fallback
+    if (!pyData || !pyData.generation_id) {
+      const { solveFallbackLayout } = require('./fallbackSolver');
+      pyData = solveFallbackLayout(sanitized, roomProgram);
     }
 
     // 3. Cache session for subsequent refine/regenerate
@@ -233,16 +234,14 @@ class AIFloorplanService {
         body: JSON.stringify(cached.response)
       });
     } catch (fetchErr) {
-      const err = new Error(`Floor plan DXF export service unavailable (${fetchErr.message || 'connection failed'}).`);
-      err.statusCode = 503;
-      throw err;
+      console.warn(`[Floorplan Service] Python DXF export service unavailable (${fetchErr.message}). Generating fallback DXF.`);
+      const { generateFallbackDxf } = require('./fallbackSolver');
+      return generateFallbackDxf(cached.response, floor);
     }
 
     if (!pyRes || !pyRes.ok) {
-      const status = pyRes?.status || 500;
-      const err = new Error(`DXF export failed: HTTP ${status}`);
-      err.statusCode = status >= 500 ? 502 : status;
-      throw err;
+      const { generateFallbackDxf } = require('./fallbackSolver');
+      return generateFallbackDxf(cached.response, floor);
     }
 
     return Buffer.from(await pyRes.arrayBuffer());
