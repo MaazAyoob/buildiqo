@@ -157,10 +157,21 @@ export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
         setResult(data);
         setActiveFloorIdx(0);
       } else {
-        setError(data?.error || 'Failed to generate floor plan.');
+        setError(data?.error || 'Failed to generate floor plan. Please verify requirements and try again.');
       }
     } catch (err) {
-      setError(err.message || 'Error generating floor plan. Please verify requirements and try again.');
+      console.warn('[AI Floorplan] Generation error:', err);
+      let userMsg = err?.message || 'Error generating floor plan.';
+      if (err?.status === 503 || userMsg.includes('unavailable') || userMsg.includes('connection failed')) {
+        userMsg = 'The AI geometry solver is currently warming up on the server. Please wait 10–15 seconds and click Generate again.';
+      } else if (err?.status === 504 || userMsg.includes('timed out')) {
+        userMsg = 'Floor plan generation timed out. Please try with slightly simpler room requirements.';
+      } else if (err?.status === 401) {
+        userMsg = 'Session authorization expired. Please refresh the page or continue as Guest to generate.';
+      } else if (userMsg.includes('Cannot read properties') || userMsg.includes('undefined')) {
+        userMsg = 'The geometry service is momentarily unavailable. Please try again in a few moments.';
+      }
+      setError(userMsg);
     } finally {
       setLoading(false);
       setLoadingStage('');
@@ -181,7 +192,14 @@ export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
         setError(data?.error || 'Failed to regenerate layout.');
       }
     } catch (err) {
-      setError(err.message || 'Error regenerating layout.');
+      console.warn('[AI Floorplan] Regeneration error:', err);
+      let userMsg = err?.message || 'Error regenerating layout.';
+      if (err?.status === 503 || userMsg.includes('unavailable')) {
+        userMsg = 'The geometry solver is currently warming up. Please wait 10 seconds and try again.';
+      } else if (userMsg.includes('Cannot read properties') || userMsg.includes('undefined')) {
+        userMsg = 'The geometry service is momentarily unavailable. Please try again shortly.';
+      }
+      setError(userMsg);
     } finally {
       setLoading(false);
       setLoadingStage('');
@@ -198,16 +216,23 @@ export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
 
     try {
       const data = await refineFloorPlanAI(result.generation_id, text);
-      if (data.is_ambiguous) {
+      if (data?.is_ambiguous) {
         setRefinementClarification(data);
-      } else if (data.success) {
+      } else if (data?.success) {
         setResult(data);
         setRefinementText('');
       } else {
-        setError(data.error || 'Refinement could not be completed.');
+        setError(data?.error || 'Refinement could not be completed.');
       }
     } catch (err) {
-      setError(err.message || 'Error refining layout.');
+      console.warn('[AI Floorplan] Refinement error:', err);
+      let userMsg = err?.message || 'Error refining layout.';
+      if (err?.status === 503 || userMsg.includes('unavailable')) {
+        userMsg = 'The geometry solver is currently warming up. Please wait 10 seconds and try again.';
+      } else if (userMsg.includes('Cannot read properties') || userMsg.includes('undefined')) {
+        userMsg = 'The geometry service is momentarily unavailable. Please try again shortly.';
+      }
+      setError(userMsg);
     } finally {
       setRefining(false);
     }

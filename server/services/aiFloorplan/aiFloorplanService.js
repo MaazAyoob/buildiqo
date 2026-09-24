@@ -77,25 +77,33 @@ class AIFloorplanService {
         signal: controller.signal
       });
     } catch (fetchErr) {
-      clearTimeout(timer);
       if (fetchErr.name === 'AbortError') {
-        const err = new Error('Geometry solver timed out.');
+        const err = new Error(`Floor plan geometry solver timed out after ${timeoutMs / 1000} seconds.`);
         err.statusCode = 504;
         throw err;
       }
-      const err = new Error(`Floor plan microservice unavailable (${fetchErr.message}).`);
+      const err = new Error(`Floor plan microservice unavailable (${fetchErr.message || 'connection failed'}).`);
+      err.statusCode = 503;
+      throw err;
     } finally {
       clearTimeout(timer);
     }
 
-    console.log(`[Floorplan Service] Upstream Python solver response status: ${pyRes.status}`);
+    if (!pyRes) {
+      const err = new Error('Floor plan microservice did not return a response.');
+      err.statusCode = 503;
+      throw err;
+    }
+
+    const pyStatus = pyRes.status || 500;
+    console.log(`[Floorplan Service] Upstream Python solver response status: ${pyStatus}`);
     const pyData = await pyRes.json().catch(() => ({}));
 
-
     if (!pyRes.ok) {
-      const err = new Error(pyData.detail?.message || pyData.detail || 'Geometry solver failed.');
-      err.statusCode = pyRes.status || 422;
-      err.details = pyData.detail;
+      const errorMsg = pyData.detail?.message || (typeof pyData.detail === 'string' ? pyData.detail : null) || `Geometry solver failed (HTTP ${pyStatus}).`;
+      const err = new Error(errorMsg);
+      err.statusCode = pyStatus === 400 || pyStatus === 422 ? pyStatus : (pyStatus >= 500 ? 502 : pyStatus);
+      err.details = pyData.detail || null;
       throw err;
     }
 
@@ -217,15 +225,23 @@ class AIFloorplanService {
     }
 
     const pyUrl = `${getPythonServiceUrl()}/export/dxf?floor=${floor}`;
-    const pyRes = await fetch(pyUrl, {
-      method: 'POST',
-      headers: getServiceHeaders(),
-      body: JSON.stringify(cached.response)
-    });
+    let pyRes;
+    try {
+      pyRes = await fetch(pyUrl, {
+        method: 'POST',
+        headers: getServiceHeaders(),
+        body: JSON.stringify(cached.response)
+      });
+    } catch (fetchErr) {
+      const err = new Error(`Floor plan DXF export service unavailable (${fetchErr.message || 'connection failed'}).`);
+      err.statusCode = 503;
+      throw err;
+    }
 
-    if (!pyRes.ok) {
-      const err = new Error(`DXF export failed: HTTP ${pyRes.status}`);
-      err.statusCode = pyRes.status;
+    if (!pyRes || !pyRes.ok) {
+      const status = pyRes?.status || 500;
+      const err = new Error(`DXF export failed: HTTP ${status}`);
+      err.statusCode = status >= 500 ? 502 : status;
       throw err;
     }
 

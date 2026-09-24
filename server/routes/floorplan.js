@@ -188,10 +188,10 @@ router.post('/generate', requireAuth, async (req, res) => {
   console.log(`[Floorplan Route] POST /api/floorplan/generate reached | Auth header present: ${hasAuth} | Authenticated user: ${userId}`);
   try {
     const result = await aiFloorplanService.generateFloorplan(req.body);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Floor plan generation failed.',
       details: err.details || null
@@ -204,10 +204,10 @@ router.post('/generate', requireAuth, async (req, res) => {
 router.post('/generate-floorplan', requireAuth, async (req, res) => {
   try {
     const result = await aiFloorplanService.generateFloorplan(req.body);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Floor plan generation failed.',
       details: err.details || null
@@ -224,10 +224,10 @@ router.post('/regenerate', requireAuth, async (req, res) => {
   try {
     const { generation_id, seed } = req.body || {};
     const result = await aiFloorplanService.regenerateFloorplan(generation_id, seed);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Regeneration failed.'
     });
@@ -238,10 +238,10 @@ router.post('/generate-floorplan/regenerate', requireAuth, async (req, res) => {
   try {
     const { generation_id, seed } = req.body || {};
     const result = await aiFloorplanService.regenerateFloorplan(generation_id, seed);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Regeneration failed.'
     });
@@ -257,10 +257,10 @@ router.post('/refine', requireAuth, async (req, res) => {
   try {
     const { generation_id, instruction } = req.body || {};
     const result = await aiFloorplanService.refineFloorplan(generation_id, instruction);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Refinement failed.'
     });
@@ -271,10 +271,10 @@ router.post('/generate-floorplan/refine', requireAuth, async (req, res) => {
   try {
     const { generation_id, instruction } = req.body || {};
     const result = await aiFloorplanService.refineFloorplan(generation_id, instruction);
-    res.json(result);
+    return res.json(result);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Refinement failed.'
     });
@@ -292,10 +292,10 @@ router.get('/download-dxf/:generationId', requireAuth, async (req, res) => {
     const dxfBuffer = await aiFloorplanService.getFloorplanDxf(req.params.generationId, floor);
     res.setHeader('Content-Type', 'application/dxf');
     res.setHeader('Content-Disposition', `attachment; filename=buildiqo_plan_${req.params.generationId}_floor_${floor}.dxf`);
-    res.send(dxfBuffer);
+    return res.send(dxfBuffer);
   } catch (err) {
-    const status = err.statusCode || 500;
-    res.status(status).json({
+    const status = (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500;
+    return res.status(status).json({
       success: false,
       error: err.message || 'Failed to download DXF.'
     });

@@ -291,3 +291,116 @@ test('11. Generated room schema conforms to Step 2 calculator requirements', () 
   const computedArea = mockGeneratedRoom.width * mockGeneratedRoom.length * mockGeneratedRoom.count;
   assert.equal(computedArea, 288.0);
 });
+
+test('12. Unreachable Python service returns 503 and never throws undefined status error', async () => {
+  const originalUrl = process.env.FLOORPLAN_SERVICE_URL;
+  // Point to a closed port
+  process.env.FLOORPLAN_SERVICE_URL = 'http://127.0.0.1:59123';
+
+  try {
+    const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${validToken}`
+      },
+      body: JSON.stringify({
+        plot_width_ft: 30,
+        plot_length_ft: 40,
+        plot_facing: 'north',
+        num_floors: 1
+      })
+    });
+
+    assert.equal(res.status, 503);
+    const data = await res.json();
+    assert.equal(data.success, false);
+    assert.ok(data.error.includes('Floor plan microservice unavailable'));
+    assert.equal(data.error.includes('Cannot read properties of undefined'), false);
+  } finally {
+    process.env.FLOORPLAN_SERVICE_URL = originalUrl;
+  }
+});
+
+test('13. Upstream Python 422 error is safely mapped to 422 without crashing route', async () => {
+  const originalUrl = process.env.FLOORPLAN_SERVICE_URL;
+  let dummyServer = null;
+
+  try {
+    dummyServer = http.createServer((req, res) => {
+      res.writeHead(422, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ detail: 'Unresolvable room constraints' }));
+    });
+
+    await new Promise((resolve) => dummyServer.listen(0, '127.0.0.1', resolve));
+    const dummyPort = dummyServer.address().port;
+    process.env.FLOORPLAN_SERVICE_URL = `http://127.0.0.1:${dummyPort}`;
+
+    const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${validToken}`
+      },
+      body: JSON.stringify({
+        plot_width_ft: 30,
+        plot_length_ft: 40,
+        plot_facing: 'north',
+        num_floors: 1
+      })
+    });
+
+    assert.equal(res.status, 422);
+    const data = await res.json();
+    assert.equal(data.success, false);
+    assert.equal(data.error, 'Unresolvable room constraints');
+    assert.equal(data.error.includes('Cannot read properties of undefined'), false);
+  } finally {
+    if (dummyServer) {
+      await new Promise((resolve) => dummyServer.close(resolve));
+    }
+    process.env.FLOORPLAN_SERVICE_URL = originalUrl;
+  }
+});
+
+test('14. Upstream Python 500 error is safely mapped to 502 Bad Gateway', async () => {
+  const originalUrl = process.env.FLOORPLAN_SERVICE_URL;
+  let dummyServer = null;
+
+  try {
+    dummyServer = http.createServer((req, res) => {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ detail: 'Internal geometry engine failure' }));
+    });
+
+    await new Promise((resolve) => dummyServer.listen(0, '127.0.0.1', resolve));
+    const dummyPort = dummyServer.address().port;
+    process.env.FLOORPLAN_SERVICE_URL = `http://127.0.0.1:${dummyPort}`;
+
+    const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${validToken}`
+      },
+      body: JSON.stringify({
+        plot_width_ft: 30,
+        plot_length_ft: 40,
+        plot_facing: 'north',
+        num_floors: 1
+      })
+    });
+
+    assert.equal(res.status, 502);
+    const data = await res.json();
+    assert.equal(data.success, false);
+    assert.equal(data.error, 'Internal geometry engine failure');
+    assert.equal(data.error.includes('Cannot read properties of undefined'), false);
+  } finally {
+    if (dummyServer) {
+      await new Promise((resolve) => dummyServer.close(resolve));
+    }
+    process.env.FLOORPLAN_SERVICE_URL = originalUrl;
+  }
+});
+
