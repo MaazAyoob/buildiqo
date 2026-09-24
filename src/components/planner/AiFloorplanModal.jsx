@@ -31,6 +31,8 @@ import {
   refineFloorPlanAI,
   downloadFloorPlanDXF
 } from '../../services/aiFloorplanService';
+import { useEstimateStore } from '../../store/useEstimateStore';
+
 
 const AVAILABLE_ROOM_OPTIONS = [
   { type: 'living', name: 'Living Room', defaultCount: 1 },
@@ -48,6 +50,7 @@ const AVAILABLE_ROOM_OPTIONS = [
 ];
 
 export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
+  const { loginAsGuest } = useEstimateStore();
   // Input form state pre-populated from Planner Step 1
   const [plotWidth, setPlotWidth] = useState(state.plotWidth || 30);
   const [plotLength, setPlotLength] = useState(state.plotLength || 40);
@@ -111,6 +114,28 @@ export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
     setLoading(true);
     setError(null);
     setRefinementClarification(null);
+
+    // Ensure valid session token exists before requesting AI floor plan generation
+    let token = localStorage.getItem('buildiqo_token');
+    if (!token || token === 'undefined' || token === 'null') {
+      setLoadingStage('Establishing secure session...');
+      try {
+        const guestRes = await loginAsGuest();
+        if (guestRes && guestRes.user) {
+          token = localStorage.getItem('buildiqo_token');
+        }
+      } catch (authErr) {
+        console.warn('Failed to establish guest session:', authErr.message);
+      }
+    }
+
+    if (!token || token === 'undefined' || token === 'null') {
+      setError('Authentication required: Please sign in or continue as Guest to generate AI floor plans.');
+      setLoading(false);
+      setLoadingStage('');
+      return;
+    }
+
     setLoadingStage('Generating room program & solving spatial constraints...');
 
     try {
@@ -127,6 +152,7 @@ export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
       };
 
       const data = await generateFloorPlanAI(payload);
+
       if (data && data.success) {
         setResult(data);
         setActiveFloorIdx(0);

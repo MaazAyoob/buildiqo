@@ -381,7 +381,25 @@ export function useEstimateStore() {
     }
   };
 
-  const loginAsGuest = () => {
+  const loginAsGuest = async () => {
+    try {
+      const res = await apiRequest('/api/auth/guest', {
+        method: 'POST'
+      });
+
+      if (res && res.success && res.token) {
+        localStorage.setItem('buildiqo_token', res.token);
+        globalAuth = res.user;
+        if (res.subscription) {
+          globalSub = res.subscription;
+        }
+        notify();
+        return { success: true, user: res.user };
+      }
+    } catch (e) {
+      console.warn('Backend guest auth unavailable, using local guest fallback:', e.message);
+    }
+
     const guestUser = {
       id: 'usr_guest',
       name: 'Guest Builder',
@@ -406,6 +424,7 @@ export function useEstimateStore() {
     notify();
     return { success: true, user: guestUser };
   };
+
 
   const logout = () => {
     localStorage.removeItem('buildiqo_token');

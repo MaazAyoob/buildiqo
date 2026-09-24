@@ -84,13 +84,14 @@ class AIFloorplanService {
         throw err;
       }
       const err = new Error(`Floor plan microservice unavailable (${fetchErr.message}).`);
-      err.statusCode = 503;
-      throw err;
     } finally {
       clearTimeout(timer);
     }
 
+    console.log(`[Floorplan Service] Upstream Python solver response status: ${pyRes.status}`);
     const pyData = await pyRes.json().catch(() => ({}));
+
+
     if (!pyRes.ok) {
       const err = new Error(pyData.detail?.message || pyData.detail || 'Geometry solver failed.');
       err.statusCode = pyRes.status || 422;

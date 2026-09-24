@@ -42,7 +42,7 @@ test.after(async () => {
   }
 });
 
-test('1. Unauthenticated generation request returns 401', async () => {
+test('1. Unauthenticated generation request returns 401 Authorization token required', async () => {
   const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -52,9 +52,26 @@ test('1. Unauthenticated generation request returns 401', async () => {
   assert.equal(res.status, 401);
   const data = await res.json();
   assert.equal(data.success, false);
+  assert.equal(data.error, 'Authorization token required');
 });
 
-test('2. Invalid bearer token returns 401', async () => {
+test('2. Missing or non-Bearer authorization header returns 401 Authorization token required', async () => {
+  const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic dXNlcjpwYXNz'
+    },
+    body: JSON.stringify({ plot_width_ft: 30, plot_length_ft: 40 })
+  });
+
+  assert.equal(res.status, 401);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.equal(data.error, 'Authorization token required');
+});
+
+test('3. Invalid or malformed bearer token returns 401 Invalid or expired token', async () => {
   const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
     method: 'POST',
     headers: {
@@ -65,7 +82,66 @@ test('2. Invalid bearer token returns 401', async () => {
   });
 
   assert.equal(res.status, 401);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.equal(data.error, 'Invalid or expired token');
 });
+
+test('4. Valid authorization token passes requireAuth and proceeds into route handler', async () => {
+  const res = await fetch(`${baseUrl}/api/floorplan/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${validToken}`
+    },
+    body: JSON.stringify({
+      plot_width_ft: 30,
+      plot_length_ft: 40,
+      plot_facing: 'north',
+      num_floors: 1,
+      setback_ft: 3
+    })
+  });
+
+  // Since route proceeds, status is either 200 (if Python up) or 503 (microservice unavailable), never 401
+  assert.notEqual(res.status, 401);
+  const data = await res.json();
+  assert.notEqual(data.error, 'Authorization token required');
+  assert.notEqual(data.error, 'Invalid or expired token');
+});
+
+test('5. Guest authentication endpoint POST /api/auth/guest issues valid JWT that passes requireAuth', async () => {
+  const guestRes = await fetch(`${baseUrl}/api/auth/guest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  assert.equal(guestRes.status, 200);
+  const guestData = await guestRes.json();
+  assert.equal(guestData.success, true);
+  assert.ok(guestData.token);
+
+  // Now verify that the issued guest token passes requireAuth on /api/floorplan/generate
+  const floorplanRes = await fetch(`${baseUrl}/api/floorplan/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${guestData.token}`
+    },
+    body: JSON.stringify({
+      plot_width_ft: 30,
+      plot_length_ft: 40,
+      plot_facing: 'north',
+      num_floors: 1
+    })
+  });
+
+  assert.notEqual(floorplanRes.status, 401);
+  const fpData = await floorplanRes.json();
+  assert.notEqual(fpData.error, 'Authorization token required');
+  assert.notEqual(fpData.error, 'Invalid or expired token');
+});
+
 
 test('3. Input validation rejects missing or invalid plot dimensions', () => {
   const res1 = validateGenerationInput({});

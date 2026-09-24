@@ -6,7 +6,6 @@
 
 import { apiRequest } from '../utils/apiClient';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 /**
  * Generates an AI-assisted architectural floor plan layout.
@@ -46,25 +45,16 @@ export async function refineFloorPlanAI(generationId, instruction) {
 
 /**
  * Triggers a browser file download of the generated DXF document.
+ * Uses centralized apiRequest for consistent token propagation and environment URL resolution.
  * @param {string} generationId
  * @param {number} [floor=0]
  */
 export async function downloadFloorPlanDXF(generationId, floor = 0) {
-  const token = localStorage.getItem('buildiqo_token');
-  const headers = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${API_BASE}/api/floorplan/download-dxf/${generationId}?floor=${floor}`, {
-    headers
+  const blob = await apiRequest(`/api/floorplan/download-dxf/${generationId}?floor=${floor}`, {
+    method: 'GET',
+    responseType: 'blob'
   });
 
-  if (!res.ok) {
-    throw new Error(`Failed to download DXF: HTTP ${res.status}`);
-  }
-
-  const blob = await res.blob();
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -74,3 +64,4 @@ export async function downloadFloorPlanDXF(generationId, floor = 0) {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+

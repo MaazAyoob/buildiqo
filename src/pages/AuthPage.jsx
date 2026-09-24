@@ -67,7 +67,7 @@ export function AuthPage({ onAuthSuccess }) {
     }
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -91,7 +91,7 @@ export function AuthPage({ onAuthSuccess }) {
       return;
     }
 
-    const res = register({
+    const res = await register({
       name: regName,
       email: regEmail,
       phone: regPhone,
@@ -100,35 +100,40 @@ export function AuthPage({ onAuthSuccess }) {
       password: regPassword
     });
 
-    if (res.success) {
+    if (res && res.success) {
       setShowRegisterSuccess(true);
       setTimeout(() => {
         if (onAuthSuccess) onAuthSuccess(res.user);
       }, 1500);
     } else {
-      setErrorMsg(res.error || 'Registration failed. Please try again.');
+      setErrorMsg(res?.error || 'Registration failed. Please try again.');
     }
   };
 
-  const handleQuickDemo = (roleType) => {
+  const handleQuickDemo = async (roleType) => {
     setErrorMsg('');
-    if (roleType === 'architect') {
-      setLoginIdentifier('rahul.architect@buildiqo.ai');
-      setLoginPassword('password123');
-      const res = login('rahul.architect@buildiqo.ai', 'password123');
-      if (res.success && onAuthSuccess) onAuthSuccess(res.user);
-    } else if (roleType === 'homeowner') {
-      setLoginIdentifier('priya.patel@gmail.com');
-      setLoginPassword('password123');
-      const res = login('priya.patel@gmail.com', 'password123');
-      if (res.success && onAuthSuccess) onAuthSuccess(res.user);
+    const targetEmail = roleType === 'architect' ? 'rahul.architect@buildiqo.ai' : 'priya.patel@gmail.com';
+    setLoginIdentifier(targetEmail);
+    setLoginPassword('password123');
+
+    let res = await login(targetEmail, 'password123');
+    if (!res || !res.success) {
+      // If demo accounts are not in DB, establish real authenticated guest session
+      res = await loginAsGuest();
+    }
+
+    if (res && res.success && onAuthSuccess) {
+      onAuthSuccess(res.user);
     }
   };
 
-  const handleGuestEntry = () => {
-    const res = loginAsGuest();
-    if (res.success && onAuthSuccess) onAuthSuccess(res.user);
+  const handleGuestEntry = async () => {
+    const res = await loginAsGuest();
+    if (res && res.success && onAuthSuccess) {
+      onAuthSuccess(res.user);
+    }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-slate-50 selection:bg-blue-600 selection:text-white">

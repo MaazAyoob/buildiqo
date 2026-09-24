@@ -183,6 +183,9 @@ const aiFloorplanService = require('../services/aiFloorplan/aiFloorplanService')
  * Protected by requireAuth.
  */
 router.post('/generate', requireAuth, async (req, res) => {
+  const hasAuth = !!req.headers.authorization;
+  const userId = req.user?.id || req.user?._id || 'unknown';
+  console.log(`[Floorplan Route] POST /api/floorplan/generate reached | Auth header present: ${hasAuth} | Authenticated user: ${userId}`);
   try {
     const result = await aiFloorplanService.generateFloorplan(req.body);
     res.json(result);
@@ -195,6 +198,7 @@ router.post('/generate', requireAuth, async (req, res) => {
     });
   }
 });
+
 
 // Alias for spec compatibility
 router.post('/generate-floorplan', requireAuth, async (req, res) => {
