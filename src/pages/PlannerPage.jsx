@@ -172,6 +172,7 @@ export function PlannerPage({ setRoute, onOpenSavedModal }) {
             state={state} 
             updateState={updateState} 
             estimation={estimation} 
+            setRoute={setRoute}
           />
         )}
 

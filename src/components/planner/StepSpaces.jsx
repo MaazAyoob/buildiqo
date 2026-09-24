@@ -30,7 +30,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
-  X
+  X,
+  ArrowRight
 } from 'lucide-react';
 import { DEFAULT_ROOM_TYPES } from '../../data/defaults';
 import { formatNumber } from '../../store/useEstimateStore';
@@ -54,7 +55,7 @@ const ICON_MAP = {
   Sparkles
 };
 
-export function StepSpaces({ state, updateState, estimation }) {
+export function StepSpaces({ state, updateState, estimation, setRoute }) {
   const [activeFloorIndex, setActiveFloorIndex] = useState(0);
   const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
   const [customRoomName, setCustomRoomName] = useState('');
@@ -323,6 +324,40 @@ export function StepSpaces({ state, updateState, estimation }) {
         </div>
       </div>
 
+      {/* AI Floor Plan Studio Product Card */}
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-blue-800/40">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-xl bg-blue-600/50 border border-blue-400/30 flex items-center justify-center text-amber-200 shadow-inner">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-200 border border-blue-400/20">
+                Standalone Module
+              </span>
+              <h3 className="text-sm font-black tracking-tight text-white">AI FLOOR PLAN STUDIO</h3>
+            </div>
+            <p className="text-xs text-blue-200/90 mt-0.5">
+              Create or import a conceptual floor plan using Buildiqo AI.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 shrink-0">
+          <button
+            onClick={() => {
+              if (typeof setRoute === 'function') setRoute('floor-plan');
+              else window.location.hash = 'floor-plan';
+            }}
+            className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white flex items-center space-x-2 shadow-md transition-all active:scale-[0.99]"
+            id="btn-open-floorplan-studio"
+          >
+            <span>Open Floor Plan Studio</span>
+            <ArrowRight className="w-3.5 h-3.5 text-amber-200" />
+          </button>
+        </div>
+      </div>
+
       {/* Floor Selector Tabs with Add Floor / Remove Floor Buttons */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2 overflow-x-auto pb-1">
@@ -394,12 +429,15 @@ export function StepSpaces({ state, updateState, estimation }) {
 
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setIsAiModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 flex items-center space-x-1.5 shadow-sm transition-all"
+              onClick={() => {
+                if (typeof setRoute === 'function') setRoute('floor-plan');
+                else window.location.hash = 'floor-plan';
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200 flex items-center space-x-1.5 transition-all shadow-sm"
               id="generate-ai-floorplan-btn"
             >
-              <Sparkles className="w-4 h-4 text-amber-200" />
-              <span>Generate Floor Plan (AI)</span>
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span>Open AI Floor Plan Studio</span>
             </button>
 
             <button

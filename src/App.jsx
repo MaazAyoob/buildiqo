@@ -14,13 +14,14 @@ import { AdminLeadsPage } from './pages/AdminLeadsPage';
 import { AuthPage } from './pages/AuthPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { CommercialBOQPage } from './pages/CommercialBOQPage';
+import { FloorPlanStudioPage } from './pages/FloorPlanStudioPage';
 import { PaymentProcessingScreen } from './components/common/PaymentProcessingScreen';
 import { useEstimateStore } from './store/useEstimateStore';
 
 export function App() {
   const getInitialRoute = () => {
     const hash = window.location.hash.replace('#', '').trim();
-    const validRoutes = ['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
+    const validRoutes = ['home', 'planner', 'floor-plan', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
     return validRoutes.includes(hash) ? hash : 'home';
   };
 
@@ -39,7 +40,7 @@ export function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '').trim();
-      const validRoutes = ['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
+      const validRoutes = ['home', 'planner', 'floor-plan', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
       if (validRoutes.includes(hash)) {
         setCurrentRouteState(hash);
       }
@@ -104,6 +105,7 @@ export function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {effectiveRoute === 'home' && <LandingPage setRoute={setRoute} />}
         {effectiveRoute === 'planner' && <PlannerPage setRoute={setRoute} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
+        {effectiveRoute === 'floor-plan' && <FloorPlanStudioPage setRoute={setRoute} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
         {effectiveRoute === 'dashboard' && <DashboardPage setRoute={setRoute} />}
         {effectiveRoute === 'admin' && <AdminPage setRoute={setRoute} />}
         {effectiveRoute === 'settings' && <SettingsPage setRoute={setRoute} />}
@@ -111,7 +113,7 @@ export function App() {
         {effectiveRoute === 'pricing' && <PricingPage setRoute={setRoute} isMandatoryGate={isSubscriptionMandatory} />}
         {effectiveRoute === 'leads' && <AdminLeadsPage setRoute={setRoute} />}
         {effectiveRoute === 'commercial-boq' && <CommercialBOQPage setRoute={setRoute} />}
-        {!['home', 'planner', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'].includes(effectiveRoute) && (
+        {!['home', 'planner', 'floor-plan', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'].includes(effectiveRoute) && (
           <NotFoundPage setRoute={setRoute} />
         )}
       </main>

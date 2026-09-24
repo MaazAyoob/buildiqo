@@ -20,7 +20,8 @@ import {
   Box,
   FileCheck2,
   Home,
-  CheckCircle2
+  CheckCircle2,
+  Compass
 } from 'lucide-react';
 import { useEstimateStore, formatCurrency } from '../../store/useEstimateStore';
 
@@ -124,6 +125,21 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
                     Interactive Engineering Steps
                   </div>
                   
+                  <button
+                    onClick={() => { setRoute('floor-plan'); setPlanningDropdownOpen(false); }}
+                    className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-700 flex items-center space-x-2.5 transition-colors border-b border-slate-100"
+                    id="nav-planning-ai-floorplan"
+                  >
+                    <Compass className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <span className="block font-black text-blue-700 flex items-center space-x-1.5">
+                        <span>AI Floor Plan Studio</span>
+                        <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-blue-100 text-blue-800">New</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-normal">Architectural layout & space solver</span>
+                    </div>
+                  </button>
+
                   <button
                     onClick={() => { setRoute('planner'); setPlanningDropdownOpen(false); }}
                     className="w-full px-3.5 py-2 text-left text-xs font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-700 flex items-center space-x-2.5 transition-colors"
@@ -481,6 +497,14 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
             Overview
           </button>
           
+          <button
+            onClick={() => { setRoute('floor-plan'); setMobileMenuOpen(false); }}
+            className="w-full text-left px-3 py-2 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center space-x-2"
+          >
+            <Compass className="w-4 h-4 text-blue-600" />
+            <span>AI Floor Plan Studio</span>
+          </button>
+
           <button
             onClick={() => { setRoute('planner'); setMobileMenuOpen(false); }}
             className="w-full text-left px-3 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white flex items-center space-x-2"
