@@ -324,36 +324,36 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
         </div>
       </div>
 
-      {/* AI Floor Plan Studio Product Card */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-blue-800/40">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-600/50 border border-blue-400/30 flex items-center justify-center text-amber-200 shadow-inner">
-            <Sparkles className="w-6 h-6" />
+      {/* AI Floor Plan Studio Gateway Card (Section 22 Specification) */}
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+            <Sparkles className="w-5 h-5" />
           </div>
-          <div>
+          <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-200 border border-blue-400/20">
-                Standalone Module
+              <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                ✦ AI ENGINE
               </span>
-              <h3 className="text-sm font-black tracking-tight text-white">AI FLOOR PLAN STUDIO</h3>
+              <h3 className="text-sm font-bold tracking-tight text-slate-900">AI FLOOR PLAN STUDIO</h3>
             </div>
-            <p className="text-xs text-blue-200/90 mt-0.5">
-              Create or import a conceptual floor plan using Buildiqo AI.
+            <p className="text-xs text-slate-600 leading-relaxed font-normal max-w-xl">
+              Create or import a conceptual floor plan using Buildiqo AI. Generate rooms, circulation, doors, windows and multi-floor layouts.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0">
+        <div className="flex items-center space-x-2 shrink-0 sm:self-center">
           <button
             onClick={() => {
               if (typeof setRoute === 'function') setRoute('floor-plan');
               else window.location.hash = 'floor-plan';
             }}
-            className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white flex items-center space-x-2 shadow-md transition-all active:scale-[0.99]"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2 shadow-xs hover:shadow transition-all active:scale-[0.98]"
             id="btn-open-floorplan-studio"
           >
             <span>Open Floor Plan Studio</span>
-            <ArrowRight className="w-3.5 h-3.5 text-amber-200" />
+            <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
           </button>
         </div>
       </div>

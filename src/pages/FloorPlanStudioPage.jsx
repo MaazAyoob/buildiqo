@@ -106,6 +106,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
   const [result, setResult] = useState(null);
   const [activeFloorIdx, setActiveFloorIdx] = useState(0);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1.0);
 
   // Regenerate Candidate A/B Comparison Modal State
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
@@ -925,19 +926,19 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
         {/* COLUMN 2: CENTER MAIN CANVAS (5 Cols)      */}
         {/* ========================================== */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3 min-h-[580px] flex flex-col justify-between">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-4 space-y-3 min-h-[580px] flex flex-col justify-between">
 
-            {/* Canvas Header & Floor Selector */}
+            {/* Canvas Header & Floor Selector & Zoom HUD */}
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-              <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl">
+              <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
                 {result?.floors && result.floors.length > 0 ? (
                   result.floors.map((fl) => (
                     <button
                       key={fl.floor}
                       onClick={() => setActiveFloorIdx(fl.floor)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         activeFloorIdx === fl.floor
-                          ? 'bg-blue-600 text-white shadow-sm'
+                          ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -945,60 +946,114 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                     </button>
                   ))
                 ) : (
-                  <span className="px-3 py-1 text-xs font-bold text-slate-500">
+                  <span className="px-3 py-1 text-xs font-medium text-slate-500">
                     Ground Floor Preview
                   </span>
                 )}
               </div>
 
-              {/* Facing Compass Indicator */}
-              <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-700">
-                <Compass className="w-3.5 h-3.5 text-blue-600" />
-                <span>Road: {facing.toUpperCase()}</span>
+              {/* Controls Cluster: Compass + Zoom HUD (Section 14 Specification) */}
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-700">
+                  <Compass className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Road: {facing.toUpperCase()}</span>
+                </div>
+
+                <div className="flex items-center space-x-1 bg-slate-100 p-0.5 rounded-lg text-slate-700">
+                  <button
+                    onClick={() => setZoomLevel(z => Math.max(0.6, Number((z - 0.15).toFixed(2))))}
+                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-white text-xs font-bold transition-colors"
+                    title="Zoom Out"
+                  >
+                    -
+                  </button>
+                  <span className="text-[10px] font-mono tabular-nums px-1 text-slate-600 font-semibold w-9 text-center">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  <button
+                    onClick={() => setZoomLevel(z => Math.min(2.0, Number((z + 0.15).toFixed(2))))}
+                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-white text-xs font-bold transition-colors"
+                    title="Zoom In"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => setZoomLevel(1.0)}
+                    className="px-1.5 py-0.5 rounded text-[10px] font-semibold hover:bg-white text-slate-600 transition-colors"
+                    title="Reset Zoom"
+                  >
+                    Fit
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Interactive SVG Canvas Display */}
-            <div className="flex-1 bg-slate-50 rounded-xl border border-slate-200/80 p-3 flex flex-col items-center justify-center relative overflow-hidden min-h-[420px]">
+            {/* Dark Architectural Graphite Canvas (Section 13 Specification) */}
+            <div className="flex-1 cad-dark-viewport rounded-xl border border-slate-800 p-3 flex flex-col items-center justify-center relative overflow-hidden min-h-[440px]">
               {loading ? (
-                <div className="text-center py-12 space-y-3">
-                  <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin mx-auto" />
-                  <p className="text-xs font-bold text-slate-700 animate-pulse">
-                    {loadingStage || 'Generating floor plan...'}
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Applying Vastu orientation and circulation graph
+                /* Progressive Generation Flow (Section 17 Specification) */
+                <div className="text-center py-6 space-y-4 max-w-sm mx-auto animate-fadeIn">
+                  <div className="w-9 h-9 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin mx-auto" />
+                  <div className="space-y-1 text-left font-mono text-[11px] bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl shadow-lg">
+                    <div className="flex items-center space-x-2 text-blue-400">
+                      <Check className="w-3.5 h-3.5 text-blue-400" />
+                      <span>ANALYZING REQUIREMENTS</span>
+                    </div>
+                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-blue-400">
+                      <Check className="w-3.5 h-3.5 text-blue-400" />
+                      <span>BUILDING ROOM PROGRAM</span>
+                    </div>
+                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-blue-300 font-bold animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping inline-block mr-1" />
+                      <span>OPTIMIZING SPATIAL LAYOUT</span>
+                    </div>
+                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-slate-500">
+                      <span className="w-3.5 h-3.5 text-center text-xs">○</span>
+                      <span>VALIDATING ACCESS</span>
+                    </div>
+                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-slate-500">
+                      <span className="w-3.5 h-3.5 text-center text-xs">○</span>
+                      <span>RENDERING FLOOR PLAN</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {loadingStage || 'Synthesizing architectural constraints...'}
                   </p>
                 </div>
               ) : result?.svg ? (
-                <div className="w-full h-full flex flex-col items-center justify-center">
+                <div className="w-full h-full flex flex-col items-center justify-center overflow-auto">
                   <div
-                    className="w-full max-h-[440px] flex items-center justify-center select-none"
+                    className="w-full max-h-[440px] flex items-center justify-center select-none transition-transform duration-150"
+                    style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
                     dangerouslySetInnerHTML={{ __html: result.svg }}
                   />
-                  <div className="mt-2 text-[10px] font-bold text-slate-400 flex items-center space-x-1">
-                    <Info className="w-3 h-3 text-blue-500" />
-                    <span>Click any room on the right panel to inspect or adjust dimensions</span>
+                  <div className="mt-3 text-[10px] font-mono text-slate-400 flex items-center space-x-1.5 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                    <Info className="w-3 h-3 text-blue-400" />
+                    <span>Select a room from the inspector panel to review dimensions</span>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-16 text-slate-400 space-y-2">
-                  <Maximize2 className="w-10 h-10 mx-auto opacity-30 text-blue-500" />
-                  <p className="text-xs font-bold text-slate-600">
+                <div className="text-center py-16 text-slate-500 space-y-2">
+                  <Maximize2 className="w-10 h-10 mx-auto opacity-30 text-blue-400" />
+                  <p className="text-xs font-semibold text-slate-300">
                     No Floor Plan Generated Yet
                   </p>
                   <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                    Select plot width, length, and room requirements on the left, then click "Generate Floor Plan".
+                    Configure plot dimensions and room program requirements on the left, then click "Generate Floor Plan".
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Subtle Architectural Disclaimer */}
-            <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-[10px] text-slate-500 leading-relaxed flex items-start space-x-1.5">
+            {/* Subtle Architectural Disclaimer (Section 21 Specification) */}
+            <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[10px] text-slate-500 leading-relaxed flex items-start space-x-1.5">
               <Info className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Notice:</strong> AI-generated conceptual floor plan. Review dimensions, access, local regulations, and structural requirements with a qualified professional before construction.
+                <strong>Notice:</strong> Conceptual floor plan. Vector architectural output. Review dimensions, access, local building regulations, and structural engineering with a qualified professional before construction.
               </span>
             </div>
 
@@ -1079,56 +1134,82 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                     </div>
                   </div>
                 ) : (
-                  /* Room Details Display */
-                  <div className="space-y-3">
+                  /* Professional Property Inspector Display (Section 15 Specification) */
+                  <div className="space-y-3.5">
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-900">{selectedRoom.name}</h3>
-                      <div className="flex items-center space-x-2 text-xs text-slate-600 mt-0.5 font-bold">
-                        <span>{selectedRoom.width} × {selectedRoom.length} ft</span>
-                        <span>•</span>
-                        <span className="text-blue-700 font-extrabold">{selectedRoom.area || (selectedRoom.width * selectedRoom.length)} sq.ft</span>
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold block">
+                        Space Inspector
+                      </span>
+                      <h3 className="text-sm font-bold uppercase tracking-tight text-slate-900 mt-0.5">
+                        {selectedRoom.name}
+                      </h3>
+                      <div className="flex items-center space-x-2 text-xs text-slate-600 mt-1">
+                        <span className="font-mono tabular-nums font-bold text-slate-900">
+                          {selectedRoom.width} × {selectedRoom.length} ft
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="font-mono tabular-nums font-bold text-blue-600">
+                          {selectedRoom.area || (selectedRoom.width * selectedRoom.length)} sq.ft
+                        </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-100">
-                      <div>
-                        <span className="text-slate-400 block text-[10px] font-semibold">Zone Category</span>
-                        <span className="font-bold text-slate-800">
-                          {AVAILABLE_ROOM_OPTIONS.find(o => o.type === selectedRoom.type)?.category || 'Space'}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+                      <div className="flex justify-between py-0.5">
+                        <span className="text-slate-500 font-medium">Zone</span>
+                        <span className="font-semibold text-slate-800 uppercase text-[11px]">
+                          {(AVAILABLE_ROOM_OPTIONS.find(o => o.type === selectedRoom.type)?.category || 'Space')} Zone
                         </span>
                       </div>
-                      <div>
-                        <span className="text-slate-400 block text-[10px] font-semibold">Assigned Floor</span>
-                        <span className="font-bold text-slate-800">
+                      <div className="flex justify-between py-0.5">
+                        <span className="text-slate-500 font-medium">Floor Level</span>
+                        <span className="font-semibold text-slate-800 text-[11px]">
                           {activeFloor?.name || `Floor ${activeFloorIdx}`}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-slate-400 block text-[10px] font-semibold">Solver Status</span>
-                        <span className="font-bold text-emerald-700">Validated</span>
+                      <div className="flex justify-between py-0.5">
+                        <span className="text-slate-500 font-medium">Solver State</span>
+                        <span className="font-mono text-emerald-700 font-semibold text-[11px]">Validated</span>
                       </div>
-                      <div>
-                        <span className="text-slate-400 block text-[10px] font-semibold">Confidence</span>
-                        <span className="font-bold text-blue-700">Deterministic</span>
+                    </div>
+
+                    {/* Dimensions Detail Breakdown */}
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold block">
+                        Dimensions
+                      </span>
+                      <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-sans block">Width</span>
+                          <span className="font-bold tabular-nums text-slate-800">{selectedRoom.width} ft</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-sans block">Length</span>
+                          <span className="font-bold tabular-nums text-slate-800">{selectedRoom.length} ft</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-sans block">Area</span>
+                          <span className="font-bold tabular-nums text-slate-800">{selectedRoom.area || (selectedRoom.width * selectedRoom.length)} sq.ft</span>
+                        </div>
                       </div>
                     </div>
 
                     {/* Room Actions */}
-                    <div className="flex items-center space-x-2 pt-2 border-t border-slate-100">
+                    <div className="flex items-center space-x-2 pt-1">
                       <button
                         onClick={() => setIsEditingRoom(true)}
-                        className="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center space-x-1 transition-colors"
+                        className="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 flex items-center justify-center space-x-1.5 transition-all shadow-2xs active:scale-[0.98]"
                       >
-                        <Edit3 className="w-3 h-3 text-slate-600" />
+                        <Edit3 className="w-3 h-3 text-slate-500" />
                         <span>Edit</span>
                       </button>
 
                       <button
                         onClick={() => handleRemoveRoomFromLayout(selectedRoom.room_id)}
-                        className="py-1.5 px-2 rounded-xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 flex items-center justify-center space-x-1 transition-colors"
+                        className="py-1.5 px-3 rounded-lg text-xs font-semibold bg-white border border-red-200 hover:bg-red-50 text-red-600 flex items-center justify-center space-x-1.5 transition-all shadow-2xs active:scale-[0.98]"
                         title="Remove room from layout"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3 h-3 text-red-500" />
                         <span>Remove</span>
                       </button>
                     </div>
@@ -1203,13 +1284,16 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
       {/* ========================================== */}
       {/* BOTTOM ACTION BAR                           */}
       {/* ========================================== */}
-      <div className="sticky bottom-3 z-30 bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-slate-200 shadow-xl flex flex-wrap items-center justify-between gap-3">
+      {/* ========================================== */}
+      {/* BOTTOM ACTION BAR (Section 16 & 21 Spec)   */}
+      {/* ========================================== */}
+      <div className="sticky bottom-3 z-30 bg-white/95 backdrop-blur-md rounded-xl p-3 border border-slate-200/90 shadow-card flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {/* Regenerate (Triggers A/B candidate) */}
           <button
             onClick={handleInitiateRegenerate}
             disabled={!result || loading}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center space-x-1.5 transition-all disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 flex items-center space-x-1.5 transition-all disabled:opacity-40 shadow-2xs active:scale-[0.98]"
             id="btn-bottom-regenerate"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${loading ? 'animate-spin' : ''}`} />
@@ -1220,7 +1304,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
           <button
             onClick={() => setIsRefineOpen(true)}
             disabled={!result || refining}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center space-x-1.5 transition-all disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 flex items-center space-x-1.5 transition-all disabled:opacity-40 shadow-2xs active:scale-[0.98]"
             id="btn-bottom-refine"
           >
             <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
@@ -1231,10 +1315,10 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
           <button
             onClick={handleDownloadDxf}
             disabled={!result}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center space-x-1.5 transition-all disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 flex items-center space-x-1.5 transition-all disabled:opacity-40 shadow-2xs active:scale-[0.98]"
             id="btn-bottom-dxf"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <Download className="w-3.5 h-3.5 text-slate-500" />
             <span>Download DXF</span>
           </button>
 
@@ -1242,10 +1326,10 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
           <button
             onClick={handleExportSvg}
             disabled={!result?.svg}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center space-x-1.5 transition-all disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 flex items-center space-x-1.5 transition-all disabled:opacity-40 shadow-2xs active:scale-[0.98]"
             id="btn-bottom-svg"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <Download className="w-3.5 h-3.5 text-slate-500" />
             <span>Export SVG</span>
           </button>
 
@@ -1253,12 +1337,16 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
           <button
             onClick={() => setIsSaveModalOpen(true)}
             disabled={!result}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center space-x-1.5 transition-all disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 flex items-center space-x-1.5 transition-all disabled:opacity-40 shadow-2xs active:scale-[0.98]"
             id="btn-bottom-save"
           >
             <Save className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Save Floor Plan</span>
+            <span>Save Plan</span>
           </button>
+
+          <span className="text-[10px] text-slate-400 font-mono hidden md:inline-block pl-1">
+            Vector architectural output
+          </span>
         </div>
 
         {/* Primary Action: Apply to Project */}
@@ -1266,11 +1354,11 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
           <button
             onClick={() => setIsApplyModalOpen(true)}
             disabled={!result}
-            className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-600 hover:bg-slate-900 text-white flex items-center space-x-2 shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 active:scale-[0.99]"
+            className="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-1.5 shadow-xs hover:shadow transition-all disabled:opacity-40 active:scale-[0.98]"
             id="btn-bottom-apply"
           >
             <span>Apply to Project</span>
-            <ArrowRight className="w-3.5 h-3.5 text-amber-200" />
+            <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
           </button>
         </div>
       </div>

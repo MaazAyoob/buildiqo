@@ -28,10 +28,14 @@ export function App() {
   const [currentRoute, setCurrentRouteState] = useState(getInitialRoute); // home, planner, dashboard, admin, settings, report, pricing, leads
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const [forceAuthScreen, setForceAuthScreen] = useState(false);
+  const [plannerInitialStep, setPlannerInitialStep] = useState(1);
   const { loadProject, currentUser, subscription } = useEstimateStore();
 
-  const setRoute = (route) => {
+  const setRoute = (route, step) => {
     setCurrentRouteState(route);
+    if (step) {
+      setPlannerInitialStep(step);
+    }
     if (window.location.hash.replace('#', '') !== route) {
       window.location.hash = route;
     }
@@ -104,7 +108,7 @@ export function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {effectiveRoute === 'home' && <LandingPage setRoute={setRoute} />}
-        {effectiveRoute === 'planner' && <PlannerPage setRoute={setRoute} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
+        {effectiveRoute === 'planner' && <PlannerPage setRoute={setRoute} initialStep={plannerInitialStep} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
         {effectiveRoute === 'floor-plan' && <FloorPlanStudioPage setRoute={setRoute} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
         {effectiveRoute === 'dashboard' && <DashboardPage setRoute={setRoute} />}
         {effectiveRoute === 'admin' && <AdminPage setRoute={setRoute} />}

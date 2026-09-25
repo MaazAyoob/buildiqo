@@ -156,93 +156,95 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
       </div>
 
       {/* Printable Report Document Card */}
-      <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 shadow-xl space-y-10">
+      <div className="bg-white rounded-2xl p-8 sm:p-12 border border-slate-200/90 shadow-sm space-y-10">
         
         {/* Document Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-8 border-b-2 border-slate-900">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="flex items-center space-x-3.5">
-            <img src="/buildiqo-logo.svg" alt="Buildiqo" className="w-28 h-12 object-contain object-left" />
+            <img src="/buildiqo-logo.svg" alt="Buildiqo" className="w-28 h-10 object-contain object-left" />
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Buildiqo.ai</h1>
-                <span className="text-[11px] uppercase font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight">Buildiqo.ai</h1>
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
                   QS Audit Report
                 </span>
               </div>
-              <p className="text-xs text-gray-500 font-medium">Residential Construction Quantity & Cost Estimation</p>
+              <p className="text-xs text-slate-500 font-medium">Residential Construction Quantity & Cost Estimation</p>
             </div>
           </div>
 
-          <div className="text-left sm:text-right space-y-1 text-xs text-gray-600">
-            <p className="font-bold text-slate-900">Report Ref: BQ-{Date.now().toString().slice(-6)}</p>
-            <p>Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            <p className="text-[11px] text-gray-400">Engineering Benchmarks: IS 456 / IS 1786 / NBC 2016</p>
+          <div className="text-left sm:text-right space-y-1 text-xs text-slate-600">
+            <p className="font-mono font-bold text-slate-900">Ref: BQ-{Date.now().toString().slice(-6)}</p>
+            <p className="text-slate-500">Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="text-[11px] text-slate-400 font-mono">IS 456 / IS 1786 / NBC 2016 Benchmarks</p>
           </div>
         </div>
 
         {/* Project and building configuration inputs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-slate-50/70 rounded-xl border border-slate-200/80">
           <div>
-            <span className="text-[10px] uppercase font-bold text-gray-500 block">Project Title</span>
-            <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{state.projectName || 'My Residence'}</span>
-            <span className="text-xs text-gray-500">{city?.name} ({city?.state})</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Project Title</span>
+            <span className="text-sm font-bold text-slate-900 mt-0.5 block">{state.projectName || 'My Residence'}</span>
+            <span className="text-xs text-slate-500">{city?.name} ({city?.state})</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-gray-500 block">Plot Dimensions & Area</span>
-            <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{state.plotWidth} × {state.plotLength} ft</span>
-            <span className="text-xs text-gray-500">{formatNumber(plotArea)} sq.ft ({state.facing} Facing)</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Plot Dimensions & Area</span>
+            <span className="font-mono tabular-nums text-sm font-bold text-slate-900 mt-0.5 block">{state.plotWidth} × {state.plotLength} ft</span>
+            <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(plotArea)} sq.ft ({state.facing} Facing)</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-gray-500 block">Building & Structural Type</span>
-            <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{buildingType?.name}</span>
-            <span className="text-xs text-gray-500">{constructionType?.name}</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Building & Structural Type</span>
+            <span className="text-sm font-bold text-slate-900 mt-0.5 block">{buildingType?.name}</span>
+            <span className="text-xs text-slate-500">{constructionType?.name}</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-gray-500 block">Massing & Quality Tier</span>
-            <span className="text-sm font-extrabold text-slate-900 mt-0.5 block uppercase">{tier} Package</span>
-            <span className="text-xs text-gray-500">{formatNumber(totalBuiltupArea)} sq.ft BUA ({state.numFloors} Floors)</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Massing & Quality Tier</span>
+            <span className="text-sm font-bold text-slate-900 mt-0.5 block uppercase">{tier} Package</span>
+            <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(totalBuiltupArea)} sq.ft BUA ({state.numFloors} Floors)</span>
           </div>
         </div>
 
         {/* Grand Total Cost Highlight Banner */}
-        <div className="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-md">
+        <div className="bg-[#0B0F19] text-white rounded-xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-slate-800 shadow-md">
           <div>
-            <span className="text-xs uppercase font-bold tracking-wider text-amber-200 block">
+            <span className="text-xs uppercase font-bold tracking-wider text-slate-400 block">
               Estimated Total Construction Investment
             </span>
-            <span className="text-3xl sm:text-4xl font-black mt-1 block">{formatCurrency(grandTotalCost)}</span>
-            <p className="text-xs text-amber-200 mt-2">
-              Includes IS standard materials, structural shuttering, masonry, finishes, MEP, and statutory buffer.
+            <span className="font-mono tabular-nums text-3xl sm:text-4xl font-bold tracking-tight text-white mt-1 block">
+              {formatCurrency(grandTotalCost)}
+            </span>
+            <p className="text-xs text-slate-400 mt-2 font-mono">
+              {formatCurrency(costPerSqFt)} / sq.ft ({formatNumber(totalBuiltupArea)} sq.ft Built-Up Area)
             </p>
           </div>
 
-          <div className="space-y-2 shrink-0 sm:border-l sm:border-stone-900 sm:pl-8">
+          <div className="space-y-2 shrink-0 sm:border-l sm:border-slate-800 sm:pl-8">
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-amber-300">Direct Materials:</span>
-              <span className="font-bold text-white">{formatCurrency(directMaterialCost)}</span>
+              <span className="text-slate-400">Direct Materials:</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(directMaterialCost)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-amber-300">Trade Labor:</span>
-              <span className="font-bold text-white">{formatCurrency(totalLaborCost)}</span>
+              <span className="text-slate-400">Trade Labor:</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(totalLaborCost)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-amber-300">Site Amenities & Scope:</span>
-              <span className="font-bold text-white">{formatCurrency(ancillaryCost)}</span>
+              <span className="text-slate-400">Site Amenities:</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(ancillaryCost)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-amber-300">Supervision & Buffer:</span>
-              <span className="font-bold text-white">{formatCurrency(architectureFee + contractorMargin + contingencyBuffer)}</span>
+              <span className="text-slate-400">Supervision & Buffer:</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(architectureFee + contractorMargin + contingencyBuffer)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-amber-300">GST ({gstRate}%):</span>
-              <span className="font-bold text-white">{formatCurrency(gst)}</span>
+              <span className="text-slate-400">GST ({gstRate}%):</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(gst)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-amber-300">BOCW Labour Cess ({labourCessRate}%):</span>
-              <span className="font-bold text-white">{formatCurrency(labourCess)}</span>
+              <span className="text-slate-400">BOCW Cess ({labourCessRate}%):</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(labourCess)}</span>
             </div>
           </div>
         </div>
@@ -254,28 +256,28 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
 
         {/* Primary Material Takeoff Table */}
         <div className="space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-blue-800" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <ShieldCheck className="w-5 h-5 text-blue-600" />
             <span>Key Material Quantity Takeoff & IS Standards</span>
           </h3>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/90">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/60 text-gray-700 font-bold border-b border-slate-200">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4">Material Category</th>
-                  <th className="py-3 px-4">Estimated Quantity</th>
-                  <th className="py-3 px-4">Engineering Benchmark</th>
-                  <th className="py-3 px-4">Standard Code</th>
+                  <th className="py-2.5 px-4">Material Category</th>
+                  <th className="py-2.5 px-4 text-right">Estimated Quantity</th>
+                  <th className="py-2.5 px-4">Engineering Benchmark</th>
+                  <th className="py-2.5 px-4">Standard Code</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100">
                 {materialSummary.map((m, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-4 font-bold text-slate-900">{m.label}</td>
-                    <td className="py-3 px-4 font-extrabold text-blue-700">{m.qty}</td>
-                    <td className="py-3 px-4 text-gray-600">{m.benchmark}</td>
-                    <td className="py-3 px-4 font-semibold text-gray-500">{m.standard}</td>
+                  <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4 font-semibold text-slate-900">{m.label}</td>
+                    <td className="py-2.5 px-4 font-mono tabular-nums font-bold text-blue-700 text-right">{m.qty}</td>
+                    <td className="py-2.5 px-4 text-slate-600">{m.benchmark}</td>
+                    <td className="py-2.5 px-4 font-mono text-slate-400 text-xs">{m.standard}</td>
                   </tr>
                 ))}
               </tbody>
@@ -283,15 +285,15 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </div>
         </div>
 
-        <div className={`rounded-xl border p-4 ${tradePackageCheck.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-          <p className="text-xs font-extrabold text-slate-900">Cost-head reconciliation</p>
-          <p className="text-[11px] text-gray-700 mt-1">{tradePackageCheck.passed ? 'Passed: the eight trade packages equal materials + labor + site amenities + supervision/buffer.' : `Failed: variance ${formatCurrency(tradePackageCheck.variance)}.`}</p>
+        <div className={`rounded-xl border p-4 ${tradePackageCheck.passed ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'}`}>
+          <p className="text-xs font-bold text-slate-900">Cost-head reconciliation</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{tradePackageCheck.passed ? 'Passed: the eight trade packages equal materials + labor + site amenities + supervision/buffer.' : `Failed: variance ${formatCurrency(tradePackageCheck.variance)}.`}</p>
         </div>
 
         {/* Floor-wise spaces schedule summary */}
         <div className="space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-            <Layers className="w-5 h-5 text-blue-800" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <Layers className="w-5 h-5 text-blue-600" />
             <span>Floor-by-Floor Space & Room Configuration Schedule</span>
           </h3>
 
@@ -299,17 +301,17 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
             {state.floors.map((floor, fIdx) => {
               const floorDetail = estimation.floorDetails[fIdx] || { carpetArea: 0, builtupArea: 0 };
               return (
-                <div key={floor.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 space-y-2">
+                <div key={floor.id} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-slate-900">{floor.name}</span>
-                    <span className="text-xs font-bold text-blue-700">
+                    <span className="text-xs font-bold text-slate-900">{floor.name}</span>
+                    <span className="font-mono tabular-nums text-xs font-bold text-blue-700">
                       {formatNumber(floorDetail.carpetArea)} sq.ft Carpet • {formatNumber(floorDetail.builtupArea)} sq.ft BUA
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {floor.rooms.map(r => (
-                      <span key={r.id} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-gray-700 font-semibold">
-                        {r.name} ({r.width}×{r.length} ft{r.count > 1 ? ` × ${r.count}` : ''})
+                      <span key={r.id} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium">
+                        {r.name} <span className="font-mono text-slate-500">({r.width}×{r.length} ft{r.count > 1 ? ` × ${r.count}` : ''})</span>
                       </span>
                     ))}
                   </div>
@@ -321,23 +323,23 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
 
         {/* Full BOQ Trade Schedule Summary */}
         <div className="space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-            <Layers className="w-5 h-5 text-blue-800" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <Layers className="w-5 h-5 text-blue-600" />
             <span>Trade-Wise Construction Work Packages</span>
           </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {boqItems.map((group, gIdx) => {
               const groupTotal = group.items.reduce((sum, item) => sum + item.total, 0);
               return (
-                <div key={gIdx} className="p-4 rounded-xl border border-slate-200 bg-slate-50/40 flex items-center justify-between">
+                <div key={gIdx} className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/40 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-extrabold text-slate-900">{gIdx + 1}. {group.category}</span>
-                    <span className="text-[11px] text-gray-500 block mt-0.5">
+                    <span className="text-xs font-bold text-slate-900">{gIdx + 1}. {group.category}</span>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">
                       {group.items.map(i => i.name.split('(')[0]).slice(0, 3).join(', ')}...
                     </span>
                   </div>
-                  <span className="text-sm font-extrabold text-slate-900">{formatCurrency(groupTotal)}</span>
+                  <span className="font-mono tabular-nums text-sm font-bold text-slate-900">{formatCurrency(groupTotal)}</span>
                 </div>
               );
             })}
@@ -346,20 +348,20 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
 
         {/* Milestone Schedule */}
         <div className="space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-blue-800" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
             <span>Stage-Wise Payment Disbursement Schedule</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {milestones.map((m, idx) => (
-              <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-white space-y-1.5">
+              <div key={idx} className="p-4 rounded-xl border border-slate-200/80 bg-white space-y-1.5 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-900">{m.stage}</span>
-                  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-blue-50 text-blue-700">{m.pct}%</span>
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">{m.pct}%</span>
                 </div>
-                <div className="text-sm font-black text-slate-900">{formatCurrency(m.amount)}</div>
-                <p className="text-[11px] text-gray-500">{m.timeline} • {m.desc}</p>
+                <div className="font-mono tabular-nums text-sm font-bold text-slate-900">{formatCurrency(m.amount)}</div>
+                <p className="text-[11px] text-slate-400">{m.timeline} • {m.desc}</p>
               </div>
             ))}
           </div>

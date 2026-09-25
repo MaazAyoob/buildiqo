@@ -25,29 +25,35 @@ import { Step3DViewer } from '../components/planner/Step3DViewer';
 import { StepReport } from '../components/planner/StepReport';
 import { PaymentModal } from '../components/common/PaymentModal';
 
-export function PlannerPage({ setRoute, onOpenSavedModal }) {
+export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
   const { state, updateState, estimation, saveCurrentProject, subscription, currentUser } = useEstimateStore();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(initialStep || 1);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState(null);
 
+  useEffect(() => {
+    if (initialStep && initialStep >= 1 && initialStep <= 6) {
+      setCurrentStep(initialStep);
+    }
+  }, [initialStep]);
+
   const isFreePlan = subscription?.planId === 'free' && !currentUser?.isGuest && !currentUser?.isAdmin;
 
   const allSteps = [
-    { id: 1, name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
-    { id: 2, name: 'Spaces & Layout', icon: Layers, desc: 'Rooms & carpet area' },
-    { id: 3, name: 'Specifications', icon: Sparkles, desc: 'Materials & finishes' },
-    { id: 4, name: 'BOQ Breakdown', icon: FileSpreadsheet, desc: 'Itemized quantities' },
-    { id: 5, name: '3D Model View', icon: Box, desc: 'Architectural massing' },
-    { id: 6, name: 'Summary Report', icon: FileCheck2, desc: 'Print & export schedule' }
+    { id: 1, stepNum: '01', name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
+    { id: 2, stepNum: '02', name: 'Spaces & Layout', icon: Layers, desc: 'Rooms & carpet area' },
+    { id: 3, stepNum: '03', name: 'Specifications', icon: Sparkles, desc: 'Materials & finishes' },
+    { id: 4, stepNum: '04', name: 'BOQ Breakdown', icon: FileSpreadsheet, desc: 'Itemized quantities' },
+    { id: 5, stepNum: '05', name: '3D Model View', icon: Box, desc: 'Architectural massing' },
+    { id: 6, stepNum: '06', name: 'Summary Report', icon: FileCheck2, desc: 'Print & export schedule' }
   ];
 
   // For Free plan: only Plot & Setup and Summary Report are visible to the customer
   const steps = isFreePlan 
     ? [
-        { id: 1, name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
-        { id: 6, name: 'Summary Report', icon: FileCheck2, desc: 'Print & export schedule' }
+        { id: 1, stepNum: '01', name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
+        { id: 6, stepNum: '02', name: 'Summary Report', icon: FileCheck2, desc: 'Print & export schedule' }
       ]
     : allSteps;
 
@@ -108,52 +114,89 @@ export function PlannerPage({ setRoute, onOpenSavedModal }) {
   };
 
   return (
-    <div className="space-y-8 pb-32 animate-fadeIn">
+    <div className="space-y-6 pb-32 animate-fadeIn">
       
-      {/* Top Stepper Navigation Header */}
-      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm no-print">
-        <div className={`grid gap-2 sm:gap-3 ${isFreePlan ? 'grid-cols-2 max-w-xl mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
-          {steps.map((step, sIdx) => {
-            const isCompleted = isFreePlan ? (currentStep === 6 && step.id === 1) : (currentStep > step.id);
-            const isCurrent = currentStep === step.id;
-            const StepIcon = step.icon;
+      {/* Compact Engineering Metrics Strip (Section 12 Specification) */}
+      <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-slate-200/90 shadow-xs no-print">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600" />
+            <span className="text-xs font-bold text-slate-900 tracking-tight">{state.projectName || 'Residential Villa Estimate'}</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-[11px] text-slate-500 font-medium">{state.city || 'Bengaluru'} ({state.tier || 'Standard'})</span>
+          </div>
 
-            return (
-              <button
-                key={step.id}
-                onClick={() => handleStepClick(step.id)}
-                className={`p-3 rounded-2xl text-left transition-all flex items-center space-x-3 border ${
-                  isCurrent
-                    ? 'bg-blue-600 text-white border-stone-900 shadow-md ring-2 ring-stone-900/20'
-                    : isCompleted
-                    ? 'bg-blue-50/60 border-blue-200 text-slate-900 hover:bg-blue-50'
-                    : 'bg-slate-50/70 border-slate-200 text-gray-500 hover:bg-slate-100/60'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                  isCurrent
-                    ? 'bg-slate-900 text-amber-200'
-                    : isCompleted
-                    ? 'bg-amber-200 text-blue-700'
-                    : 'bg-slate-100 text-gray-500'
-                }`}>
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-4 h-4 text-blue-700" />
-                  ) : (
-                    isFreePlan ? sIdx + 1 : step.id
-                  )}
-                </div>
-                <div className="overflow-hidden flex-1">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-xs font-extrabold block truncate">{step.name}</span>
+          <div className="flex items-center space-x-6 sm:space-x-8 text-right">
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Total Usable Carpet</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-slate-900">
+                {formatNumber(estimation.totalCarpetArea)} <span className="text-[10px] font-sans font-normal text-slate-500">sq.ft</span>
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Total Built-Up Area</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-slate-900">
+                {formatNumber(estimation.totalBuiltupArea)} <span className="text-[10px] font-sans font-normal text-slate-500">sq.ft</span>
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Estimated Cost</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-blue-600">
+                {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.grandTotalCost)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Professional Project-Progress Stepper (Section 11 Specification) */}
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/90 shadow-xs no-print">
+        <div className="relative">
+          {/* Connecting line behind step circles */}
+          <div className="hidden lg:block absolute top-1/2 left-6 right-6 -translate-y-1/2 h-0.5 bg-slate-100 -z-0" />
+          
+          <div className={`grid gap-2 sm:gap-3 relative z-10 ${isFreePlan ? 'grid-cols-2 max-w-lg mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
+            {steps.map((step, sIdx) => {
+              const isCompleted = isFreePlan ? (currentStep === 6 && step.id === 1) : (currentStep > step.id);
+              const isCurrent = currentStep === step.id;
+
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => handleStepClick(step.id)}
+                  className={`p-2.5 sm:p-3 rounded-lg text-left transition-all flex items-center space-x-2.5 border group ${
+                    isCurrent
+                      ? 'bg-blue-50/70 border-blue-600 text-blue-900 shadow-2xs'
+                      : isCompleted
+                      ? 'bg-white border-slate-200 text-slate-900 hover:border-slate-300'
+                      : 'bg-slate-50/60 border-slate-200/70 text-slate-400 hover:border-slate-300'
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-all ${
+                    isCurrent
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : isCompleted
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'bg-white border border-slate-200 text-slate-400'
+                  }`}>
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      step.stepNum
+                    )}
                   </div>
-                  <span className={`text-[10px] block truncate ${isCurrent ? 'text-amber-200' : 'text-gray-400'}`}>
-                    {step.desc}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+                  <div className="overflow-hidden flex-1 min-w-0">
+                    <span className={`text-xs font-semibold block truncate ${isCurrent ? 'text-blue-900 font-bold' : isCompleted ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {step.name}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block truncate">
+                      {step.desc}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -210,78 +253,78 @@ export function PlannerPage({ setRoute, onOpenSavedModal }) {
       </div>
 
       {/* Sticky Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3.5 px-4 sm:px-8 shadow-2xl no-print">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 py-3 px-4 sm:px-8 shadow-card no-print">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           
           {/* Active Price Ticker */}
           <div className="flex items-center space-x-4">
             <div>
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold block">
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
                 Estimated Construction Cost
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-xl font-black text-slate-900">
+                <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
                   {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.grandTotalCost)}
                 </span>
-                <span className="text-xs font-semibold text-gray-500">
+                <span className="text-xs font-mono tabular-nums text-slate-500">
                   ({(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.costPerSqFt)} / sq.ft)
                 </span>
               </div>
             </div>
 
-            <div className="hidden md:block h-8 w-px bg-slate-100" />
+            <div className="hidden md:block h-7 w-px bg-slate-200" />
 
-            <div className="hidden md:block text-xs text-gray-500">
-              <span className="font-bold text-gray-700 block">{formatNumber(estimation.totalBuiltupArea)} sq.ft BUA</span>
-              <span>{estimation.city?.name} • {state.tier} tier</span>
+            <div className="hidden md:block text-xs text-slate-500">
+              <span className="font-semibold text-slate-700 font-mono tabular-nums block">{formatNumber(estimation.totalBuiltupArea)} sq.ft BUA</span>
+              <span className="text-[11px]">{estimation.city?.name} • {state.tier} tier</span>
             </div>
           </div>
 
           {/* Stepper Actions Buttons */}
-          <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             {currentStep > 1 && (
               <button
                 onClick={handlePrev}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-gray-700 hover:bg-slate-100/60 font-bold text-xs flex items-center space-x-1.5 transition-colors"
+                className="px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 font-semibold text-xs flex items-center space-x-1.5 transition-all active:scale-[0.98]"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
               </button>
             )}
 
             <button
               onClick={() => saveCurrentProject(state.projectName)}
-              className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-gray-700 hover:bg-slate-100/60 font-bold text-xs flex items-center space-x-1.5 transition-colors hidden sm:flex"
+              className="px-3.5 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold text-xs flex items-center space-x-1.5 transition-all hidden sm:flex active:scale-[0.98]"
               title="Save project"
             >
-              <Bookmark className="w-4 h-4 text-blue-800" />
+              <Bookmark className="w-3.5 h-3.5 text-blue-600" />
               <span>Save</span>
             </button>
 
             {currentStep < 6 ? (
               <button
                 onClick={handleNext}
-                className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-slate-900 font-bold text-xs shadow-md flex items-center space-x-1.5 transition-all"
+                className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-semibold text-xs shadow-xs hover:shadow flex items-center space-x-1.5 transition-all active:scale-[0.98]"
               >
                 {isFreePlan && currentStep === 1 ? (
                   <>
-                    <FileCheck2 className="w-3.5 h-3.5 text-amber-200" />
+                    <FileCheck2 className="w-3.5 h-3.5 text-blue-200" />
                     <span>View Summary Report</span>
-                    <ArrowRight className="w-4 h-4 text-amber-200" />
+                    <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
                   </>
                 ) : (
                   <>
                     <span>Continue to {allSteps[currentStep]?.name}</span>
-                    <ArrowRight className="w-4 h-4 text-amber-200" />
+                    <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
                   </>
                 )}
               </button>
             ) : (
               <button
                 onClick={() => window.print()}
-                className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-slate-900 font-bold text-xs shadow-md flex items-center space-x-1.5 transition-all"
+                className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-semibold text-xs shadow-xs hover:shadow flex items-center space-x-1.5 transition-all active:scale-[0.98]"
               >
-                <Printer className="w-4 h-4 text-amber-200" />
+                <Printer className="w-3.5 h-3.5 text-blue-200" />
                 <span>Print Formal Report</span>
               </button>
             )}

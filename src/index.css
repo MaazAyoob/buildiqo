@@ -5,9 +5,68 @@
 @layer base {
   body {
     background-color: #F8FAFC;
+    background-image: 
+      radial-gradient(ellipse 90% 40% at 50% -10%, rgba(37, 99, 235, 0.05), transparent 70%),
+      radial-gradient(ellipse 60% 30% at 90% 20%, rgba(99, 102, 241, 0.03), transparent 60%),
+      radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 24px 24px;
+    background-attachment: fixed;
     color: #0F172A;
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Outfit', 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Monospaced tabular alignment for engineering and monetary figures */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Reusable card & button design tokens matching Linear/Apple architectural precision */
+@layer components {
+  .card-architect {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  }
+
+  .card-architect-interactive {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card-architect-interactive:hover {
+    border-color: #CBD5E1;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+  }
+
+  /* Dark specialized CAD canvas */
+  .cad-dark-viewport {
+    background-color: #0B0F19;
+    background-image: 
+      radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: #F8FAFC;
+  }
+
+  /* Precision Input Style */
+  .input-architect {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: #0F172A;
+    transition: all 150ms ease;
+  }
+  .input-architect:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   }
 }
 

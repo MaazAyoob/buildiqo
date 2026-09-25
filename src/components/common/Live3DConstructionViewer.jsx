@@ -125,12 +125,12 @@ export function Live3DConstructionViewer({
       const height = canvas.height;
       ctx.clearRect(0, 0, width, height);
 
-      // Clean Light Blueprint Background
-      ctx.fillStyle = '#FFFFFF';
+      // Dark Specialist Architectural Background (#0B0F19 per Section 23)
+      ctx.fillStyle = '#0B0F19';
       ctx.fillRect(0, 0, width, height);
 
       // Subtle drafting grid
-      ctx.strokeStyle = '#F1F5F9';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       const gridSize = 24;
       for (let x = 0; x < width; x += gridSize) {
@@ -268,7 +268,7 @@ export function Live3DConstructionViewer({
       const floorH = 26;
 
       // 1. Plot Base Slab / Ground
-      drawBox(-plotW / 2, -4, -plotL / 2, plotW, 4, plotL, '#E2E8F0', '#CBD5E1', '#94A3B8', '#64748B');
+      drawBox(-plotW / 2, -4, -plotL / 2, plotW, 4, plotL, '#1E293B', '#0F172A', '#0B1329', '#334155');
 
       // 2. Setback Boundary Guides in Top View
       if (viewMode === 'top') {
@@ -401,7 +401,7 @@ export function Live3DConstructionViewer({
 
       // In Top View, Draw Room Label Markers
       if (viewMode === 'top') {
-        ctx.fillStyle = '#0F172A';
+        ctx.fillStyle = '#F8FAFC';
         ctx.font = 'bold 11px Inter, sans-serif';
         ctx.textAlign = 'center';
 
@@ -519,9 +519,9 @@ export function Live3DConstructionViewer({
         </div>
       </div>
 
-      {/* Main 3D Canvas Area */}
+      {/* Main 3D Canvas Area (Section 23 Specialist Dark Environment) */}
       <div 
-        className="relative h-[320px] sm:h-[380px] bg-white cursor-grab active:cursor-grabbing select-none overflow-hidden"
+        className="relative h-[320px] sm:h-[390px] bg-[#0B0F19] cursor-grab active:cursor-grabbing select-none overflow-hidden"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -534,28 +534,28 @@ export function Live3DConstructionViewer({
           className="w-full h-full object-contain"
         />
 
-        {/* View Mode Badge */}
-        <div className="absolute top-4 left-4 flex items-center space-x-2">
-          <span className="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold shadow-xs">
-            {viewMode === 'top' ? '📐 Top Plan View' : '🔄 Drag to orbit 360°'}
+        {/* View Mode & HUD Badges */}
+        <div className="absolute top-3 left-3 flex items-center space-x-2">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-700/60 text-slate-300 font-mono text-[10px] font-semibold shadow-xs">
+            {viewMode === 'top' ? '📐 Top Plan View' : '🔄 360° Orbit Drag'}
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-extrabold shadow-xs">
+          <span className="px-2.5 py-1 rounded-lg bg-blue-600/90 text-white font-mono text-[10px] font-bold shadow-xs">
             {activePhaseObj.name} ({activePhaseObj.pct})
           </span>
         </div>
       </div>
 
       {/* Construction Phase Progress Stepper Bar */}
-      <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 space-y-3">
+      <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200/90 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-blue-600 font-semibold">
               {activePhaseObj.badge} of 6
             </span>
-            <h4 className="text-sm font-black text-slate-900">{activePhaseObj.name}</h4>
-            <p className="text-xs text-slate-600 font-medium">{activePhaseObj.sub}</p>
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{activePhaseObj.name}</h4>
+            <p className="text-[11px] text-slate-500 font-normal">{activePhaseObj.sub}</p>
           </div>
-          <span className="text-sm font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+          <span className="text-xs font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
             {activePhaseObj.pct} Complete
           </span>
         </div>
@@ -569,12 +569,12 @@ export function Live3DConstructionViewer({
               <button
                 key={p.id}
                 onClick={() => { setCurrentPhase(p.id); setIsPlaying(false); }}
-                className={`py-2 rounded-xl text-center font-extrabold text-[10px] sm:text-xs transition-all border ${
+                className={`py-1.5 rounded-lg text-center font-mono font-semibold text-[10px] sm:text-xs transition-all border ${
                   isCurrent
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-600/20'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : isCompleted
-                    ? 'bg-blue-50 text-blue-800 border-blue-200'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    ? 'bg-white text-slate-800 border-slate-300 hover:border-slate-400'
+                    : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
                 }`}
               >
                 P{p.id}
@@ -584,30 +584,30 @@ export function Live3DConstructionViewer({
         </div>
       </div>
 
-      {/* Bottom Live Metrics Strip matching screenshot */}
-      <div className="p-4 sm:p-5 bg-white border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
+      {/* Bottom Live Metrics Strip */}
+      <div className="p-3.5 sm:p-5 bg-white border-t border-slate-200/90 grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
         <div>
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Estimated Cost</span>
-          <span className="text-base sm:text-lg font-black text-slate-900 block mt-0.5">{totalCost}</span>
-          <span className="text-[10px] text-green-700 font-bold">IS 456 Verified</span>
+          <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Estimated Cost</span>
+          <span className="text-base sm:text-lg font-bold font-mono tabular-nums text-slate-900 block mt-0.5">{totalCost}</span>
+          <span className="text-[10px] font-mono text-emerald-700 font-medium">IS 456 Quantities</span>
         </div>
 
         <div>
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Built-Up Area</span>
-          <span className="text-base sm:text-lg font-black text-slate-900 block mt-0.5">{totalBua} sq.ft</span>
-          <span className="text-[10px] text-slate-500 font-medium">G+{numFloors - 1} Structure</span>
+          <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Built-Up Area</span>
+          <span className="text-base sm:text-lg font-bold font-mono tabular-nums text-slate-900 block mt-0.5">{totalBua} sq.ft</span>
+          <span className="text-[10px] text-slate-500 font-normal">G+{numFloors - 1} Superstructure</span>
         </div>
 
         <div>
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Rate / Sq.Ft</span>
-          <span className="text-base sm:text-lg font-black text-slate-900 block mt-0.5">{ratePerSqFt}</span>
-          <span className="text-[10px] text-slate-500 font-medium">{cityName.split(' ')[0]} Index</span>
+          <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider block">Rate / Sq.Ft</span>
+          <span className="text-base sm:text-lg font-bold font-mono tabular-nums text-slate-900 block mt-0.5">{ratePerSqFt}</span>
+          <span className="text-[10px] text-slate-500 font-normal">{cityName.split(' ')[0]} Benchmark</span>
         </div>
 
         <div className="col-span-2 sm:col-span-1">
           <button
             onClick={onLaunchPlanner}
-            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-1.5"
+            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-all flex items-center justify-center space-x-1.5 active:scale-[0.98]"
           >
             <span>Open Planner & BOQ</span>
             <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
