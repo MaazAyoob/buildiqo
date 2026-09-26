@@ -27,15 +27,21 @@ export function LiveMaterialPriceTicker({
   const activeState = normalizeStateName(selectedState || selectedCity || 'Karnataka');
 
   useEffect(() => {
-    let isMounted = true;
+    let isCancelled = false;
+    const reqId = ++LiveMaterialPriceTicker.reqSeq;
+
     async function loadLiveRates() {
       setPricingStatus('LOADING');
+      // Reset rates immediately so previous state's prices do not linger
+      setRates(null);
+
       try {
         const res = await apiRequest(`/api/pricing/current?state=${encodeURIComponent(activeState)}`);
-        if (!isMounted) return;
-        if (res.success && res.data && res.data.pricingStatus === 'APPROVED' && res.data.rates) {
+        if (isCancelled || reqId !== LiveMaterialPriceTicker.reqSeq) return;
+
+        if (res.success && res.data && res.data.rates && Object.keys(res.data.rates).length > 0) {
           setRates(res.data.rates);
-          setPricingStatus('APPROVED');
+          setPricingStatus(res.data.pricingStatus === 'APPROVED' ? 'APPROVED' : (res.data.pricingStatus || 'PARTIAL'));
           setPricingScope(res.data.pricingScope || 'STATE');
           setLastUpdated(res.data.lastFetchedAt || new Date().toISOString());
         } else {
@@ -44,7 +50,7 @@ export function LiveMaterialPriceTicker({
           setPricingScope('UNAVAILABLE');
         }
       } catch (err) {
-        if (!isMounted) return;
+        if (isCancelled || reqId !== LiveMaterialPriceTicker.reqSeq) return;
         setRates(null);
         setPricingStatus('UNAVAILABLE');
         setPricingScope('UNAVAILABLE');
@@ -53,7 +59,7 @@ export function LiveMaterialPriceTicker({
 
     loadLiveRates();
     return () => {
-      isMounted = false;
+      isCancelled = true;
     };
   }, [activeState]);
 
@@ -174,7 +180,7 @@ export function LiveMaterialPriceTicker({
 
         {/* Middle: Horizontal Mini Ticker Pills (Desktop) */}
         <div className="hidden lg:flex items-center space-x-3 text-[11px] font-semibold text-gray-700">
-          {pricingStatus === 'APPROVED' ? (
+          {(pricingStatus === 'APPROVED' || pricingStatus === 'PARTIAL') && rates ? (
             <>
               <span className="flex items-center space-x-1">
                 <span className="text-gray-400">Steel:</span>
@@ -326,3 +332,5 @@ export function LiveMaterialPriceTicker({
     </div>
   );
 }
+
+LiveMaterialPriceTicker.reqSeq = 0;

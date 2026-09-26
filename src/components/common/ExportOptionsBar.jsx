@@ -65,8 +65,8 @@ export function ExportOptionsBar({ state, estimation, className = '' }) {
 
   return (
     <div className={`w-full no-print ${className}`}>
-      {/* 4 Export Buttons Grid matching exact UI reference */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      {/* 3 Export Buttons Grid (PDF, Excel, WhatsApp) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         
         {/* 1. PDF Button (Red outline, white background, red text) */}
         <button
@@ -100,24 +100,7 @@ export function ExportOptionsBar({ state, estimation, className = '' }) {
           <span>{downloadingFormat === 'excel' ? 'Exporting...' : 'Excel'}</span>
         </button>
 
-        {/* 3. DXF Button (Navy blue outline, white background, navy text) */}
-        <button
-          type="button"
-          onClick={handleDXF}
-          className="w-full py-3 sm:py-3.5 px-4 rounded-2xl border-2 border-indigo-950 bg-white hover:bg-indigo-50/60 text-indigo-950 font-extrabold text-sm sm:text-base flex items-center justify-center space-x-2.5 shadow-xs hover:shadow transition-all group"
-          title="Download AutoCAD DXF CAD drawing (IS 456 ductile detailing)"
-        >
-          {/* Drafting Set Square Triangle Icon */}
-          <div className="w-5 h-5 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-blue-700 stroke-blue-700 stroke-2 fill-none" viewBox="0 0 24 24">
-              <path d="M2 22L22 22L2 2L2 22Z" />
-              <path d="M6 18L14 18L6 10L6 18Z" fill="currentColor" fillOpacity="0.2" />
-            </svg>
-          </div>
-          <span>{downloadingFormat === 'dxf' ? 'Generating CAD...' : 'DXF'}</span>
-        </button>
-
-        {/* 4. WhatsApp Button (Solid vibrant green background, white text) */}
+        {/* 3. WhatsApp Button (Solid vibrant green background, white text) */}
         <button
           type="button"
           onClick={handleWhatsApp}

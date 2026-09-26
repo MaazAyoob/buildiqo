@@ -70,9 +70,9 @@ test('2. Invalid bearer token returns 401', async () => {
   assert.equal(res.status, 401);
 });
 
-test('3. Non-CAD file extension (.pdf) rejected with 400', async () => {
+test('3. Non-CAD/PDF file extension (.txt) rejected with 400', async () => {
   const form = new FormData();
-  form.append('file', new Blob(['not cad'], { type: 'application/pdf' }), 'floorplan.pdf');
+  form.append('file', new Blob(['not cad'], { type: 'text/plain' }), 'floorplan.txt');
 
   const res = await fetch(`${baseUrl}/api/floorplan/extract`, {
     method: 'POST',
@@ -85,7 +85,7 @@ test('3. Non-CAD file extension (.pdf) rejected with 400', async () => {
   assert.equal(res.status, 400);
   const data = await res.json();
   assert.equal(data.success, false);
-  assert.match(data.error, /\.dxf and \.dwg/i);
+  assert.match(data.error, /\.dxf, \.dwg, and \.pdf/i);
 });
 
 test('4. Empty DXF file rejected with 400', async () => {

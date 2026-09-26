@@ -115,22 +115,27 @@ let globalIsBenchmarkMode = localStorage.getItem('buildiqo_benchmark_mode') === 
 let globalIsSnapshotMode = false;
 let globalActiveSnapshot = null;
 let listeners = [];
+let fetchRatesSeq = 0;
 
 async function fetchApprovedRates(stateName) {
   if (globalIsSnapshotMode) {
     return false; // Preserve immutable historical snapshot rates
   }
+  const currentSeq = ++fetchRatesSeq;
   try {
     const targetState = stateName || globalState.state || 'Karnataka';
     const res = await apiRequest(`/api/pricing/current?state=${encodeURIComponent(targetState)}`);
-    if (res.success && res.data && res.data.pricingStatus === 'APPROVED') {
+    if (currentSeq !== fetchRatesSeq) return false; // Discard stale response
+
+    if (res.success && res.data && res.data.rates && Object.keys(res.data.rates).length > 0) {
       globalPricingRates = res.data.rates;
-      globalPricingStatus = 'APPROVED';
+      globalPricingStatus = res.data.pricingStatus === 'APPROVED' ? 'APPROVED' : (res.data.pricingStatus || 'PARTIAL');
       globalPricingScope = res.data.pricingScope || 'STATE';
       globalPricingSource = res.data.pricingSource || 'APPROVED_STATE_RATE';
       notify();
       return true;
     } else {
+      globalPricingRates = null;
       globalPricingStatus = globalIsBenchmarkMode ? 'BENCHMARK' : 'UNAVAILABLE';
       globalPricingScope = 'UNAVAILABLE';
       globalPricingSource = 'UNAVAILABLE';
@@ -138,6 +143,8 @@ async function fetchApprovedRates(stateName) {
       return false;
     }
   } catch (err) {
+    if (currentSeq !== fetchRatesSeq) return false;
+    globalPricingRates = null;
     globalPricingStatus = globalIsBenchmarkMode ? 'BENCHMARK' : 'UNAVAILABLE';
     globalPricingScope = 'UNAVAILABLE';
     globalPricingSource = 'UNAVAILABLE';

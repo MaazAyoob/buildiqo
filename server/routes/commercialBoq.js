@@ -345,14 +345,118 @@ router.post('/:id/recalculate', requireAuth, async (req, res) => {
 });
 
 /**
+ * POST /api/commercial-boq/save
+ * Saves or updates a commercial BOQ from frontend JSON payload (drafts or edits)
+ */
+router.post('/save', optionalAuth, async (req, res) => {
+  try {
+    const boqData = req.body;
+    if (!boqData || !boqData.sheets) {
+      return res.status(400).json({ success: false, error: 'Invalid BOQ data provided.' });
+    }
+
+    const userId = req.user ? (req.user._id || req.user.id) : 'usr_guest';
+
+    // If existing valid MongoDB ObjectId, update it
+    if (boqData._id && !boqData._id.startsWith('draft_') && /^[0-9a-fA-F]{24}$/.test(boqData._id)) {
+      const updated = await CommercialBOQ.findByIdAndUpdate(
+        boqData._id,
+        {
+          ...boqData,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      if (updated) {
+        return res.json({ success: true, message: 'Commercial BOQ updated successfully.', data: updated });
+      }
+    }
+
+    // Otherwise, create a new document
+    const cleanBoq = { ...boqData };
+    delete cleanBoq._id; // Remove draft ID to allow MongoDB to generate a real ObjectId
+    cleanBoq.userId = userId;
+
+    const newDoc = new CommercialBOQ(cleanBoq);
+    await newDoc.save();
+
+    res.json({
+      success: true,
+      message: 'Commercial BOQ saved successfully.',
+      data: newDoc
+    });
+  } catch (err) {
+    console.error('Error saving BOQ:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to save BOQ.' });
+  }
+});
+
+/**
+ * POST /api/commercial-boq/export/excel
+ * Generates and downloads styled Excel export directly from client in-memory BOQ data.
+ * Resolves bug where unsaved draft workbooks failed to open in Microsoft Excel.
+ */
+router.post('/export/excel', async (req, res) => {
+  try {
+    let boq = req.body.boqData || req.body;
+    if (!boq || !boq.sheets) {
+      return res.status(400).json({ success: false, error: 'No BOQ data provided for Excel export.' });
+    }
+
+    // Ensure totals are fresh and calculated
+    boq = recalculateBOQ(boq);
+
+    const excelBuffer = await exportToExcel(boq);
+    const cleanFileName = (boq.fileName || 'Commercial_BOQ').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanFileName}_Buildiqo_Edited.xlsx"`);
+    res.send(excelBuffer);
+  } catch (err) {
+    console.error('Excel export error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/commercial-boq/export/pdf
+ * Generates and downloads styled PDF export directly from client in-memory BOQ data.
+ * Resolves bug where unsaved draft workbooks failed to open in Adobe Acrobat.
+ */
+router.post('/export/pdf', async (req, res) => {
+  try {
+    let boq = req.body.boqData || req.body;
+    if (!boq || !boq.sheets) {
+      return res.status(400).json({ success: false, error: 'No BOQ data provided for PDF export.' });
+    }
+
+    // Ensure totals are fresh and calculated
+    boq = recalculateBOQ(boq);
+
+    const pdfBuffer = await exportToPDF(boq);
+    const cleanFileName = (boq.fileName || 'Commercial_BOQ').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanFileName}_Buildiqo_Report.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('PDF export error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/commercial-boq/:id/export/excel
- * Generates and downloads styled Excel export
+ * Generates and downloads styled Excel export by document ID
  */
 router.get('/:id/export/excel', async (req, res) => {
   try {
     const { id } = req.params;
-    const boq = await CommercialBOQ.findById(id);
+    if (!id || id.startsWith('draft_') || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({ success: false, error: 'Draft workbooks must be exported via POST /export/excel with data payload.' });
+    }
 
+    const boq = await CommercialBOQ.findById(id);
     if (!boq) {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
     }
@@ -371,13 +475,16 @@ router.get('/:id/export/excel', async (req, res) => {
 
 /**
  * GET /api/commercial-boq/:id/export/pdf
- * Generates and downloads styled PDF export
+ * Generates and downloads styled PDF export by document ID
  */
 router.get('/:id/export/pdf', async (req, res) => {
   try {
     const { id } = req.params;
-    const boq = await CommercialBOQ.findById(id);
+    if (!id || id.startsWith('draft_') || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({ success: false, error: 'Draft workbooks must be exported via POST /export/pdf with data payload.' });
+    }
 
+    const boq = await CommercialBOQ.findById(id);
     if (!boq) {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
     }

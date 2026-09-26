@@ -47,6 +47,22 @@ export function AuthPage({ onAuthSuccess }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
 
+  // Discrete Admin Portal access via #admin hash or Ctrl+Alt+A keyboard shortcut
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#admin' || window.location.hash === '#owner') {
+        setShowAdminModal(true);
+      }
+      const handleKeyDown = (e) => {
+        if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'A')) {
+          setShowAdminModal(true);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, []);
+
   // Check if current selected role requires Firm Name
   const isFirmRequiredRole = (role) => {
     return (
@@ -484,24 +500,15 @@ export function AuthPage({ onAuthSuccess }) {
             </form>
           )}
 
-          {/* Guest Access Option & Secure Admin Portal Link */}
-          <div className="pt-2 text-center space-y-2">
+          {/* Guest Access Option */}
+          <div className="pt-2 text-center">
             <button
               onClick={handleGuestEntry}
-              className="text-xs font-bold text-slate-500 hover:text-slate-900 inline-flex items-center space-x-1 transition-colors"
+              className="text-xs font-bold text-slate-500 hover:text-slate-900 inline-flex items-center space-x-1.5 transition-colors group"
             >
-              <span>Or Explore as Guest (No Registration Needed) →</span>
+              <span>Explore as Guest (No Registration Needed)</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </button>
-            <div>
-              <button
-                type="button"
-                onClick={() => { setShowAdminModal(true); setAdminError(''); setAdminPasscode(''); }}
-                className="text-[11px] text-slate-400 hover:text-blue-600 font-bold flex items-center justify-center space-x-1 mx-auto transition-colors"
-              >
-                <Lock className="w-3 h-3 text-slate-400" />
-                <span>🔒 Authorized Admin & Owner Portal</span>
-              </button>
-            </div>
           </div>
 
         </div>

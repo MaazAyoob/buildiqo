@@ -67,8 +67,9 @@ export function AdminPage() {
   const [selectedCity, setSelectedCity] = useState('Varanasi');
   const [locationScope, setLocationScope] = useState('city'); // 'city' | 'state' | 'national'
   const [selectedProvider, setSelectedProvider] = useState('google'); // 'google' | 'openai' | 'mock'
-  const [researchScope, setResearchScope] = useState('all'); // 'all' | 'category' | 'specific'
+  const [researchScope, setResearchScope] = useState('all'); // 'all' | 'category' | 'specific' | 'custom'
   const [researchCategory, setResearchCategory] = useState('steel');
+  const [customResearchQuery, setCustomResearchQuery] = useState('');
   const [sourcePreferences, setSourcePreferences] = useState([
     'government', 'manufacturer', 'authorized_dealer', 'market_publication', 'marketplace'
   ]);
@@ -244,6 +245,7 @@ export function AdminPage() {
           locationScope,
           researchScope,
           category: researchScope === 'category' ? researchCategory : null,
+          searchQuery: researchScope === 'custom' ? customResearchQuery : null,
           sourcePreferences,
           provider: selectedProvider
         })
@@ -764,22 +766,35 @@ export function AdminPage() {
                 >
                   <option value="all">All Materials in Catalog ({materials.length})</option>
                   <option value="category">By Specific Category</option>
+                  <option value="custom">Physical Entry / Search Any Material</option>
                 </select>
               </div>
 
-              {/* Category Filter if scope is category */}
+              {/* Category Filter or Physical Entry Input */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Category Filter</label>
-                <select
-                  value={researchCategory}
-                  disabled={researchScope !== 'category'}
-                  onChange={(e) => setResearchCategory(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white disabled:opacity-50"
-                >
-                  {categories.filter(c => c !== 'ALL').map(c => (
-                    <option key={c} value={c}>{c.toUpperCase()}</option>
-                  ))}
-                </select>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  {researchScope === 'custom' ? 'Physical Entry / Material Name' : 'Category Filter'}
+                </label>
+                {researchScope === 'custom' ? (
+                  <input
+                    type="text"
+                    value={customResearchQuery}
+                    onChange={(e) => setCustomResearchQuery(e.target.value)}
+                    placeholder="Enter any material (e.g. Tata Tiscon 12mm, Ultratech PPC...)"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <select
+                    value={researchCategory}
+                    disabled={researchScope !== 'category'}
+                    onChange={(e) => setResearchCategory(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white disabled:opacity-50"
+                  >
+                    {categories.filter(c => c !== 'ALL').map(c => (
+                      <option key={c} value={c}>{c.toUpperCase()}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 

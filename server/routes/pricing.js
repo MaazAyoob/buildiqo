@@ -45,6 +45,105 @@ router.get('/current', async (req, res) => {
 });
 
 /**
+ * GET /api/pricing/search
+ * Public / Estimator Price Search Engine:
+ * Searches material catalog and resolves latest approved state/national rates.
+ * Supports keyword search ('concrete', 'steel', '550d', 'ultratech', 'sand', etc.),
+ * category filter, and target state.
+ */
+router.get('/search', async (req, res) => {
+  try {
+    const { q, state, stateId, category, limit = 25 } = req.query;
+    const targetState = state || 'Karnataka';
+    const norm = normalizeState(state || stateId || 'Karnataka');
+    const targetStateId = norm ? norm.stateId : 'karnataka';
+
+    const filter = { active: true };
+    if (category && category !== 'ALL') {
+      filter.category = category.toLowerCase();
+    }
+
+    if (q && q.trim()) {
+      const cleanQ = q.trim();
+      filter.$or = [
+        { name: { $regex: cleanQ, $options: 'i' } },
+        { materialCode: { $regex: cleanQ, $options: 'i' } },
+        { description: { $regex: cleanQ, $options: 'i' } },
+        { category: { $regex: cleanQ, $options: 'i' } }
+      ];
+    }
+
+    const materials = await Material.find(filter)
+      .limit(parseInt(limit, 10) || 25)
+      .sort({ category: 1, name: 1 })
+      .lean();
+
+    // Attach latest approved state/national rates to each matching material
+    const results = await Promise.all(materials.map(async (mat) => {
+      let approvedRate = null;
+      let isStateRate = false;
+
+      // 1. Look for State-specific approved rate
+      if (targetStateId && targetStateId !== 'all') {
+        approvedRate = await MaterialRate.findOne({
+          materialCode: mat.materialCode,
+          stateId: targetStateId,
+          cityId: 'all',
+          status: 'approved'
+        }).sort({ effectiveFrom: -1 }).lean();
+        if (approvedRate) isStateRate = true;
+      }
+
+      // 2. Fall back to National approved rate
+      if (!approvedRate) {
+        approvedRate = await MaterialRate.findOne({
+          materialCode: mat.materialCode,
+          stateId: 'all',
+          cityId: 'all',
+          status: 'approved'
+        }).sort({ effectiveFrom: -1 }).lean();
+      }
+
+      if (!approvedRate) {
+        approvedRate = await MaterialRate.findOne({
+          materialCode: mat.materialCode,
+          cityId: 'all',
+          $or: [{ stateId: 'all' }, { stateId: { $exists: false } }, { stateId: null }],
+          status: 'approved'
+        }).sort({ effectiveFrom: -1 }).lean();
+      }
+
+      const unitRate = approvedRate ? approvedRate.rate : mat.benchmarkRate;
+      const pricingScope = isStateRate ? 'STATE' : (approvedRate ? 'NATIONAL' : 'BENCHMARK');
+      const pricingSource = isStateRate ? `${norm.stateName} State Approved` : (approvedRate ? 'National Approved' : 'IS Benchmark Standard');
+
+      return {
+        materialCode: mat.materialCode,
+        name: mat.name,
+        category: mat.category,
+        description: mat.description,
+        unit: approvedRate ? approvedRate.unit : mat.unit,
+        unitRate,
+        pricingScope,
+        pricingSource,
+        state: norm ? norm.stateName : targetState,
+        effectiveFrom: approvedRate ? approvedRate.effectiveFrom : null,
+        confidenceScore: approvedRate ? (approvedRate.confidenceScore || 0.95) : 0.85
+      };
+    }));
+
+    res.json({
+      success: true,
+      count: results.length,
+      data: results
+    });
+  } catch (err) {
+    console.error('Price search error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/pricing/materials
  * Admin-only: Full list of materials with their current active rates for a selected state.
  */
@@ -276,6 +375,7 @@ router.post('/research', requireAdmin, async (req, res) => {
       locationScope = 'city',
       researchScope = 'all',
       category = null,
+      searchQuery = null,
       materialCodes = [],
       sourcePreferences = [],
       provider = null
@@ -288,6 +388,7 @@ router.post('/research', requireAdmin, async (req, res) => {
       locationScope,
       researchScope,
       category,
+      searchQuery,
       materialCodes,
       sourcePreferences,
       providerName: provider

@@ -446,7 +446,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
               id="upload-dxf-btn"
             >
               <FileCode className="w-4 h-4 text-cyan-400" />
-              <span>Upload CAD Plan (DXF / DWG)</span>
+              <span>Upload Plan (CAD / PDF)</span>
             </button>
 
             <button
@@ -680,8 +680,8 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                   <FileCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Upload CAD Floor Plan</h3>
-                  <span className="text-[11px] text-slate-500 font-medium">AutoCAD DXF or DWG Format (.dxf, .dwg)</span>
+                  <h3 className="text-base font-extrabold text-slate-900">Upload Floor Plan (CAD / PDF)</h3>
+                  <span className="text-[11px] text-slate-500 font-medium">AutoCAD DXF, DWG, or Vector PDF (.dxf, .dwg, .pdf)</span>
                 </div>
               </div>
               <button 
@@ -694,7 +694,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
 
             <div className="mt-4 space-y-4">
               <p className="text-xs text-slate-600 leading-relaxed">
-                Upload an AutoCAD DXF or DWG floor plan to automatically detect rooms, dimensions, and spatial geometry.
+                Upload an AutoCAD DXF, DWG, or vector PDF floor plan to automatically detect rooms, dimensions, and spatial geometry.
               </p>
 
               {dxfError && (
@@ -722,7 +722,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                 {dxfLoading ? (
                   <div className="flex flex-col items-center justify-center space-y-3 py-4">
                     <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                    <span className="text-xs font-bold text-slate-900">Parsing CAD layers, geometry & labels...</span>
+                    <span className="text-xs font-bold text-slate-900">Parsing CAD / PDF layers, geometry & labels...</span>
                     <span className="text-[10px] text-slate-500">Normalizing dimensions and computing spatial boundaries</span>
                   </div>
                 ) : (
@@ -730,11 +730,11 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
                       <UploadCloud className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-bold text-slate-900">Click to select CAD file or drag & drop</span>
-                    <span className="text-[10px] text-slate-500">AutoCAD DXF or DWG • Maximum 25 MB</span>
+                    <span className="text-xs font-bold text-slate-900">Click to select CAD or PDF file or drag & drop</span>
+                    <span className="text-[10px] text-slate-500">AutoCAD DXF, DWG, or Vector PDF • Maximum 25 MB</span>
                     <input
                       type="file"
-                      accept=".dxf,.dwg"
+                      accept=".dxf,.dwg,.pdf"
                       className="hidden"
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
@@ -747,10 +747,11 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
               </div>
 
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-[11px] text-slate-500 space-y-1">
-                <span className="font-bold text-slate-700 block">CAD Preparation Tips:</span>
-                <span>• Ensure room boundaries are drawn as closed polylines (LWPOLYLINE).</span>
+                <span className="font-bold text-slate-700 block">CAD / PDF Preparation Tips:</span>
+                <span>• Ensure room boundaries are drawn as closed polylines (LWPOLYLINE) or vector closed paths.</span>
                 <span className="block">• Place room name labels (TEXT/MTEXT) inside room polygons.</span>
-                <span className="block">• Drawings with set $INSUNITS (feet, meters, mm, inches) extract with HIGH confidence.</span>
+                <span className="block">• Vector PDFs exported from CAD tools (AutoCAD, Revit, ArchiCAD) are supported.</span>
+                <span className="block">• Scanned/raster pixel PDFs cannot be vectorized automatically; enter room dimensions manually.</span>
               </div>
             </div>
           </div>

@@ -37,6 +37,15 @@ export const DEFAULT_ROOM_TYPES = [
   { id: 'terrace', name: 'Open Terrace / Deck', category: 'outdoor', defaultW: 20, defaultL: 25, minArea: 300, icon: 'Sparkles', desc: 'Rooftop recreation & garden space' }
 ];
 
+export const PROFESSIONAL_ROLES = [
+  'Architect',
+  'Contractor',
+  'Builder',
+  'Consultant',
+  'Developer',
+  'Other'
+];
+
 export const INITIAL_PROJECT_STATE = {
   projectName: 'My Dream Residence',
   state: 'Karnataka',
@@ -44,6 +53,12 @@ export const INITIAL_PROJECT_STATE = {
   tier: 'standard', // standard, premium, luxury
   buildingType: 'villa_duplex', // villa_duplex, bungalow, multi_family, commercial_res
   constructionType: 'rcc_framed', // rcc_framed, load_bearing, composite_steel
+  
+  // Professional & Client Report Metadata
+  professionalRole: 'Architect',
+  professionalName: '',
+  companyName: '',
+  customerName: '',
   
   plotLength: 40, // ft
   plotWidth: 30, // ft

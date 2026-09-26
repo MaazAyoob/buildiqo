@@ -15,103 +15,232 @@ function fmt(amount) {
 export function downloadExcelBOQ(state, estimation) {
   const projectName = state.projectName || 'My Construction Project';
   const cityName = estimation.city?.name || state.city || 'Bengaluru';
+  const customerName = state.customerName || 'Valued Customer';
+  const professionalName = state.professionalName ? `${state.professionalName} (${state.professionalRole || 'Architect / Consultant'})` : 'Buildiqo Certified Consultant';
+  const companyName = state.companyName || 'Buildiqo Architectural Network';
   const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const gstRateGlobal = estimation.gstRate || 18;
 
   const rows = [];
 
-  // Header Banner
-  rows.push(['BUILDIQO.AI — CIVIL CONSTRUCTION ESTIMATION & BILL OF QUANTITIES (BOQ)']);
-  rows.push(['Deterministic Engineering Quantity Engine (Compliant with IS 456:2000 & IS 13920:2016)']);
-  rows.push(['Generated On:', dateStr]);
-  rows.push([]);
+  // Compact Header Block (No redundant gaps, clean tabular alignment)
+  rows.push(['BUILDIQO.AI — DETAILED CIVIL BILL OF QUANTITIES (BOQ) & MATERIAL RATE AUDIT']);
+  rows.push(['IS 456:2000 & IS 13920:2016 Compliant Deterministic Engineering Takeoff']);
+  rows.push(['Generated On', dateStr, 'Ref Code', `BQ-${Date.now().toString().slice(-6)}`, 'GST Status', 'Itemized with Statutory Taxes']);
+  
+  // Section 1: Project & Client Specifications
+  rows.push(['1. PROJECT & CLIENT SPECIFICATIONS']);
+  rows.push(['Project Title', projectName, 'Customer / Client Name', customerName]);
+  rows.push(['Prepared By', professionalName, 'Firm / Company', companyName]);
+  rows.push(['Location / State', `${cityName} (${estimation.city?.state || state.state || 'Karnataka'})`, 'Quality Tier', `${(state.tier || 'Standard').toUpperCase()} PACKAGE`]);
+  rows.push(['Building Typology', state.buildingType || 'Residential Villa / Duplex', 'Structural System', state.constructionType || 'RCC Framed Structure (IS 456)']);
+  rows.push(['Plot Dimensions', `${state.plotWidth || 30} ft × ${state.plotLength || 40} ft`, 'Plot Area', `${estimation.plotArea} sq.ft (${(estimation.plotArea / 9).toFixed(1)} sq.yd)`]);
+  rows.push(['Built-up Area (BUA)', `${estimation.totalBuiltupArea} sq.ft`, 'Usable Carpet Area', `${estimation.totalCarpetArea} sq.ft`]);
+  rows.push(['Number of Floors', `G + ${(state.numFloors || 2) - 1} (${state.numFloors || 2} levels)`, 'Rate per Sq.Ft BUA', `INR ${Math.round(estimation.costPerSqFt)} / sq.ft`]);
 
-  // Project Information
-  rows.push(['1. PROJECT SPECIFICATIONS']);
-  rows.push(['Project Title', projectName]);
-  rows.push(['Location / City', cityName]);
-  rows.push(['Construction Quality Tier', (state.tier || 'Standard').toUpperCase() + ' PACKAGE']);
-  rows.push(['Building Typology', state.buildingType || 'Residential Villa / Duplex']);
-  rows.push(['Structural Frame', state.constructionType || 'RCC Framed Structure (IS 456)']);
-  rows.push(['Plot Dimensions', `${state.plotWidth || 30} ft × ${state.plotLength || 40} ft`]);
-  rows.push(['Plot Area', `${estimation.plotArea} sq.ft (${(estimation.plotArea / 9).toFixed(1)} sq.yd)`]);
-  rows.push(['Total Built-up Area (BUA)', `${estimation.totalBuiltupArea} sq.ft`]);
-  rows.push(['Total Carpet Area', `${estimation.totalCarpetArea} sq.ft`]);
-  rows.push(['Number of Floors', `G + ${(state.numFloors || 2) - 1} (${state.numFloors || 2} levels)`]);
-  rows.push([]);
+  // Section 2: Financial & Budget Summary with GST Breakdown
+  rows.push(['2. FINANCIAL & BUDGET SUMMARY (WITH GST BREAKDOWN)']);
+  rows.push(['Cost Component', 'Basis / Standard Code', 'Pre-GST Amount (INR)', 'GST %', 'GST Amount (INR)', 'Total with GST (INR)']);
 
-  // Financial Cost Breakdown Summary
-  rows.push(['2. FINANCIAL & BUDGET SUMMARY']);
-  rows.push(['Cost Component', 'Rate / Basis', 'Total Amount (INR)']);
-  rows.push(['Direct Material Procurement', 'Standard IS Benchmarks', Math.round(estimation.directMaterialCost)]);
-  rows.push(['Civil & Trade Labor Works', 'Regional Labor Wage Index', Math.round(estimation.totalLaborCost)]);
-  rows.push(['Infrastructure & Ancillary Works', 'Boundary, Sump, Tanks, Solar', Math.round(estimation.ancillaryCost || 0)]);
-  rows.push(['DIRECT CONSTRUCTION SUB-TOTAL', '', Math.round(estimation.directConstructionCost)]);
-  rows.push(['Architectural & Structural Engineering Fees', '2.5% of Direct Works', Math.round(estimation.architectureFee)]);
-  rows.push(['Contractor Supervision & Builder Margin', '10.0% of Direct Works', Math.round(estimation.contractorMargin)]);
-  rows.push(['Contingency & Price Escalation Buffer', '4.0% Safety Reserve', Math.round(estimation.contingencyBuffer)]);
-  rows.push(['GST & Statutory Taxes', 'Applicable Taxes (18% / 1%)', Math.round(estimation.statutoryTaxes || 0)]);
-  rows.push(['GRAND TOTAL ESTIMATED BUDGET', `INR ${Math.round(estimation.costPerSqFt)} / sq.ft BUA`, Math.round(estimation.grandTotalCost)]);
-  rows.push([]);
+  const directPreGst = Math.round(estimation.directConstructionCost);
+  const directGst = Math.round(directPreGst * (gstRateGlobal / 100));
+  const laborPreGst = Math.round(estimation.totalLaborCost);
+  const laborCessAmt = Math.round(laborPreGst * ((estimation.labourCessRate || 1) / 100));
+  const supervisionPreGst = Math.round(estimation.architectureFee + estimation.contractorMargin + estimation.contingencyBuffer);
+  const supervisionGst = Math.round(supervisionPreGst * (gstRateGlobal / 100));
 
-  // Major Material Takeoff Quantities
-  rows.push(['3. STRUCTURAL MATERIAL TAKEOFF (IS 456 QUANTITIES)']);
-  rows.push(['Material Category', 'Selected Specification', 'Calculated Quantity', 'Unit', 'Estimated Cost (INR)']);
+  rows.push(['Direct Material Procurement', 'IS 456 Engineering Quantities', Math.round(estimation.directMaterialCost), `${gstRateGlobal}%`, Math.round(estimation.directMaterialCost * (gstRateGlobal / 100)), Math.round(estimation.directMaterialCost * (1 + gstRateGlobal / 100))]);
+  rows.push(['Civil & Trade Labor Works', 'Regional Labor Wage Index', laborPreGst, `${estimation.labourCessRate || 1}% Cess`, laborCessAmt, laborPreGst + laborCessAmt]);
+  rows.push(['Site Amenities & Ancillary Works', 'Boundary Wall, Sump, Tanks, Solar', Math.round(estimation.ancillaryCost || 0), `${gstRateGlobal}%`, Math.round((estimation.ancillaryCost || 0) * (gstRateGlobal / 100)), Math.round((estimation.ancillaryCost || 0) * (1 + gstRateGlobal / 100))]);
+  rows.push(['Architectural, Supervision & Buffer', 'Design Fees (2.5%) + Margin (10%) + Contingency (4%)', supervisionPreGst, `${gstRateGlobal}%`, supervisionGst, supervisionPreGst + supervisionGst]);
+  rows.push(['TOTAL STATUTORY TAXES (GST + BOCW CESS)', 'Statutory Compliance', '', '', Math.round(estimation.statutoryTaxes || (directGst + laborCessAmt)), Math.round(estimation.statutoryTaxes || (directGst + laborCessAmt))]);
+  rows.push(['GRAND TOTAL ESTIMATED BUDGET', `INR ${Math.round(estimation.costPerSqFt)} / sq.ft BUA`, Math.round(estimation.baseGrandTotalCost || estimation.directConstructionCost + supervisionPreGst), `${gstRateGlobal}%`, Math.round(estimation.statutoryTaxes || directGst), Math.round(estimation.grandTotalCost)]);
 
-  const matItems = [
-    { cat: 'Reinforcement Steel', name: estimation.materialSummary?.steelGrade || 'Fe 500D TMT Bars', qty: (estimation.materialSummary?.steelTonnes || 0).toFixed(2), unit: 'Tonnes', cost: estimation.materialSummary?.steelCost || 0 },
-    { cat: 'Structural Cement', name: estimation.materialSummary?.cementBrand || 'UltraTech / Dalmia 53 Grade', qty: estimation.materialSummary?.cementBags || 0, unit: 'Bags (50kg)', cost: estimation.materialSummary?.cementCost || 0 },
-    { cat: 'Sand (Coarse & Fine)', name: 'Filtered Concreting M-Sand + P-Sand', qty: estimation.materialSummary?.sandTons || 0, unit: 'Tonnes / CFT', cost: estimation.materialSummary?.sandCost || 0 },
-    { cat: 'Coarse Aggregate', name: '20mm & 12mm Blue Metal Granite Jelly', qty: estimation.materialSummary?.aggTons || 0, unit: 'Tonnes', cost: estimation.materialSummary?.aggCost || 0 },
-    { cat: 'Masonry Wall Units', name: 'AAC Lightweight Blocks / Concrete Blocks', qty: estimation.materialSummary?.blocksCount || 0, unit: 'Blocks / Nos', cost: estimation.materialSummary?.blocksCost || 0 },
-    { cat: 'Flooring & Tiling', name: 'Vitrified Glazed Porcelain Tiles / Granite', qty: estimation.materialSummary?.flooringSqFt || 0, unit: 'Sq.Ft', cost: estimation.materialSummary?.flooringCost || 0 },
-    { cat: 'Electrical Conduit & Wiring', name: 'FR Insulated Wires + Modular Switches', qty: estimation.materialSummary?.electricalPoints || 0, unit: 'Points', cost: estimation.materialSummary?.electricalCost || 0 },
-    { cat: 'Plumbing & CP Sanitary', name: 'Jaquar / Kohler CPVC & PVC Lines', qty: estimation.materialSummary?.plumbingPoints || 0, unit: 'Outlets', cost: estimation.materialSummary?.plumbingCost || 0 },
-    { cat: 'Painting & Finishing', name: '2 Coats Putty + Premium Acrylic Emulsion', qty: estimation.materialSummary?.paintSqFt || 0, unit: 'Sq.Ft', cost: estimation.materialSummary?.paintCost || 0 },
-    { cat: 'Waterproofing System', name: 'Polymer Slurry + Brickbat Coba Membrane', qty: 1, unit: 'Lump Sum', cost: estimation.materialSummary?.waterproofingCost || 0 }
+  // Section 3: Structural Material Takeoff & Pricing Along With GST
+  rows.push(['3. STRUCTURAL MATERIAL TAKEOFF & PRICING ALONG WITH GST']);
+  rows.push([
+    'Material Category',
+    'Selected Brand & Specification',
+    'Calculated Quantity',
+    'Unit',
+    'Base Unit Rate (INR)',
+    'Pre-GST Amount (INR)',
+    'GST %',
+    'GST Amount (INR)',
+    'Total Amount with GST (INR)'
+  ]);
+
+  const selMat = estimation.selectedMaterials || {};
+  
+  // Explicit itemized material entries with exact GST rates per Indian GST classification
+  const matTakeoff = [
+    {
+      cat: 'Reinforcement Steel Rebar',
+      spec: selMat.steel ? `${selMat.steel.name} (${selMat.steel.grade || 'IS 1786'})` : 'Fe 550D High-Ductility TMT Rebar',
+      qty: (estimation.materialSummary?.steelTonnes || 0).toFixed(2),
+      unit: 'Tonnes',
+      baseCost: Math.round(estimation.materialSummary?.steelCost || (estimation.directMaterialCost * 0.38)),
+      gstPct: 18
+    },
+    {
+      cat: 'Structural Cement',
+      spec: selMat.cement ? `${selMat.cement.name} (${selMat.cement.grade || '53 Grade'})` : 'UltraTech / Dalmia 53 Grade OPC/PPC',
+      qty: estimation.materialSummary?.cementBags || 0,
+      unit: 'Bags (50kg)',
+      baseCost: Math.round(estimation.materialSummary?.cementCost || (estimation.directMaterialCost * 0.22)),
+      gstPct: 28 // 28% GST on cement in India
+    },
+    {
+      cat: 'Manufactured Sand (M-Sand & P-Sand)',
+      spec: selMat.sand ? `${selMat.sand.name}` : 'Filtered Concreting M-Sand + Plastering P-Sand (IS 383)',
+      qty: Math.round(estimation.totalBuiltupArea * 1.9),
+      unit: 'Cu.Ft',
+      baseCost: Math.round(estimation.materialSummary?.sandCost || (estimation.directMaterialCost * 0.10)),
+      gstPct: 5 // 5% GST on sand/aggregates
+    },
+    {
+      cat: 'Coarse Aggregates (20mm & 12mm)',
+      spec: selMat.aggregate ? `${selMat.aggregate.name}` : '20mm & 12mm Machine-Crushed Blue Metal Granite Jelly',
+      qty: Math.round(estimation.totalBuiltupArea * 1.35),
+      unit: 'Cu.Ft',
+      baseCost: Math.round(estimation.materialSummary?.aggCost || (estimation.directMaterialCost * 0.08)),
+      gstPct: 5
+    },
+    {
+      cat: 'Masonry Wall Units',
+      spec: selMat.masonry ? `${selMat.masonry.name} (${selMat.masonry.desc || 'Grade 1'})` : 'AAC Lightweight Blocks (600x200x150mm)',
+      qty: estimation.materialSummary?.blocksCount || Math.round(estimation.totalBuiltupArea * 0.85),
+      unit: 'Blocks / Sq.Ft',
+      baseCost: Math.round(estimation.materialSummary?.blocksCost || (estimation.directMaterialCost * 0.08)),
+      gstPct: 12 // 12% on AAC blocks
+    },
+    {
+      cat: 'Flooring & Tiling',
+      spec: selMat.flooring ? `${selMat.flooring.name} (${selMat.flooring.desc || 'Vitrified'})` : 'Double Charged Vitrified Tiles / Granite',
+      qty: Math.round(estimation.totalCarpetArea * 1.07),
+      unit: 'Sq.Ft',
+      baseCost: Math.round(estimation.materialSummary?.flooringCost || (estimation.directMaterialCost * 0.06)),
+      gstPct: 18
+    },
+    {
+      cat: 'Electrical Conduits & Wiring',
+      spec: selMat.electrical ? `${selMat.electrical.name}` : 'Polycab FRLS Wires + Schneider Modular Switches',
+      qty: estimation.totalBuiltupArea,
+      unit: 'Sq.Ft BUA',
+      baseCost: Math.round(estimation.materialSummary?.electricalCost || (estimation.directMaterialCost * 0.04)),
+      gstPct: 18
+    },
+    {
+      cat: 'Plumbing & Sanitaryware',
+      spec: selMat.bathroom ? `${selMat.bathroom.name}` : 'Jaquar / Kohler CP & Ceramic Fittings + CPVC Pipes',
+      qty: estimation.totalBuiltupArea,
+      unit: 'Sq.Ft BUA',
+      baseCost: Math.round(estimation.materialSummary?.plumbingCost || (estimation.directMaterialCost * 0.03)),
+      gstPct: 18
+    },
+    {
+      cat: 'Internal & Exterior Painting',
+      spec: selMat.painting ? `${selMat.painting.name}` : 'Asian Paints 2-Coat Putty + Apex Royale Emulsion',
+      qty: Math.round(estimation.totalBuiltupArea * 3.2),
+      unit: 'Sq.Ft Surface',
+      baseCost: Math.round(estimation.materialSummary?.paintCost || (estimation.directMaterialCost * 0.02)),
+      gstPct: 18
+    },
+    {
+      cat: 'Waterproofing Chemical Systems',
+      spec: selMat.waterproofing ? `${selMat.waterproofing.name}` : 'Dr. Fixit 2K Polymer Elastomeric Membrane',
+      qty: 1,
+      unit: 'Package (L.S)',
+      baseCost: Math.round(estimation.materialSummary?.waterproofingCost || (estimation.directMaterialCost * 0.01)),
+      gstPct: 18
+    }
   ];
 
-  matItems.forEach(item => {
-    rows.push([item.cat, item.name, item.qty, item.unit, Math.round(item.cost)]);
-  });
-  rows.push([]);
+  matTakeoff.forEach(m => {
+    const qtyNum = parseFloat(m.qty) || 1;
+    const unitRate = qtyNum > 0 ? Math.round(m.baseCost / qtyNum) : m.baseCost;
+    const gstAmt = Math.round(m.baseCost * (m.gstPct / 100));
+    const totalWithGst = m.baseCost + gstAmt;
 
-  // Itemized BOQ Schedule by Work Phase
+    rows.push([
+      m.cat,
+      m.spec,
+      m.qty,
+      m.unit,
+      unitRate,
+      m.baseCost,
+      `${m.gstPct}%`,
+      gstAmt,
+      totalWithGst
+    ]);
+  });
+
+  // Section 4: Detailed BOQ Work Schedule by Trade with Material Specs & GST
   if (estimation.boqItems && estimation.boqItems.length > 0) {
     rows.push(['4. DETAILED BILL OF QUANTITIES (BOQ) WORK SCHEDULE']);
-    rows.push(['Item #', 'Trade Category', 'Work Description', 'Quantity', 'Unit', 'Unit Rate (INR)', 'Total Cost (INR)']);
-    estimation.boqItems.forEach((b, idx) => {
-      rows.push([
-        idx + 1,
-        b.category || 'Civil',
-        b.item || b.description || 'Works',
-        b.qty || 1,
-        b.unit || 'sq.ft',
-        Math.round(b.rate || 0),
-        Math.round(b.totalCost || b.amount || 0)
-      ]);
+    rows.push([
+      'Item #',
+      'Trade Work Package',
+      'Work Scope & Technical Specification',
+      'Quantity',
+      'Unit',
+      'Unit Rate (INR)',
+      'Pre-GST Amount (INR)',
+      'GST %',
+      'GST Amount (INR)',
+      'Total with GST (INR)'
+    ]);
+
+    let itemCounter = 1;
+    estimation.boqItems.forEach(group => {
+      const groupGstPct = 18;
+      (group.items || []).forEach(it => {
+        const preGstCost = Math.round(it.total || (it.materialCost + it.laborCost) || 0);
+        const gstVal = Math.round(preGstCost * (groupGstPct / 100));
+        const totalVal = preGstCost + gstVal;
+        const qNum = parseFloat(it.qty) || 1;
+        const uRate = qNum > 0 ? Math.round(preGstCost / qNum) : preGstCost;
+
+        rows.push([
+          itemCounter++,
+          group.category,
+          it.spec ? `${it.name} — ${it.spec}` : it.name,
+          it.qty,
+          it.unit || 'sq.ft',
+          uRate,
+          preGstCost,
+          `${groupGstPct}%`,
+          gstVal,
+          totalVal
+        ]);
+      });
     });
-    rows.push([]);
   }
 
-  // Milestone Payment Schedule
+  // Section 5: Contractor Milestone Payment Disbursement Schedule
   if (estimation.milestones && estimation.milestones.length > 0) {
-    rows.push(['5. CONTRACTOR MILESTONE PAYMENT SCHEDULE']);
-    rows.push(['Milestone #', 'Construction Stage', 'Share (%)', 'Amount (INR)', 'Indicative Timeline']);
+    rows.push(['5. STAGE-WISE PAYMENT DISBURSEMENT SCHEDULE (WITH GST)']);
+    rows.push(['Stage #', 'Construction Milestone', 'Scope Description', 'Share (%)', 'Pre-GST Amount (INR)', 'Total with GST (INR)', 'Timeline']);
     estimation.milestones.forEach((m, idx) => {
+      const grossAmt = Math.round(m.amount);
+      const netAmt = Math.round(grossAmt / (1 + (gstRateGlobal / 100)));
       rows.push([
         idx + 1,
-        m.name || m.stage,
+        m.stage || m.name,
+        m.desc || 'Construction works execution',
         `${m.pct}%`,
-        Math.round(m.amount),
-        m.timeline || 'Phase ' + (idx + 1)
+        netAmt,
+        grossAmt,
+        m.timeline || `Phase ${idx + 1}`
       ]);
     });
-    rows.push([]);
   }
 
-  // Engineering Disclaimer
-  rows.push(['NOTICE / DISCLAIMER']);
-  rows.push(['Quantities are computed deterministically per IS 456 / NBC 2016 norms. Actual site consumption may vary depending on architectural details, soil bearing capacity, and quarry transport distances.']);
+  // Section 6: Engineering & Statutory Notes
+  rows.push(['6. STATUTORY & ENGINEERING COMPLIANCE NOTES']);
+  rows.push(['Standards Compliance', 'Quantities calculated deterministically per IS 456:2000, IS 1786:2008, IS 383, and National Building Code 2016.']);
+  rows.push(['GST Treatment', 'All material and contractor prices are itemized showing Pre-GST base value, statutory GST rate, and gross payable total.']);
+  rows.push(['Soil & Foundation', 'Structural rebar estimates include 5% lap/cutting wastage based on isolated pad footing benchmark. Verify final BBS against structural engineer design.']);
 
   // Convert to CSV with UTF-8 BOM for Microsoft Excel compatibility
   const csvContent = '\uFEFF' + rows.map(r => 

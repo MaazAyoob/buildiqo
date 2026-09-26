@@ -6,6 +6,8 @@ const fs = require('fs');
 const os = require('os');
 const { requireAuth } = require('../middleware/auth');
 
+const { parseDxfFallback } = require('../services/aiFloorplan/cadFallbackParser');
+
 // Multer storage in memory for streaming to Python service, with 25MB limit
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -16,13 +18,14 @@ const upload = multer({
     const originalName = file.originalname || '';
     const isDxfExt = /\.dxf$/i.test(originalName);
     const isDwgExt = /\.dwg$/i.test(originalName);
+    const isPdfExt = /\.pdf$/i.test(originalName);
 
-    // 1. Extension validation (.dxf and .dwg)
-    if (!isDxfExt && !isDwgExt) {
-      return cb(new Error('Invalid file format. Only AutoCAD .dxf and .dwg files are supported.'), false);
+    // 1. Extension validation (.dxf, .dwg, and .pdf)
+    if (!isDxfExt && !isDwgExt && !isPdfExt) {
+      return cb(new Error('Invalid file format. Only AutoCAD .dxf, .dwg, and .pdf floor plan files are supported.'), false);
     }
 
-    // 2. Relaxed CAD MIME validation
+    // 2. Relaxed CAD & PDF MIME validation
     const allowedMimes = [
       'application/dxf',
       'application/x-dxf',
@@ -35,13 +38,14 @@ const upload = multer({
       'image/vnd.dwg',
       'application/dwg',
       'application/x-dwg',
+      'application/pdf',
+      'application/x-pdf',
       'application/octet-stream'
     ];
 
     if (!file.mimetype || allowedMimes.includes(file.mimetype.toLowerCase())) {
       cb(null, true);
     } else {
-      // Allow CAD extensions to be authoritative
       cb(null, true);
     }
   }
@@ -50,7 +54,7 @@ const upload = multer({
 /**
  * POST /api/floorplan/extract
  * Protected by requireAuth: only authenticated users can upload floor plans.
- * Proxies file securely to the Python extraction service.
+ * Proxies file securely to the Python extraction service with resilient fallback.
  */
 router.post('/extract', requireAuth, (req, res, next) => {
   upload.single('file')(req, res, (err) => {
@@ -72,13 +76,14 @@ router.post('/extract', requireAuth, (req, res, next) => {
   if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
     return res.status(400).json({
       success: false,
-      error: 'Uploaded CAD file is empty.'
+      error: 'Uploaded CAD/PDF file is empty.'
     });
   }
 
   const originalName = req.file.originalname || 'plan.dxf';
   const isDwg = /\.dwg$/i.test(originalName);
-  const ext = isDwg ? '.dwg' : '.dxf';
+  const isPdf = /\.pdf$/i.test(originalName);
+  const ext = isDwg ? '.dwg' : (isPdf ? '.pdf' : '.dxf');
 
   // Target Python service URL (configurable for production and local development)
   const floorplanServiceUrl = (process.env.FLOORPLAN_SERVICE_URL || 'http://127.0.0.1:5001').replace(/\/+$/, '');
@@ -96,12 +101,22 @@ router.post('/extract', requireAuth, (req, res, next) => {
   const safeRandomName = `cad_${Date.now()}_${Math.random().toString(36).substring(2, 10)}${ext}`;
   const tempFilePath = path.join(tempDir, safeRandomName);
 
+  let mimeType = 'application/dxf';
+  let endpoint = `${floorplanServiceUrl}/extract/dxf`;
+  if (isDwg) {
+    endpoint = `${floorplanServiceUrl}/extract/dwg`;
+    mimeType = 'application/acad';
+  } else if (isPdf) {
+    endpoint = `${floorplanServiceUrl}/extract/pdf`;
+    mimeType = 'application/pdf';
+  }
+
   try {
     // Write buffer to safe temporary file
     fs.writeFileSync(tempFilePath, req.file.buffer);
 
     // Prepare multipart form data for Python service
-    const fileBlob = new Blob([req.file.buffer], { type: isDwg ? 'application/acad' : 'application/dxf' });
+    const fileBlob = new Blob([req.file.buffer], { type: mimeType });
     const formData = new FormData();
     formData.append('file', fileBlob, originalName);
 
@@ -114,8 +129,6 @@ router.post('/extract', requireAuth, (req, res, next) => {
       headers['X-Floorplan-Service-Token'] = process.env.FLOORPLAN_SERVICE_TOKEN;
     }
 
-    const endpoint = isDwg ? `${floorplanServiceUrl}/extract/dwg` : `${floorplanServiceUrl}/extract/dxf`;
-
     let pyResponse;
     try {
       pyResponse = await fetch(endpoint, {
@@ -125,6 +138,21 @@ router.post('/extract', requireAuth, (req, res, next) => {
         signal: controller.signal
       });
     } catch (fetchErr) {
+      clearTimeout(timer);
+      console.warn(`Upstream Python floor plan service failed (${fetchErr.message}). Checking in-process fallback.`);
+
+      // Resilient fallback for DXF when microservice is cold-starting
+      if (!isDwg && !isPdf) {
+        try {
+          const fallbackData = parseDxfFallback(req.file.buffer.toString('utf8'), originalName);
+          if (fallbackData && fallbackData.rooms.length > 0) {
+            return res.json(fallbackData);
+          }
+        } catch (fbErr) {
+          console.warn('Fallback CAD parser error:', fbErr.message);
+        }
+      }
+
       if (fetchErr.name === 'AbortError') {
         return res.status(504).json({
           success: false,
@@ -133,7 +161,7 @@ router.post('/extract', requireAuth, (req, res, next) => {
       }
       return res.status(503).json({
         success: false,
-        error: 'Floor plan extraction service is currently unavailable. Please verify service configuration.'
+        error: 'Floor plan extraction service is currently starting up. Please try again in a few moments.'
       });
     } finally {
       clearTimeout(timer);

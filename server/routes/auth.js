@@ -18,8 +18,8 @@ function getJwtSecret() {
 async function ensurePlatformOwner(options = {}) {
   const { overwritePassword = false } = options;
   try {
-    const ownerEmail = process.env.SEED_ADMIN_EMAIL || 'admin@buildiqo.ai';
-    const ownerPassword = process.env.SEED_ADMIN_PASSWORD || 'BuildiqoAdminSecret#2026';
+    const ownerEmail = process.env.SEED_ADMIN_EMAIL;
+    const ownerPassword = process.env.SEED_ADMIN_PASSWORD;
     if (!ownerEmail || !ownerPassword) {
       return { seeded: false, reason: 'SEED_ADMIN_EMAIL or SEED_ADMIN_PASSWORD not configured' };
     }

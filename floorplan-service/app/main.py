@@ -142,6 +142,8 @@ from .generator import (
     render_floorplan_dxf
 )
 
+from .extractors.pdf_extractor import extract_pdf_floorplan
+
 @app.post("/extract/dxf", response_model=ExtractionResponse)
 async def extract_dxf_endpoint(
     file: UploadFile = File(...),
@@ -161,6 +163,35 @@ async def extract_dwg_endpoint(
     Explicit endpoint for DWG floor plan extraction via ODA -> DXF pipeline.
     """
     return await process_cad_extraction(file)
+
+@app.post("/extract/pdf", response_model=ExtractionResponse)
+async def extract_pdf_endpoint(
+    file: UploadFile = File(...),
+    _: Optional[str] = Depends(verify_service_token)
+):
+    """
+    Extracts floor plans from architectural vector PDF drawings.
+    Rejects scanned/raster PDFs gracefully with structured limitation.
+    """
+    filename = file.filename or "plan.pdf"
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Invalid file format. Only PDF files are supported.")
+    
+    content = await file.read()
+    if not content or len(content) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded PDF file is empty.")
+    
+    max_size_bytes = 25 * 1024 * 1024  # 25 MB
+    if len(content) > max_size_bytes:
+        raise HTTPException(status_code=413, detail="File size exceeds maximum 25 MB limit.")
+        
+    try:
+        return extract_pdf_floorplan(content, filename)
+    except ValueError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        logger.error("PDF floor plan extraction error: %s", type(e).__name__)
+        raise HTTPException(status_code=500, detail=f"PDF extraction failed: {str(e)}")
 
 @app.post("/generate-layout", response_model=GeneratedFloorplanResponse)
 async def generate_layout_endpoint(

@@ -42,7 +42,8 @@ class PriceResearchService {
     category = null,
     materialCodes = [],
     sourcePreferences = [],
-    providerName = null
+    providerName = null,
+    searchQuery = ''
   }) {
     if (!userId) {
       throw new Error('Authentication required: userId is missing.');
@@ -54,9 +55,35 @@ class PriceResearchService {
       query.category = category;
     } else if (researchScope === 'specific' && Array.isArray(materialCodes) && materialCodes.length > 0) {
       query.materialCode = { $in: materialCodes.map(c => c.toUpperCase().trim()) };
+    } else if (researchScope === 'custom' || searchQuery) {
+      const q = (searchQuery || '').trim();
+      if (q) {
+        query.$or = [
+          { name: { $regex: q, $options: 'i' } },
+          { materialCode: { $regex: q, $options: 'i' } },
+          { description: { $regex: q, $options: 'i' } },
+          { category: { $regex: q, $options: 'i' } }
+        ];
+      }
     }
 
-    const materials = await Material.find(query).limit(ResearchPolicy.MAX_MATERIALS_PER_RUN).lean();
+    let materials = await Material.find(query).limit(ResearchPolicy.MAX_MATERIALS_PER_RUN).lean();
+    if ((!materials || materials.length === 0) && searchQuery) {
+      // Dynamic physical entry support: create a research target for user-entered query
+      const cleanName = searchQuery.trim();
+      const codeSuffix = cleanName.toUpperCase().replace(/[^A-Z0-9]/g, '_').slice(0, 16);
+      materials = [{
+        materialCode: `ITEM_${codeSuffix}`,
+        name: cleanName,
+        category: 'custom',
+        unit: 'unit',
+        benchmarkRate: 1000,
+        specificationStandard: 'Physical Entry Search',
+        active: true,
+        isCustom: true
+      }];
+    }
+
     if (!materials || materials.length === 0) {
       throw new Error('No active materials matched the requested research scope.');
     }
