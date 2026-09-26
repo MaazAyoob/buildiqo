@@ -27,6 +27,7 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
 
   const isFreePlan = subscription?.planId === 'free';
   const displayPrice = (val) => isFreePlan ? '₹00' : formatCurrency(val);
+  const selectedMaterials = estimation?.selectedMaterials || {};
 
   const handleSave = () => {
     saveCurrentProject(state.projectName || 'My Dream Residence');

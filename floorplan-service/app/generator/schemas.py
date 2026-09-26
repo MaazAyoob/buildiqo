@@ -50,6 +50,14 @@ class GeneratedRoomGeometry(BaseModel):
     polygon: List[List[float]] = Field(default_factory=list)
     doors: List[Dict[str, Any]] = Field(default_factory=list)
     windows: List[Dict[str, Any]] = Field(default_factory=list)
+    # Phase 3 Additive Architectural Fields
+    zone: str = Field(default="public", description="public, private, service, special, circulation")
+    aspect_ratio: float = Field(default=1.0, description="Aspect ratio width / length")
+    formatted_dimensions: str = Field(default="", description="Human-readable architectural dimensions (e.g. 12'-0\" × 14'-0\")")
+    furniture: List[Dict[str, Any]] = Field(default_factory=list, description="Schematic furniture symbols")
+    attached_to_room_id: Optional[str] = Field(default=None, description="Parent bedroom ID if attached bath")
+    has_exterior_window: bool = Field(default=True, description="Habitable ventilation requirement satisfied")
+    furniture_fit: bool = Field(default=True, description="Required furniture module fits within room clearances")
 
 class FloorLayout(BaseModel):
     floor: int
@@ -60,6 +68,11 @@ class FloorLayout(BaseModel):
     circulation_area_sqft: float = Field(default=0.0, description="Dedicated circulation/corridor/hall area in sq.ft")
     unused_area_sqft: float = Field(default=0.0, description="Unassigned usable or open buildable area in sq.ft")
     circulation_corridors: List[Dict[str, Any]] = Field(default_factory=list, description="Explicit circulation polygon corridors")
+    # Phase 3 Additive Architectural Fields
+    open_areas: List[Dict[str, Any]] = Field(default_factory=list, description="Classified open spaces (Courtyard, Garden, Balcony, Terrace)")
+    walls: List[Dict[str, Any]] = Field(default_factory=list, description="Architectural wall segments with exterior/interior classification")
+    strategy_applied: str = Field(default="central_circulation_spine", description="Architectural planning strategy applied")
+    quality_score: Optional[Dict[str, Any]] = Field(default=None, description="Detailed 100-point composite quality score")
 
 class GenerationWarning(BaseModel):
     code: str
@@ -77,3 +90,9 @@ class GeneratedFloorplanResponse(BaseModel):
     constraints: Dict[str, Any] = Field(default_factory=dict)
     svg: str = ""
     dxf_available: bool = True
+    # Phase 3 Additive Architectural Fields
+    overall_quality_score: float = Field(default=85.0, description="Overall layout quality score out of 100")
+    score_breakdown: Optional[Dict[str, Any]] = Field(default=None, description="Detailed score per category")
+    architectural_strategy: str = Field(default="", description="Name of selected architectural planning strategy")
+    planning_principles_applied: List[str] = Field(default_factory=list, description="List of architectural principles satisfied")
+

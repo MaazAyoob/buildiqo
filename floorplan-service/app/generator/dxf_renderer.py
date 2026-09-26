@@ -19,11 +19,14 @@ def render_floorplan_dxf(response: GeneratedFloorplanResponse, active_floor_idx:
     layers = [
         ("PLOT_BOUNDARY", 7, "CONTINUOUS"),
         ("SETBACK_LINE", 1, "DASHED"),
+        ("WALLS", 4, "CONTINUOUS"),
         ("ROOM_WALLS", 4, "CONTINUOUS"),
         ("ROOM_LABELS", 2, "CONTINUOUS"),
         ("DOORS", 5, "CONTINUOUS"),
         ("WINDOWS", 6, "CONTINUOUS"),
-        ("CIRCULATION", 8, "DASHED")
+        ("CIRCULATION", 8, "DASHED"),
+        ("FURNITURE", 9, "CONTINUOUS"),
+        ("OPEN_AREAS", 3, "DASHED")
     ]
     for layer_name, color, linetype in layers:
         if layer_name not in doc.layers:
@@ -43,7 +46,7 @@ def render_floorplan_dxf(response: GeneratedFloorplanResponse, active_floor_idx:
     setback_pts = [(sx0, sy0), (sx1, sy0), (sx1, sy1), (sx0, sy1), (sx0, sy0)]
     msp.add_lwpolyline(setback_pts, dxfattribs={"layer": "SETBACK_LINE", "lineweight": 15})
 
-    # 4. Draw Selected Floor Rooms and Circulation
+    # 4. Draw Selected Floor Rooms, Walls, and Furniture
     target_floor = None
     for fl in response.floors:
         if fl.floor == active_floor_idx:
@@ -53,6 +56,25 @@ def render_floorplan_dxf(response: GeneratedFloorplanResponse, active_floor_idx:
         target_floor = response.floors[0]
 
     if target_floor:
+        # Draw Wall Segments
+        for wall in getattr(target_floor, "walls", []) or []:
+            sp = wall.get("start", [0, 0])
+            ep = wall.get("end", [0, 0])
+            wtype = wall.get("wall_type", "interior")
+            lweight = 35 if wtype == "exterior" else 20
+            msp.add_line((sp[0], sp[1]), (ep[0], ep[1]), dxfattribs={"layer": "WALLS", "lineweight": lweight})
+
+        # Draw Open Areas
+        for oa in getattr(target_floor, "open_areas", []) or []:
+            ox, oy = oa["x"], oa["y"]
+            ow, ol = oa["width"], oa["length"]
+            o_pts = [(ox, oy), (ox + ow, oy), (ox + ow, oy + ol), (ox, oy + ol), (ox, oy)]
+            msp.add_lwpolyline(o_pts, dxfattribs={"layer": "OPEN_AREAS", "lineweight": 15})
+            msp.add_text(
+                oa.get("name", "OPEN AREA").upper(),
+                dxfattribs={"layer": "OPEN_AREAS", "height": 0.6}
+            ).set_placement((ox + ow/2, oy + ol/2), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
+
         # Draw Circulation Corridors
         for corridor in getattr(target_floor, "circulation_corridors", []) or []:
             cx, cy = corridor["x"], corridor["y"]
@@ -71,7 +93,8 @@ def render_floorplan_dxf(response: GeneratedFloorplanResponse, active_floor_idx:
             # Centered Text Label
             cx = rx + (rw / 2.0)
             cy = ry + (rl / 2.0)
-            label_text = f"{room.name}\n{rw:.1f}' x {rl:.1f}'\n{room.area:.0f} SQ.FT"
+
+            dim_display = getattr(room, "formatted_dimensions", f"{rw:.1f}' x {rl:.1f}'")
 
             msp.add_text(
                 room.name.upper(),
@@ -83,7 +106,7 @@ def render_floorplan_dxf(response: GeneratedFloorplanResponse, active_floor_idx:
             ).set_placement((cx, cy + 0.5), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
 
             msp.add_text(
-                f"{rw:.1f}' x {rl:.1f}' ({room.area:.0f} sq.ft)",
+                f"{dim_display} ({room.area:.0f} sq.ft)",
                 dxfattribs={
                     "layer": "ROOM_LABELS",
                     "height": 0.6,
@@ -104,6 +127,13 @@ def render_floorplan_dxf(response: GeneratedFloorplanResponse, active_floor_idx:
                 wy = win.get("y", ry + rl)
                 ww = win.get("width", 4.0)
                 msp.add_line((wx, wy), (wx + ww, wy), dxfattribs={"layer": "WINDOWS", "lineweight": 25})
+
+            # Draw Furniture
+            for fi in getattr(room, "furniture", []) or []:
+                fx, fy = fi["x"], fi["y"]
+                fw, fl = fi["width"], fi["length"]
+                f_pts = [(fx, fy), (fx + fw, fy), (fx + fw, fy + fl), (fx, fy + fl), (fx, fy)]
+                msp.add_lwpolyline(f_pts, dxfattribs={"layer": "FURNITURE", "lineweight": 10})
 
     stream = io.StringIO()
     doc.write(stream)

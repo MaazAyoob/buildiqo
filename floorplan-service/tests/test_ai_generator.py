@@ -187,7 +187,7 @@ def test_multi_floor_distribution():
     assert "master_bed" in upper_rooms or "regular_bed" in upper_rooms
 
     val = validate_generated_geometry(response)
-    assert val.is_valid is True
+    assert val.is_valid is True, f"Validation errors: {val.errors}"
 
 def test_solver_failure_on_impossible_plot():
     """When requested rooms cannot fit inside buildable area, solver raises controlled SolverException."""
@@ -374,4 +374,97 @@ def test_floor_count_limit_validation():
             num_floors=10,
             rooms_required=[{"type": "living", "count": 1}]
         )
+
+def test_phase3_1_30x50_3bhk():
+    """TEST 1: 30×50 3BHK - Validates bedroom counts, widths, lengths, and aspect ratios."""
+    from app.generator.room_registry import get_room_definition
+    req = FloorplanGenerationRequest(
+        plot_width_ft=30.0,
+        plot_length_ft=50.0,
+        plot_facing="north",
+        num_floors=1,
+        setback_ft=3.0,
+        rooms_required=[
+            {"type": "living", "count": 1},
+            {"type": "kitchen", "count": 1},
+            {"type": "dining", "count": 1},
+            {"type": "master_bed", "count": 1},
+            {"type": "regular_bed", "count": 2},
+            {"type": "common_bath", "count": 1},
+            {"type": "attached_bath", "count": 1}
+        ],
+        seed=42
+    )
+    solver = DeterministicFloorplanSolver(req)
+    res = solver.solve()
+    assert res.success is True
+    floor = res.floors[0]
+    beds = [r for r in floor.rooms if r.type in ["master_bed", "regular_bed"]]
+    assert len(beds) == 3, f"Expected 3 bedrooms, found {len(beds)}"
+    for b in beds:
+        r_def = get_room_definition(b.type)
+        assert b.width >= r_def.min_width_ft, f"{b.name} width {b.width} < min {r_def.min_width_ft}"
+        assert b.length >= r_def.min_length_ft, f"{b.name} length {b.length} < min {r_def.min_length_ft}"
+        ar = max(b.width, b.length) / min(b.width, b.length)
+        assert ar <= r_def.max_aspect_ratio + 0.1, f"{b.name} aspect ratio {ar:.2f} > max {r_def.max_aspect_ratio}"
+
+def test_phase3_1_40x60_4bhk():
+    """TEST 2: 40×60 4BHK - Validates 4 bedrooms, living room width >= 10ft, and valid bathrooms."""
+    from app.generator.room_registry import get_room_definition
+    req = FloorplanGenerationRequest(
+        plot_width_ft=40.0,
+        plot_length_ft=60.0,
+        plot_facing="east",
+        num_floors=1,
+        setback_ft=3.0,
+        rooms_required=[
+            {"type": "living", "count": 1},
+            {"type": "kitchen", "count": 1},
+            {"type": "dining", "count": 1},
+            {"type": "puja", "count": 1},
+            {"type": "master_bed", "count": 1},
+            {"type": "regular_bed", "count": 3},
+            {"type": "common_bath", "count": 1},
+            {"type": "attached_bath", "count": 1}
+        ],
+        seed=101
+    )
+    solver = DeterministicFloorplanSolver(req)
+    res = solver.solve()
+    assert res.success is True
+    floor = res.floors[0]
+    beds = [r for r in floor.rooms if r.type in ["master_bed", "regular_bed"]]
+    assert len(beds) == 4, f"Expected 4 bedrooms, found {len(beds)}"
+    for b in beds:
+        r_def = get_room_definition(b.type)
+        assert b.width >= r_def.min_width_ft, f"{b.name} width {b.width} < min {r_def.min_width_ft}"
+    living = next(r for r in floor.rooms if r.type == "living")
+    assert living.width >= 10.0, f"Living room width {living.width} < 10.0"
+    baths = [r for r in floor.rooms if "bath" in r.type]
+    for bath in baths:
+        assert bath.width >= 4.5 and bath.length >= 5.5
+
+def test_phase3_1_30x40_3bhk_2floor():
+    """TEST 3: 30×40 3BHK 2-Floor - Verifies multi-floor distribution and vertical alignment."""
+    req = FloorplanGenerationRequest(
+        plot_width_ft=30.0,
+        plot_length_ft=40.0,
+        num_floors=2,
+        setback_ft=3.0,
+        rooms_required=[
+            {"type": "living", "count": 1},
+            {"type": "kitchen", "count": 1},
+            {"type": "master_bed", "count": 1},
+            {"type": "regular_bed", "count": 2},
+            {"type": "common_bath", "count": 1},
+            {"type": "attached_bath", "count": 1}
+        ],
+        seed=555
+    )
+    solver = DeterministicFloorplanSolver(req)
+    res = solver.solve()
+    assert res.success is True
+    assert len(res.floors) == 2
+    val = validate_generated_geometry(res)
+    assert val.is_valid is True, f"Validation errors: {val.errors}"
 

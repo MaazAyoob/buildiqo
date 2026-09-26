@@ -5,7 +5,8 @@ from .room_registry import (
     ROOM_REGISTRY,
     normalize_room_type,
     get_room_definition,
-    RoomDefinition
+    RoomDefinition,
+    format_room_dimensions
 )
 from .schemas import (
     FloorplanGenerationRequest,

@@ -321,3 +321,13 @@ def normalize_room_type(type_str: str) -> str:
 def get_room_definition(canonical_type: str) -> RoomDefinition:
     """Returns the definition for a room type, falling back safely."""
     return ROOM_REGISTRY.get(canonical_type, ROOM_REGISTRY["regular_bed"])
+
+def format_room_dimensions(w: float, l: float) -> str:
+    """Format decimal dimensions into architectural feet and inches, e.g. 12'-0" × 14'-6"."""
+    def to_ft_in(val: float) -> str:
+        total_inches = round(float(val) * 12)
+        feet = total_inches // 12
+        inches = total_inches % 12
+        return f"{feet}'-{inches}\""
+    return f"{to_ft_in(w)} × {to_ft_in(l)}"
+
