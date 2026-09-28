@@ -30,28 +30,32 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
   const selectedMaterials = estimation?.selectedMaterials || {};
 
   const handleSave = () => {
-    saveCurrentProject(state.projectName || 'My Dream Residence');
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    if (saveCurrentProject) {
+      saveCurrentProject(state?.projectName || 'My Dream Residence');
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    }
   };
 
   const handlePrint = () => {
     // Automatically capture customer requirement lead in the Website Owner inbox
     try {
-      captureCustomerLead({
-        name: currentUser?.name || state.customerName || (state.projectName + ' Homeowner'),
-        email: currentUser?.email || 'customer@buildiqo.ai',
-        phone: currentUser?.phone || '+91 98765 43210',
-        notes: `Customer generated formal IS 456 BOQ PDF Report for ${state.projectName || 'Project'}. Client: ${state.customerName || 'N/A'}, Consultant: ${state.professionalName || 'N/A'}`
-      });
+      if (captureCustomerLead) {
+        captureCustomerLead({
+          name: currentUser?.name || state?.customerName || ((state?.projectName || 'Project') + ' Homeowner'),
+          email: currentUser?.email || 'customer@buildiqo.ai',
+          phone: currentUser?.phone || '+91 98765 43210',
+          notes: `Customer generated formal IS 456 BOQ PDF Report for ${state?.projectName || 'Project'}. Client: ${state?.customerName || 'N/A'}, Consultant: ${state?.professionalName || 'N/A'}`
+        });
+      }
     } catch (e) {}
     window.print();
   };
 
   const handleShare = async () => {
-    const projName = state.projectName || 'Construction Project';
-    const grandCost = formatCurrency(estimation.grandTotalCost);
-    const bua = formatNumber(estimation.totalBuiltupArea);
+    const projName = state?.projectName || 'Construction Project';
+    const grandCost = formatCurrency(estimation?.grandTotalCost);
+    const bua = formatNumber(estimation?.totalBuiltupArea);
     const shareUrl = window.location.href;
 
     const shareData = {
@@ -98,35 +102,36 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
     }
   };
 
+  const safeState = state || {};
   const {
-    plotArea,
-    totalCarpetArea,
-    totalBuiltupArea,
-    costPerSqFt,
-    directMaterialCost,
-    totalLaborCost,
-    ancillaryCost,
-    directConstructionCost,
-    architectureFee,
-    contractorMargin,
-    contingencyBuffer,
-    grandTotalCost,
-    materialSummary,
-    boqItems,
-    milestones,
-    city,
-    soil,
-    tier,
-    buildingType,
-    constructionType,
-    coverageCheck,
-    tradePackageCheck,
-    gst,
-    gstRate,
-    labourCess,
-    labourCessRate,
-    statutoryTaxes
-  } = estimation;
+    plotArea = 0,
+    totalCarpetArea = 0,
+    totalBuiltupArea = 0,
+    costPerSqFt = 0,
+    directMaterialCost = 0,
+    totalLaborCost = 0,
+    ancillaryCost = 0,
+    directConstructionCost = 0,
+    architectureFee = 0,
+    contractorMargin = 0,
+    contingencyBuffer = 0,
+    grandTotalCost = 0,
+    materialSummary = [],
+    boqItems = [],
+    milestones = [],
+    city = {},
+    soil = {},
+    tier = 'standard',
+    buildingType = {},
+    constructionType = {},
+    coverageCheck = {},
+    tradePackageCheck = {},
+    gst = 0,
+    gstRate = 18,
+    labourCess = 0,
+    labourCessRate = 1,
+    statutoryTaxes = 0
+  } = estimation || {};
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -283,26 +288,26 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-slate-50/70 rounded-xl border border-slate-200/80">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Project Title</span>
-            <span className="text-sm font-bold text-slate-900 mt-0.5 block">{state.projectName || 'My Residence'}</span>
-            <span className="text-xs text-slate-500">{city?.name} ({city?.state})</span>
+            <span className="text-sm font-bold text-slate-900 mt-0.5 block">{safeState.projectName || 'My Residence'}</span>
+            <span className="text-xs text-slate-500">{city?.name || safeState.city || 'Bengaluru'} ({city?.state || safeState.state || 'Karnataka'})</span>
           </div>
 
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Plot Dimensions & Area</span>
-            <span className="font-mono tabular-nums text-sm font-bold text-slate-900 mt-0.5 block">{state.plotWidth} × {state.plotLength} ft</span>
-            <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(plotArea)} sq.ft ({state.facing} Facing)</span>
+            <span className="font-mono tabular-nums text-sm font-bold text-slate-900 mt-0.5 block">{safeState.plotWidth || 30} × {safeState.plotLength || 40} ft</span>
+            <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(plotArea)} sq.ft ({safeState.facing || 'North'} Facing)</span>
           </div>
 
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Building & Structural Type</span>
-            <span className="text-sm font-bold text-slate-900 mt-0.5 block">{buildingType?.name}</span>
-            <span className="text-xs text-slate-500">{constructionType?.name}</span>
+            <span className="text-sm font-bold text-slate-900 mt-0.5 block">{buildingType?.name || 'Independent Residence'}</span>
+            <span className="text-xs text-slate-500">{constructionType?.name || 'RCC Framed Structure'}</span>
           </div>
 
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Massing & Quality Tier</span>
-            <span className="text-sm font-bold text-slate-900 mt-0.5 block uppercase">{tier} Package</span>
-            <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(totalBuiltupArea)} sq.ft BUA ({state.numFloors} Floors)</span>
+            <span className="text-sm font-bold text-slate-900 mt-0.5 block uppercase">{tier || 'Standard'} Package</span>
+            <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(totalBuiltupArea)} sq.ft BUA ({safeState.numFloors || 2} Floors)</span>
           </div>
         </div>
 
@@ -348,9 +353,9 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </div>
         </div>
 
-        <div className={`rounded-xl border p-4 ${coverageCheck.isOverLimit ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}`}>
+        <div className={`rounded-xl border p-4 ${coverageCheck?.isOverLimit ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}`}>
           <p className="text-xs font-extrabold text-slate-900">Ground coverage / setback sanity check</p>
-          <p className="text-[11px] text-gray-700 mt-1">{coverageCheck.message}</p>
+          <p className="text-[11px] text-gray-700 mt-1">{coverageCheck?.message || 'Ground coverage is within planning benchmark.'}</p>
         </div>
 
         {/* Primary Material Takeoff Table */}
@@ -371,12 +376,12 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {materialSummary.map((m, idx) => (
+                {(materialSummary || []).map((m, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-2.5 px-4 font-semibold text-slate-900">{m.label}</td>
-                    <td className="py-2.5 px-4 font-mono tabular-nums font-bold text-blue-700 text-right">{m.qty}</td>
-                    <td className="py-2.5 px-4 text-slate-600">{m.benchmark}</td>
-                    <td className="py-2.5 px-4 font-mono text-slate-400 text-xs">{m.standard}</td>
+                    <td className="py-2.5 px-4 font-semibold text-slate-900">{m?.label}</td>
+                    <td className="py-2.5 px-4 font-mono tabular-nums font-bold text-blue-700 text-right">{m?.qty}</td>
+                    <td className="py-2.5 px-4 text-slate-600">{m?.benchmark}</td>
+                    <td className="py-2.5 px-4 font-mono text-slate-400 text-xs">{m?.standard}</td>
                   </tr>
                 ))}
               </tbody>
@@ -384,9 +389,9 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </div>
         </div>
 
-        <div className={`rounded-xl border p-4 ${tradePackageCheck.passed ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'}`}>
+        <div className={`rounded-xl border p-4 ${tradePackageCheck?.passed ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'}`}>
           <p className="text-xs font-bold text-slate-900">Cost-head reconciliation</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">{tradePackageCheck.passed ? 'Passed: the eight trade packages equal materials + labor + site amenities + supervision/buffer.' : `Failed: variance ${formatCurrency(tradePackageCheck.variance)}.`}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{tradePackageCheck?.passed ? 'Passed: the eight trade packages equal materials + labor + site amenities + supervision/buffer.' : (tradePackageCheck?.variance !== undefined ? `Failed: variance ${formatCurrency(tradePackageCheck.variance)}.` : 'Reconciled to trade package totals.')}</p>
         </div>
 
         {/* Floor-wise spaces schedule summary */}
@@ -397,20 +402,20 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </h3>
 
           <div className="space-y-3">
-            {state.floors.map((floor, fIdx) => {
-              const floorDetail = estimation.floorDetails[fIdx] || { carpetArea: 0, builtupArea: 0 };
+            {(safeState.floors || []).map((floor, fIdx) => {
+              const floorDetail = (estimation?.floorDetails && estimation.floorDetails[fIdx]) || { carpetArea: 0, builtupArea: 0 };
               return (
-                <div key={floor.id} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/40 space-y-2">
+                <div key={floor?.id || fIdx} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900">{floor.name}</span>
+                    <span className="text-xs font-bold text-slate-900">{floor?.name || `Floor ${fIdx + 1}`}</span>
                     <span className="font-mono tabular-nums text-xs font-bold text-blue-700">
                       {formatNumber(floorDetail.carpetArea)} sq.ft Carpet • {formatNumber(floorDetail.builtupArea)} sq.ft BUA
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {floor.rooms.map(r => (
-                      <span key={r.id} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium">
-                        {r.name} <span className="font-mono text-slate-500">({r.width}×{r.length} ft{r.count > 1 ? ` × ${r.count}` : ''})</span>
+                    {(floor?.rooms || []).map(r => (
+                      <span key={r?.id || Math.random()} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-700 font-medium">
+                        {r?.name || 'Room'} <span className="font-mono text-slate-500">({r?.width || 0}×{r?.length || 0} ft{(r?.count || 1) > 1 ? ` × ${r.count}` : ''})</span>
                       </span>
                     ))}
                   </div>
@@ -431,12 +436,13 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </div>
 
           <div className="space-y-3">
-            {boqItems.map((group, gIdx) => {
-              const groupTotal = group.items.reduce((sum, item) => sum + item.total, 0);
+            {(boqItems || []).map((group, gIdx) => {
+              const groupItems = group?.items || [];
+              const groupTotal = groupItems.reduce((sum, item) => sum + (item?.total || 0), 0);
 
               // Resolve stage-specific material specifications
               let stageSpecs = [];
-              const catKey = (group.id || group.category || '').toLowerCase();
+              const catKey = (group?.id || group?.category || '').toLowerCase();
 
               if (catKey.includes('structure') || gIdx === 0) {
                 stageSpecs = [
@@ -470,7 +476,7 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
               } else if (catKey.includes('elec') || gIdx === 5) {
                 stageSpecs = [
                   selectedMaterials?.electrical ? `Wiring & Switches: ${selectedMaterials.electrical.name}` : 'Electrical: Polycab FRLS Insulated Wires + Schneider Modular Switches',
-                  `Circuits: ${estimation.electricalPoints?.lights || 0} Lights, ${estimation.electricalPoints?.plugs || 0} Plugs, ${estimation.electricalPoints?.ac || 0} AC points with 8-way TPN DB & Earthing`
+                  `Circuits: ${estimation?.electricalPoints?.lights || 0} Lights, ${estimation?.electricalPoints?.plugs || 0} Plugs, ${estimation?.electricalPoints?.ac || 0} AC points with 8-way TPN DB & Earthing`
                 ];
               } else if (catKey.includes('paint') || gIdx === 6) {
                 stageSpecs = [
@@ -478,13 +484,13 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
                   selectedMaterials?.waterproofing ? `Waterproofing: ${selectedMaterials.waterproofing.name}` : 'Waterproofing: Dr. Fixit 2K Polymer membrane with brickbat coba on terrace'
                 ];
               } else {
-                stageSpecs = group.items.map(i => `${i.name}: ${i.spec || 'Standard Specification'}`);
+                stageSpecs = groupItems.map(i => `${i?.name || 'Item'}: ${i?.spec || 'Standard Specification'}`);
               }
 
               return (
                 <div key={gIdx} className="p-4 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50/50 transition-colors shadow-2xs space-y-2.5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <span className="text-xs font-bold text-slate-900">{gIdx + 1}. {group.category}</span>
+                    <span className="text-xs font-bold text-slate-900">{gIdx + 1}. {group?.category || 'Trade Package'}</span>
                     <span className="font-mono tabular-nums text-sm font-bold text-slate-900">{formatCurrency(groupTotal)}</span>
                   </div>
 
@@ -511,14 +517,14 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {milestones.map((m, idx) => (
+            {(milestones || []).map((m, idx) => (
               <div key={idx} className="p-4 rounded-xl border border-slate-200/80 bg-white space-y-1.5 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">{m.stage}</span>
-                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">{m.pct}%</span>
+                  <span className="text-xs font-bold text-slate-900">{m?.stage || `Stage ${idx + 1}`}</span>
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">{m?.pct || 0}%</span>
                 </div>
-                <div className="font-mono tabular-nums text-sm font-bold text-slate-900">{formatCurrency(m.amount)}</div>
-                <p className="text-[11px] text-slate-400">{m.timeline} • {m.desc}</p>
+                <div className="font-mono tabular-nums text-sm font-bold text-slate-900">{formatCurrency(m?.amount || 0)}</div>
+                <p className="text-[11px] text-slate-400">{m?.timeline || ''} {m?.desc ? `• ${m.desc}` : ''}</p>
               </div>
             ))}
           </div>

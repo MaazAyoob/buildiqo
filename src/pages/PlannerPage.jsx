@@ -25,6 +25,52 @@ import { Step3DViewer } from '../components/planner/Step3DViewer';
 import { StepReport } from '../components/planner/StepReport';
 import { PaymentModal } from '../components/common/PaymentModal';
 
+class StepErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Planner Step Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-white rounded-2xl p-8 border border-red-200 shadow-sm text-center space-y-4 max-w-xl mx-auto my-8">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto font-bold text-lg">
+            !
+          </div>
+          <h3 className="text-base font-bold text-slate-900">Summary Report Encountered an Error</h3>
+          <p className="text-xs text-slate-500">
+            {this.state.error?.message || 'A runtime issue occurred while loading this section.'}
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
   const { state, updateState, estimation, saveCurrentProject, subscription, currentUser } = useEstimateStore();
   const [currentStep, setCurrentStep] = useState(initialStep || 1);
@@ -244,11 +290,13 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
         )}
 
         {currentStep === 6 && (
-          <StepReport 
-            state={state} 
-            estimation={estimation}
-            onOpenSavedModal={onOpenSavedModal}
-          />
+          <StepErrorBoundary>
+            <StepReport 
+              state={state} 
+              estimation={estimation}
+              onOpenSavedModal={onOpenSavedModal}
+            />
+          </StepErrorBoundary>
         )}
       </div>
 
