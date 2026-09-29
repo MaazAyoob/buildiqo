@@ -108,10 +108,14 @@ let globalLeads = getInitialLeads();
 let globalSub = getActiveSubscription();
 let globalPayments = getInitialPayments();
 let globalPricingRates = null;
-let globalPricingStatus = localStorage.getItem('buildiqo_benchmark_mode') === 'true' ? 'BENCHMARK' : 'CHECKING';
+// Safe localStorage read — iOS Safari Private Browsing throws SecurityError on bare localStorage access
+function safeLocalGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+let globalPricingStatus = safeLocalGet('buildiqo_benchmark_mode') === 'true' ? 'BENCHMARK' : 'CHECKING';
 let globalPricingScope = null;
 let globalPricingSource = null;
-let globalIsBenchmarkMode = localStorage.getItem('buildiqo_benchmark_mode') === 'true';
+let globalIsBenchmarkMode = safeLocalGet('buildiqo_benchmark_mode') === 'true';
 let globalIsSnapshotMode = false;
 let globalActiveSnapshot = null;
 let listeners = [];
