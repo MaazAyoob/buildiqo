@@ -144,30 +144,30 @@ export function LiveMaterialPriceTicker({
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all">
+    <div className="bg-gradient-to-r from-blue-50/95 via-sky-50/80 to-indigo-50/90 rounded-2xl border border-blue-200/90 shadow-card overflow-hidden transition-all">
       
       {/* Compact Main Bar */}
       <div className="p-3 sm:p-3.5 flex flex-wrap items-center justify-between gap-3">
         
         {/* Left: Title & State Dropdown */}
         <div className="flex items-center space-x-2.5">
-          <div className="flex items-center space-x-1.5 shrink-0">
-            <span className={`w-2 h-2 rounded-full ${pricingStatus === 'APPROVED' ? 'bg-green-500 animate-ping' : 'bg-amber-500'}`} />
-            <span className="text-xs font-black text-gray-900 tracking-tight">
+          <div className="flex items-center space-x-1.5 shrink-0 bg-blue-600 text-white px-2.5 py-1 rounded-lg shadow-brand">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span className="text-xs font-black tracking-tight">
               Live Material Rates
             </span>
           </div>
 
-          <span className="text-gray-300 text-xs hidden sm:inline">•</span>
+          <span className="text-blue-300 text-xs hidden sm:inline">•</span>
 
           {/* State Selector Dropdown */}
-          <div className="flex items-center space-x-1 bg-gray-100/90 px-2 py-1 rounded-lg border border-gray-200 shrink-0">
-            <MapPin className="w-3 h-3 text-blue-600" />
-            <span className="text-[10px] font-medium text-gray-500 hidden sm:inline">State:</span>
+          <div className="flex items-center space-x-1.5 bg-white/95 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs shrink-0">
+            <MapPin className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-[10px] font-semibold text-slate-500 hidden sm:inline">Hub:</span>
             <select
               value={activeState}
               onChange={handleStateSelect}
-              className="text-[11px] font-bold text-gray-900 bg-transparent focus:outline-none cursor-pointer pr-1"
+              className="text-[11px] font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer pr-1"
             >
               {INDIAN_STATES.map(s => (
                 <option key={s.id} value={s.name}>

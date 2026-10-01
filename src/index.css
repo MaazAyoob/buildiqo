@@ -2,53 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Brand Tokens - Directly matched to official Buildiqo logo */
+  --brand-primary: #2563EB;       /* Royal Blue - center bar & "i" stem */
+  --brand-cobalt: #1D4ED8;        /* Deep Cobalt - right tallest bar */
+  --brand-sky: #93C5FD;           /* Light Sky - left metric bar */
+  --brand-accent: #F59E0B;        /* Intelligence Amber Sun disc */
+  --brand-slate: #0F172A;         /* Hexagon perimeter & dark wordmark */
+  --brand-subtle: #EFF6FF;        /* Lightest blue tint */
+
+  /* Neutral Surface System */
+  --bg-app: #F8FAFC;              /* Clean Slate-50 background */
+  --surface-card: #FFFFFF;        /* Pure crisp card surface */
+  --border-subtle: #E2E8F0;       /* Slate-200 separator */
+  --border-focus: #2563EB;        /* Blue focus ring */
+  --text-primary: #0F172A;        /* Slate-900 high contrast */
+  --text-secondary: #475569;      /* Slate-600 architectural metadata */
+  --text-muted: #94A3B8;          /* Slate-400 inactive/hint */
+}
+
 @layer base {
   body {
     background-color: #F8FAFC;
     background-image: 
-      radial-gradient(ellipse 90% 40% at 50% -10%, rgba(37, 99, 235, 0.05), transparent 70%),
-      radial-gradient(ellipse 60% 30% at 90% 20%, rgba(99, 102, 241, 0.03), transparent 60%),
-      radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 24px 24px;
+      radial-gradient(ellipse 80% 35% at 50% -5%, rgba(37, 99, 235, 0.05), transparent 60%),
+      radial-gradient(ellipse 50% 25% at 95% 15%, rgba(245, 158, 11, 0.03), transparent 50%),
+      radial-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 28px 28px;
     background-attachment: fixed;
     color: #0F172A;
-    font-family: 'Plus Jakarta Sans', 'Outfit', 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Monospaced tabular alignment for engineering and monetary figures */
+  /* Monospaced tabular alignment for engineering quantities & INR currency */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* Reusable card & button design tokens matching Linear/Apple architectural precision */
+/* Reusable Architectural Design System Tokens */
 @layer components {
+  /* Crisp Architectural Card */
   .card-architect {
     background-color: #FFFFFF;
     border: 1px solid #E2E8F0;
     border-radius: 1rem;
-    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
   }
 
+  /* Interactive Hover Card */
   .card-architect-interactive {
     background-color: #FFFFFF;
     border: 1px solid #E2E8F0;
     border-radius: 1rem;
-    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
+    transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .card-architect-interactive:hover {
     border-color: #CBD5E1;
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+    box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
   }
 
-  /* Dark specialized CAD canvas */
+  /* Dark Specialized Architectural CAD Canvas */
   .cad-dark-viewport {
     background-color: #0B0F19;
     background-image: 
-      radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
     background-size: 20px 20px;
     color: #F8FAFC;
   }
@@ -56,21 +78,149 @@
   /* Precision Input Style */
   .input-architect {
     background-color: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #CBD5E1;
     border-radius: 0.75rem;
     padding: 0.625rem 0.875rem;
     font-size: 0.875rem;
     color: #0F172A;
-    transition: all 150ms ease;
+    transition: all 180ms ease;
   }
   .input-architect:focus {
     outline: none;
     border-color: #2563EB;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  }
+
+  /* Primary Brand Button */
+  .btn-brand-primary {
+    background-color: #2563EB;
+    color: #FFFFFF;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.25);
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-brand-primary:hover {
+    background-color: #1D4ED8;
+    box-shadow: 0 6px 18px 0 rgba(37, 99, 235, 0.35);
+    transform: translateY(-1px);
+  }
+  .btn-brand-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px 0 rgba(37, 99, 235, 0.2);
+  }
+
+  /* Secondary Brand Button */
+  .btn-brand-secondary {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    font-weight: 600;
+    border: 1px solid #CBD5E1;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-brand-secondary:hover {
+    background-color: #F8FAFC;
+    border-color: #94A3B8;
+    color: #0F172A;
+  }
+
+  /* Amber Accent Badge (Derived from the Logo's Sun Disc) */
+  .badge-amber {
+    background-color: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FDE68A;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* Blue Brand Badge */
+  .badge-brand {
+    background-color: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* Engineering Workspace Layered Panel */
+  .panel-engineering {
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.6) 0%, rgba(248, 250, 252, 0.95) 100%);
+    border: 1px solid rgba(191, 219, 254, 0.8);
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px -4px rgba(37, 99, 235, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
+  }
+
+  /* Workspace Primary Card */
+  .card-workspace {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px -2px rgba(15, 23, 42, 0.04), 0 1px 4px 0 rgba(37, 99, 235, 0.03);
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .card-workspace:hover {
+    border-color: rgba(147, 197, 253, 0.8);
+    box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.08);
+  }
+
+  /* Engineering Metric Card with Brand Accent Top Line */
+  .card-metric-blue {
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.5) 0%, #FFFFFF 100%);
+    border: 1px solid rgba(191, 219, 254, 0.8);
+    border-top: 3px solid #2563EB;
+    border-radius: 0.875rem;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px -2px rgba(37, 99, 235, 0.05);
+  }
+
+  .card-metric-amber {
+    background: linear-gradient(180deg, rgba(254, 243, 199, 0.4) 0%, #FFFFFF 100%);
+    border: 1px solid rgba(253, 230, 138, 0.8);
+    border-top: 3px solid #F59E0B;
+    border-radius: 0.875rem;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px -2px rgba(245, 158, 11, 0.05);
+  }
+
+  .card-metric-dark {
+    background: linear-gradient(135deg, #0B0F19 0%, #0F172A 100%);
+    border: 1px solid rgba(30, 41, 59, 0.9);
+    border-top: 3px solid #3B82F6;
+    border-radius: 0.875rem;
+    padding: 1rem 1.25rem;
+    color: #FFFFFF;
+    box-shadow: 0 8px 24px -4px rgba(11, 15, 25, 0.3);
   }
 }
 
-/* Custom scrollbars */
+/* Custom Architectural Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -90,6 +240,7 @@
 @media print {
   body {
     background: #ffffff !important;
+    background-image: none !important;
     color: #000000 !important;
   }
   header, nav, footer, .no-print {

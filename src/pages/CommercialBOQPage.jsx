@@ -547,22 +547,26 @@ export function CommercialBOQPage({ setRoute }) {
     <div className="space-y-6 pb-20">
       
       {/* ================= TOP HEADER BANNER ================= */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 transition-all">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl border border-blue-200/90 shadow-xs p-5 sm:p-6 transition-all">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-              <FileSpreadsheet className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white border border-blue-400/30 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+              <FileSpreadsheet className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Commercial BOQ Workspace
                 </h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
                   Live QS Engine
                 </span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-50 border border-amber-200/80 text-amber-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Contract Intelligence
+                </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
                 Multi-discipline Excel import, material rate intelligence & live contract editor.
               </p>
             </div>

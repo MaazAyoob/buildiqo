@@ -21,15 +21,15 @@ export function Step3DViewer({ state, estimation, onNavigateStep }) {
     <div className="space-y-8 animate-fadeIn text-left">
       
       {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 sm:p-7 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-wider border border-blue-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
               Interactive 3D & Plan View
             </span>
-            <h2 className="text-xl font-black text-slate-900">Step 5: 3D Architectural & Top Plan Viewer</h2>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 5: 3D Architectural & Top Plan Viewer</h2>
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-1">
+          <p className="text-xs text-slate-600 font-medium mt-1">
             Rotate in full 3D, switch to Top View (Plan), and play the 6-phase construction timelapse.
           </p>
         </div>
@@ -37,10 +37,10 @@ export function Step3DViewer({ state, estimation, onNavigateStep }) {
         <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={() => onNavigateStep && onNavigateStep(5)}
-            className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center space-x-1.5 transition-all"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-extrabold text-xs shadow-md shadow-blue-500/25 flex items-center space-x-2 transition-all active:scale-[0.98]"
           >
             <span>Proceed to Step 6 Summary</span>
-            <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
+            <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
           </button>
         </div>
       </div>
@@ -57,24 +57,24 @@ export function Step3DViewer({ state, estimation, onNavigateStep }) {
 
       {/* Structural Specifications Checklist */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-          <span className="text-[10px] font-extrabold uppercase text-blue-600">IS 456 Concrete Frame</span>
+        <div className="bg-white/95 p-5 rounded-2xl border border-slate-200/90 border-t-3 border-t-blue-600 shadow-xs hover:border-blue-300 transition-colors space-y-2">
+          <span className="text-[10px] font-extrabold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 inline-block">IS 456 Concrete Frame</span>
           <h4 className="text-xs font-black text-slate-900">RCC Superstructure</h4>
           <p className="text-[11px] text-slate-500 leading-relaxed">
             M20/M25 design mix concrete for column footings, plinth beams, lintels, and roof slabs with minimum 21 days curing.
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-          <span className="text-[10px] font-extrabold uppercase text-blue-600">IS 1786 High-Yield Steel</span>
+        <div className="bg-white/95 p-5 rounded-2xl border border-slate-200/90 border-t-3 border-t-blue-700 shadow-xs hover:border-blue-300 transition-colors space-y-2">
+          <span className="text-[10px] font-extrabold uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 inline-block">IS 1786 High-Yield Steel</span>
           <h4 className="text-xs font-black text-slate-900">Fe 550D TMT Rebar</h4>
           <p className="text-[11px] text-slate-500 leading-relaxed">
             Corrosion-resistant earthquake-resistant rebar with 5% standard cutting and lap length allowance adhering to IS 2502.
           </p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-          <span className="text-[10px] font-extrabold uppercase text-blue-600">NBC 2016 Guidelines</span>
+        <div className="bg-white/95 p-5 rounded-2xl border border-slate-200/90 border-t-3 border-t-amber-500 shadow-xs hover:border-amber-300 transition-colors space-y-2">
+          <span className="text-[10px] font-extrabold uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 inline-block">NBC 2016 Guidelines</span>
           <h4 className="text-xs font-black text-slate-900">Top Plan & Setbacks</h4>
           <p className="text-[11px] text-slate-500 leading-relaxed">
             Conforms to permissible ground coverage ratios, cross-ventilation window openings (min 15% carpet area), and ceiling heights.

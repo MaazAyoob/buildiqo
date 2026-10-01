@@ -297,42 +297,43 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
     <div className="space-y-8 animate-fadeIn">
       
       {/* Top Banner */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      {/* Top Banner / Heading */}
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-extrabold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
                 Space planning
               </span>
-              <h2 className="text-xl font-extrabold text-slate-900">Step 2: Floor Spaces & Room Configuration</h2>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 2: Floor Spaces & Room Configuration</h2>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Add, edit, or remove spaces per floor. Live Carpet Area and Built-up Area compute automatically.
             </p>
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="bg-slate-100/60 px-3.5 py-2 rounded-xl border border-slate-200 text-right">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold block">Total Usable Carpet</span>
-              <span className="text-sm font-extrabold text-slate-900">{formatNumber(estimation.totalCarpetArea)} sq.ft</span>
+            <div className="bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-slate-200/90 text-right shadow-xs">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold block">Total Usable Carpet</span>
+              <span className="text-sm font-extrabold font-mono tabular-nums text-slate-900">{formatNumber(estimation.totalCarpetArea)} sq.ft</span>
             </div>
-            <div className="bg-blue-600 text-white px-3.5 py-2 rounded-xl text-right shadow-sm">
-              <span className="text-[10px] text-amber-200 uppercase tracking-wider font-bold block">Total Built-Up Area</span>
-              <span className="text-sm font-extrabold">{formatNumber(estimation.totalBuiltupArea)} sq.ft</span>
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-xl text-right shadow-md shadow-blue-500/20">
+              <span className="text-[10px] text-sky-200 uppercase tracking-wider font-extrabold block">Total Built-Up Area</span>
+              <span className="text-sm font-extrabold font-mono tabular-nums">{formatNumber(estimation.totalBuiltupArea)} sq.ft</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* AI Floor Plan Studio Gateway Card (Section 22 Specification) */}
-      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* AI Floor Plan Studio Gateway Card */}
+      <div className="bg-gradient-to-r from-blue-50/95 via-indigo-50/60 to-white rounded-2xl p-5 sm:p-6 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-300 transition-colors">
         <div className="flex items-start space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0 mt-0.5">
+            <Sparkles className="w-5 h-5 text-amber-300" />
           </div>
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded border border-blue-200">
                 ✦ AI ENGINE
               </span>
               <h3 className="text-sm font-bold tracking-tight text-slate-900">AI FLOOR PLAN STUDIO</h3>
@@ -349,11 +350,11 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
               if (typeof setRoute === 'function') setRoute('floor-plan');
               else window.location.hash = 'floor-plan';
             }}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2 shadow-xs hover:shadow transition-all active:scale-[0.98]"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white flex items-center space-x-2 shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-[0.98]"
             id="btn-open-floorplan-studio"
           >
             <span>Open Floor Plan Studio</span>
-            <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
+            <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
           </button>
         </div>
       </div>
@@ -370,18 +371,18 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                 onClick={() => setActiveFloorIndex(idx)}
                 className={`px-4 py-3 rounded-2xl border text-left transition-all shrink-0 flex items-center space-x-3 ${
                   isSelected
-                    ? 'bg-blue-600 text-white border-stone-900 shadow-md ring-2 ring-stone-900/20'
-                    : 'bg-white border-slate-200 text-gray-700 hover:bg-slate-50'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600 shadow-md shadow-blue-500/25 ring-2 ring-blue-500/25'
+                    : 'bg-white border-slate-200/90 text-slate-700 hover:border-blue-300 hover:bg-slate-50'
                 }`}
               >
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                  isSelected ? 'bg-slate-900 text-amber-200' : 'bg-slate-100 text-gray-800'
+                  isSelected ? 'bg-white text-blue-700 shadow-xs' : 'bg-blue-50 text-blue-700'
                 }`}>
                   {idx === 0 ? 'G' : `${idx}F`}
                 </div>
                 <div>
-                  <span className="text-xs font-extrabold block">{floor.name}</span>
-                  <span className={`text-[10px] ${isSelected ? 'text-amber-200' : 'text-gray-400'}`}>
+                  <span className="text-xs font-bold block">{floor.name}</span>
+                  <span className={`text-[10px] font-mono tabular-nums ${isSelected ? 'text-sky-100' : 'text-slate-500'}`}>
                     {formatNumber(floorStats.carpetArea)} sq.ft Carpet
                   </span>
                 </div>
@@ -394,7 +395,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
           {state.floors.length > 1 && (
             <button
               onClick={() => handleRemoveActiveFloor(activeFloorIndex)}
-              className="px-3 py-2 rounded-xl text-xs font-bold border border-red-200 text-red-700 bg-red-50/50 hover:bg-red-100 flex items-center space-x-1"
+              className="px-3 py-2 rounded-xl text-xs font-bold border border-rose-200 text-rose-700 bg-rose-50/70 hover:bg-rose-100 flex items-center space-x-1 transition-colors"
               title="Delete active floor"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -404,56 +405,56 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
 
           <button
             onClick={handleAddNewFloor}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-slate-900 flex items-center space-x-1.5 shadow-sm"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 flex items-center space-x-1.5 shadow-xs transition-all active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4 text-amber-200" />
+            <Plus className="w-4 h-4 text-sky-200" />
             <span>Add Floor</span>
           </button>
         </div>
       </div>
 
       {/* Active Floor Workspace Card */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-6">
         
         {/* Active Floor Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
           <div>
             <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-              <Layers className="w-5 h-5 text-blue-800" />
+              <Layers className="w-5 h-5 text-blue-600" />
               <span>{activeFloor?.name} Spaces (Add / Edit / Remove)</span>
             </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               {activeFloor?.rooms?.length || 0} Rooms configured • {formatNumber(currentFloorDetail.carpetArea)} sq.ft usable carpet area
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center flex-wrap gap-2">
             <button
               onClick={() => {
                 if (typeof setRoute === 'function') setRoute('floor-plan');
                 else window.location.hash = 'floor-plan';
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200 flex items-center space-x-1.5 transition-all shadow-sm"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200 flex items-center space-x-1.5 transition-all shadow-2xs"
               id="generate-ai-floorplan-btn"
             >
               <Sparkles className="w-4 h-4 text-blue-600" />
-              <span>Open AI Floor Plan Studio</span>
+              <span>Open AI Studio</span>
             </button>
 
             <button
               onClick={() => { setIsDxfUploadModalOpen(true); setDxfError(null); }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 flex items-center space-x-1.5 shadow-sm transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#0B0F19] text-white hover:bg-slate-800 flex items-center space-x-1.5 shadow-xs transition-all"
               id="upload-dxf-btn"
             >
-              <FileCode className="w-4 h-4 text-cyan-400" />
+              <FileCode className="w-4 h-4 text-sky-400" />
               <span>Upload Plan (CAD / PDF)</span>
             </button>
 
             <button
               onClick={() => setIsAddRoomModalOpen(true)}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-slate-900 flex items-center space-x-1.5 shadow-sm transition-all"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 flex items-center space-x-1.5 shadow-md shadow-blue-500/20 transition-all active:scale-[0.98]"
             >
-              <Plus className="w-4 h-4 text-amber-200" />
+              <Plus className="w-4 h-4 text-sky-200" />
               <span>Add Space / Room</span>
             </button>
           </div>
@@ -469,18 +470,18 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
             return (
               <div 
                 key={room.id}
-                className="p-4 rounded-xl border border-slate-200 hover:border-blue-400 bg-white hover:bg-slate-50/50 transition-all space-y-3 relative group"
+                className="p-4 rounded-xl border border-slate-200/90 hover:border-blue-400 bg-white hover:bg-blue-50/20 transition-all space-y-3 relative group shadow-2xs hover:shadow-xs"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50/60 text-blue-700 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
                       <IconComponent className="w-4 h-4" />
                     </div>
                     <input
                       type="text"
                       value={room.name}
                       onChange={(e) => handleUpdateRoomName(room.id, e.target.value)}
-                      className="text-xs font-bold text-slate-900 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-stone-900 focus:outline-none px-1"
+                      className="text-xs font-bold text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-600 focus:outline-none px-1"
                     />
                   </div>
 
@@ -498,7 +499,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                     )}
                     <button
                       onClick={() => handleDeleteRoom(room.id)}
-                      className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                       title="Remove space"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -509,45 +510,45 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                 {/* Dimension Inputs */}
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <span className="text-[10px] text-gray-500 font-semibold block mb-1">Width (ft)</span>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Width (ft)</span>
                     <input
                       type="number"
                       min="4"
                       max="60"
                       value={room.width || ''}
                       onChange={(e) => handleUpdateRoom(room.id, 'width', e.target.value)}
-                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-stone-900 bg-white"
+                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200/90 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/50 focus:bg-white transition-all"
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-gray-500 font-semibold block mb-1">Length (ft)</span>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Length (ft)</span>
                     <input
                       type="number"
                       min="4"
                       max="60"
                       value={room.length || ''}
                       onChange={(e) => handleUpdateRoom(room.id, 'length', e.target.value)}
-                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-stone-900 bg-white"
+                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200/90 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/50 focus:bg-white transition-all"
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-gray-500 font-semibold block mb-1">Qty / Count</span>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Qty / Count</span>
                     <input
                       type="number"
                       min="1"
                       max="10"
                       value={room.count || 1}
                       onChange={(e) => handleUpdateRoom(room.id, 'count', e.target.value)}
-                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-stone-900 bg-white"
+                      className="w-full px-2 py-1.5 rounded-lg border border-slate-200/90 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/50 focus:bg-white transition-all"
                     />
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-gray-500">
+                <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-slate-500">
                     {room.area_sqft ? 'True Polygon Area:' : 'Calculated Area:'}
                   </span>
-                  <span className="font-extrabold text-blue-700">
+                  <span className="font-extrabold font-mono tabular-nums text-blue-700">
                     {formatNumber(room.area_sqft || roomArea)} sq.ft
                   </span>
                 </div>

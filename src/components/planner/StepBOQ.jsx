@@ -75,74 +75,74 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
     <div className="space-y-8 animate-fadeIn">
       
       {/* Top Banner */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider border border-blue-100">
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
                 Quantity schedule
               </span>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">Step 4: Itemized Bill of Quantities (BOQ)</h2>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 4: Itemized Bill of Quantities (BOQ)</h2>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Deterministic quantity takeoff, trade labor, add/remove scope items, and milestone cashflow schedule.
             </p>
           </div>
 
-          <div className="bg-[#0B0F19] text-white px-6 py-4 rounded-xl border border-slate-800 shadow-md text-right">
+          <div className="bg-gradient-to-br from-[#0B0F19] to-[#1E293B] text-white px-6 py-4 rounded-2xl border border-slate-700/80 shadow-md text-right">
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Grand Total Estimated Cost</span>
-            <span className="font-mono tabular-nums text-2xl font-bold text-white tracking-tight block">{formatCurrency(grandTotalCost)}</span>
-            <span className="font-mono tabular-nums text-xs text-blue-400 block font-medium mt-0.5">
+            <span className="font-mono tabular-nums text-2xl font-black text-white tracking-tight block">{formatCurrency(grandTotalCost)}</span>
+            <span className="font-mono tabular-nums text-xs text-sky-400 block font-bold mt-0.5">
               {formatCurrency(costPerSqFt)} / sq.ft ({formatNumber(totalBuiltupArea)} sq.ft BUA)
             </span>
           </div>
         </div>
       </div>
 
-      {/* Cost Split Summary Cards */}
+      {/* Cost Split Summary Cards with Architectural Accents */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="bg-white rounded-xl p-4.5 border border-slate-200/80 shadow-xs space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Direct Materials</span>
-          <span className="font-mono tabular-nums text-lg font-bold text-slate-900 block">{formatCurrency(directMaterialCost)}</span>
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5 border-t border-slate-100">
-            <span>IS standard materials</span>
-            <span className="font-mono tabular-nums font-bold text-blue-600">
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-blue-600 shadow-xs hover:border-blue-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Direct Materials</span>
+          <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">{formatCurrency(directMaterialCost)}</span>
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
+            <span className="text-[11px]">IS standard materials</span>
+            <span className="font-mono tabular-nums font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">
               {grandTotalCost > 0 ? Math.round((directMaterialCost / grandTotalCost) * 100) : 0}%
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4.5 border border-slate-200/80 shadow-xs space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Trade Labor</span>
-          <span className="font-mono tabular-nums text-lg font-bold text-slate-900 block">{formatCurrency(totalLaborCost)}</span>
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5 border-t border-slate-100">
-            <span>Skilled masonry & MEP</span>
-            <span className="font-mono tabular-nums font-bold text-blue-600">
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-blue-700 shadow-xs hover:border-blue-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Trade Labor</span>
+          <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">{formatCurrency(totalLaborCost)}</span>
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
+            <span className="text-[11px]">Skilled masonry & MEP</span>
+            <span className="font-mono tabular-nums font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded">
               {grandTotalCost > 0 ? Math.round((totalLaborCost / grandTotalCost) * 100) : 0}%
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4.5 border border-slate-200/80 shadow-xs space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Site Amenities & Custom</span>
-          <span className="font-mono tabular-nums text-lg font-bold text-slate-900 block">{formatCurrency(ancillaryCost)}</span>
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5 border-t border-slate-100">
-            <span>Sump, wall, custom items</span>
-            <span className="font-mono tabular-nums font-bold text-blue-600">
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-amber-500 shadow-xs hover:border-amber-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Site Amenities & Custom</span>
+          <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">{formatCurrency(ancillaryCost)}</span>
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
+            <span className="text-[11px]">Sump, wall, custom</span>
+            <span className="font-mono tabular-nums font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">
               {grandTotalCost > 0 ? Math.round((ancillaryCost / grandTotalCost) * 100) : 0}%
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4.5 border border-slate-200/80 shadow-xs space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Engineering & Margin</span>
-          <span className="font-mono tabular-nums text-lg font-bold text-slate-900 block">
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-indigo-600 shadow-xs hover:border-indigo-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Engineering & Margin</span>
+          <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">
             {formatCurrency(architectureFee + contractorMargin + contingencyBuffer)}
           </span>
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5 border-t border-slate-100">
-            <span>Design, supervision, buffer</span>
-            <span className="font-mono tabular-nums font-bold text-blue-600">
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
+            <span className="text-[11px]">Design, supervision, buffer</span>
+            <span className="font-mono tabular-nums font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded">
               {grandTotalCost > 0 ? Math.round(((architectureFee + contractorMargin + contingencyBuffer) / grandTotalCost) * 100) : 0}%
             </span>
           </div>
@@ -151,7 +151,7 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
       </div>
 
       {/* Category Breakdown Bars */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs space-y-4">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-4">
         <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
           <PieChartIcon className="w-4 h-4 text-blue-600" />
           <span>Construction Category Cost Distribution</span>
@@ -161,14 +161,14 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
           {categoryTotals.map((cat, idx) => (
             <div key={idx} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-800 font-medium">{cat.name}</span>
+                <span className="text-slate-800 font-semibold">{cat.name}</span>
                 <span className="font-mono tabular-nums text-slate-900 font-bold">
                   {formatCurrency(cat.total)} <span className="text-slate-400 font-normal">({cat.percentage}%)</span>
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-600 rounded-full transition-all duration-500" 
+                  className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500" 
                   style={{ width: `${Math.min(100, Math.max(2, cat.percentage))}%` }}
                 />
               </div>
@@ -177,32 +177,32 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
         </div>
       </div>
 
-      <div className={`rounded-xl p-4 border ${estimation.tradePackageCheck.passed ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'}`}>
+      <div className={`rounded-xl p-4 border ${estimation.tradePackageCheck.passed ? 'border-emerald-200 bg-emerald-50/70' : 'border-rose-200 bg-rose-50/70'}`}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold text-slate-900">Trade package reconciliation</p>
             <p className="text-[11px] text-slate-500">8 packages vs. materials + labor + amenities + supervision/buffer</p>
           </div>
-          <span className={`font-mono tabular-nums text-xs font-bold ${estimation.tradePackageCheck.passed ? 'text-emerald-700' : 'text-rose-700'}`}>
+          <span className={`font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded ${estimation.tradePackageCheck.passed ? 'text-emerald-800 bg-emerald-100' : 'text-rose-800 bg-rose-100'}`}>
             {estimation.tradePackageCheck.passed ? 'CHECK PASSED' : `CHECK FAILED: ${formatCurrency(estimation.tradePackageCheck.variance)}`}
           </span>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors">
         <h3 className="text-sm font-bold text-slate-900">Statutory cost lines</h3>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-3 rounded-xl bg-slate-50/70 border border-slate-100">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Works-contract GST ({estimation.gstRate}%)</span>
-            <span className="font-mono tabular-nums text-base font-bold text-slate-900 mt-0.5 block">{formatCurrency(estimation.gst)}</span>
+          <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+            <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Works-contract GST ({estimation.gstRate}%)</span>
+            <span className="font-mono tabular-nums text-base font-black text-slate-900 mt-0.5 block">{formatCurrency(estimation.gst)}</span>
           </div>
-          <div className="p-3 rounded-xl bg-slate-50/70 border border-slate-100">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">BOCW labour cess ({estimation.labourCessRate}%)</span>
-            <span className="font-mono tabular-nums text-base font-bold text-slate-900 mt-0.5 block">{formatCurrency(estimation.labourCess)}</span>
+          <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+            <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">BOCW labour cess ({estimation.labourCessRate}%)</span>
+            <span className="font-mono tabular-nums text-base font-black text-slate-900 mt-0.5 block">{formatCurrency(estimation.labourCess)}</span>
           </div>
-          <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
-            <span className="text-blue-600 text-[10px] uppercase font-bold tracking-wider block">Tax-inclusive estimate</span>
-            <span className="font-mono tabular-nums text-base font-bold text-blue-700 mt-0.5 block">{formatCurrency(estimation.grandTotalCost)}</span>
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xs">
+            <span className="text-sky-200 text-[10px] uppercase font-bold tracking-wider block">Tax-inclusive estimate</span>
+            <span className="font-mono tabular-nums text-base font-black text-white mt-0.5 block">{formatCurrency(estimation.grandTotalCost)}</span>
           </div>
         </div>
       </div>
@@ -229,15 +229,15 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
           const groupTotal = group.items.reduce((sum, item) => sum + item.total, 0);
 
           return (
-            <div key={groupIdx} className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            <div key={groupIdx} className="bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-200 overflow-hidden transition-all">
               
               {/* Group Header */}
               <div 
                 onClick={() => toggleCategory(groupIdx)}
-                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/70 transition-colors"
+                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-blue-50/30 transition-colors"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-7 h-7 rounded-lg bg-slate-100 font-mono text-slate-700 flex items-center justify-center font-bold text-xs">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 font-mono flex items-center justify-center font-extrabold text-xs shadow-2xs border border-blue-100">
                     {groupIdx + 1}
                   </div>
                   <div>
@@ -247,8 +247,8 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <span className="font-mono tabular-nums text-sm font-bold text-slate-900">{formatCurrency(groupTotal)}</span>
-                  <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                  <span className="font-mono tabular-nums text-sm font-extrabold text-slate-900">{formatCurrency(groupTotal)}</span>
+                  <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </div>
@@ -258,7 +258,7 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
               {isExpanded && (
                 <div className="overflow-x-auto border-t border-slate-200/80">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                    <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                       <tr>
                         <th className="py-2.5 px-4 text-left">Item & Specification</th>
                         <th className="py-2.5 px-4 text-right">Quantity</th>
@@ -271,7 +271,7 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {group.items.map((item, itemIdx) => (
-                        <tr key={itemIdx} className="hover:bg-slate-50/60 transition-colors">
+                        <tr key={itemIdx} className="hover:bg-blue-50/30 even:bg-slate-50/40 transition-colors">
                           <td className="py-2.5 px-4">
                             <span className="font-semibold text-slate-900 block">{item.name}</span>
                             <span className="text-[11px] text-slate-500 block font-normal">{item.spec}</span>

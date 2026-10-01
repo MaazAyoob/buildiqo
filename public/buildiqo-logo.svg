@@ -1,7 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 150" role="img" aria-label="Buildiqo logo">
-  <g fill="none" stroke="#10202b" stroke-width="9" stroke-linejoin="round">
-    <path d="M72 78V42L112 12l40 30v36"/>
-    <path d="M91 78V48M119 78V48c0-15 25-15 25 0v30"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 140" fill="none" role="img" aria-label="Buildiqo.AI - Civil Cost Estimator &amp; 3D BOQ">
+  <!-- Hexagonal Brand Mark -->
+  <g id="hexagon-mark">
+    <!-- Outer Regular Hexagon with Dark Slate Border -->
+    <polygon points="76,14 124,42 124,98 76,126 28,98 28,42" 
+             stroke="#0F172A" 
+             stroke-width="9.5" 
+             stroke-linejoin="round" 
+             stroke-linecap="round" 
+             fill="none" />
+    
+    <!-- 3 Ascending Estimation Metric Bars -->
+    <!-- Bar 1 (Left - Light Blue) -->
+    <rect x="47" y="74" width="14" height="30" rx="2" fill="#93C5FD" />
+    <!-- Bar 2 (Center - Royal Blue) -->
+    <rect x="69" y="50" width="14" height="54" rx="2" fill="#2563EB" />
+    <!-- Bar 3 (Right - Deep Cobalt Blue) -->
+    <rect x="91" y="32" width="14" height="72" rx="2" fill="#1D4ED8" />
+    
+    <!-- Intelligence Sun / Amber Dot above Bar 3 -->
+    <circle cx="98" cy="21" r="7.5" fill="#F59E0B" />
   </g>
-  <text x="210" y="83" text-anchor="middle" fill="#10202b" font-family="Arial, sans-serif" font-size="42" font-weight="700">Buildiqo</text>
+
+  <!-- Wordmark: buildiqo -->
+  <g id="brand-wordmark" font-family="'Plus Jakarta Sans', 'Outfit', 'Inter', system-ui, -apple-system, sans-serif">
+    <text x="156" y="80" font-size="64" font-weight="800" letter-spacing="-1.5">
+      <tspan fill="#0F172A">build</tspan><tspan fill="#2563EB">i</tspan><tspan fill="#0F172A">qo</tspan>
+    </text>
+    
+    <!-- Subtitle: CIVIL COST ESTIMATOR & 3D BOQ -->
+    <text x="158" y="110" font-size="18.5" font-weight="600" fill="#475569" letter-spacing="4.5">CIVIL COST ESTIMATOR &amp; 3D BOQ</text>
+  </g>
 </svg>

@@ -1,0 +1,26 @@
+warning: in the working copy of 'floorplan-service/app/generator/__init__.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'floorplan-service/app/generator/dxf_renderer.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'floorplan-service/app/generator/room_registry.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'floorplan-service/app/generator/schemas.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'floorplan-service/app/generator/solver.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'floorplan-service/app/generator/svg_renderer.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'floorplan-service/tests/test_ai_generator.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/services/aiFloorplan/fallbackSolver.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/tests/pytest_runner.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/planner/StepReport.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/AuthPage.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/FloorPlanStudioPage.jsx', LF will be replaced by CRLF the next time Git touches it
+ floorplan-service/app/generator/__init__.py      |   3 [32m+[m[31m-[m
+ floorplan-service/app/generator/dxf_renderer.py  |  38 [32m++[m[31m-[m
+ floorplan-service/app/generator/room_registry.py |  10 [32m+[m
+ floorplan-service/app/generator/schemas.py       |  19 [32m++[m
+ floorplan-service/app/generator/solver.py        | 144 [32m+++++++++[m[31m-[m
+ floorplan-service/app/generator/svg_renderer.py  | 243 [32m++++++++++++[m[31m-----[m
+ floorplan-service/tests/test_ai_generator.py     |  95 [32m++++++[m[31m-[m
+ floorplan-service/verify_results.json            | 333 [32m+++++[m[31m------------------[m
+ server/services/aiFloorplan/fallbackSolver.js    | 293 [32m+++++++++++++++++[m[31m---[m
+ server/tests/pytest_runner.test.js               |  33 [32m++[m[31m-[m
+ src/components/planner/StepReport.jsx            |   1 [32m+[m
+ src/pages/AuthPage.jsx                           |   2 [32m+[m[31m-[m
+ src/pages/FloorPlanStudioPage.jsx                | 162 [32m++++++++++[m[31m-[m
+ 13 files changed, 974 insertions(+), 402 deletions(-)

@@ -1,5 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#2563EB"/>
-  <path d="M16 6L6 14V26H12V19H20V26H26V14L16 6Z" fill="#FFFFFF"/>
-  <path d="M14 11H18V15H14V11Z" fill="#2563EB"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" role="img" aria-label="Buildiqo Icon">
+  <!-- Outer Regular Hexagon with Dark Slate Border -->
+  <polygon points="64,8 112,36 112,92 64,120 16,92 16,36" 
+           stroke="#0F172A" 
+           stroke-width="10" 
+           stroke-linejoin="round" 
+           stroke-linecap="round" 
+           fill="#FFFFFF" />
+  
+  <!-- 3 Ascending Estimation Metric Bars -->
+  <!-- Bar 1 (Left - Light Blue) -->
+  <rect x="35" y="68" width="14" height="30" rx="2.5" fill="#93C5FD" />
+  <!-- Bar 2 (Center - Royal Blue) -->
+  <rect x="57" y="44" width="14" height="54" rx="2.5" fill="#2563EB" />
+  <!-- Bar 3 (Right - Deep Cobalt Blue) -->
+  <rect x="79" y="26" width="14" height="72" rx="2.5" fill="#1D4ED8" />
+  
+  <!-- Intelligence Sun / Amber Dot above Bar 3 -->
+  <circle cx="86" cy="15" r="7.5" fill="#F59E0B" />
 </svg>

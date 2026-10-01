@@ -45,15 +45,20 @@ export function DashboardPage({ setRoute }) {
     <div className="space-y-8 animate-fadeIn max-w-7xl mx-auto pb-16">
       
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-3xl p-6 sm:p-8 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700">
-              <FolderKanban className="w-6 h-6" />
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/20 border border-blue-400/30">
+              <FolderKanban className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900">Saved Project Estimations</h1>
-              <p className="text-xs text-gray-500">Manage, compare, and reopen your saved home construction estimates</p>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Saved Project Estimations</h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
+                  Workspace
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 font-medium">Manage, compare, and reopen your saved home construction estimates</p>
             </div>
           </div>
         </div>

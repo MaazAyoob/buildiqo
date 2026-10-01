@@ -557,21 +557,25 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
     <div className="space-y-4 pb-16 animate-fadeIn text-slate-800">
 
       {/* Top Header Card */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-5 border border-blue-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-              <Sparkles className="w-5 h-5 text-amber-200" />
+          <div className="flex items-center space-x-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/25 border border-blue-400/30">
+              <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-xl font-black text-slate-900 tracking-tight">AI Floor Plan Studio</h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
                   Buildiqo Pro
                 </span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-50 border border-amber-200/80 text-amber-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  CAD Vector Solver
+                </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                AI-assisted residential floor planning & deterministic spatial zoning
+              <p className="text-xs text-slate-600 mt-1 font-medium">
+                AI-assisted residential floor planning, Vastu compliance & deterministic spatial zoning
               </p>
             </div>
           </div>
@@ -585,16 +589,16 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
               setSelectedRoom(null);
               setError(null);
             }}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center space-x-1.5 transition-all"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/90 hover:bg-white text-slate-700 border border-slate-200/80 hover:border-blue-300 flex items-center space-x-1.5 transition-all shadow-2xs"
             id="btn-new-floorplan"
           >
-            <Plus className="w-3.5 h-3.5 text-slate-600" />
+            <Plus className="w-3.5 h-3.5 text-blue-600" />
             <span>New Floor Plan</span>
           </button>
 
           <button
             onClick={() => setIsSavedDrawerOpen(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center space-x-1.5 transition-all"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/90 hover:bg-white text-slate-700 border border-slate-200/80 hover:border-blue-300 flex items-center space-x-1.5 transition-all shadow-2xs"
             id="btn-saved-plans"
           >
             <FolderKanban className="w-3.5 h-3.5 text-blue-600" />
@@ -603,7 +607,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
 
           <button
             onClick={() => setIsRecentDrawerOpen(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center space-x-1.5 transition-all"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/90 hover:bg-white text-slate-700 border border-slate-200/80 hover:border-blue-300 flex items-center space-x-1.5 transition-all shadow-2xs"
             id="btn-recent-plans"
           >
             <Clock className="w-3.5 h-3.5 text-slate-600" />
@@ -612,10 +616,10 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
 
           <button
             onClick={() => { setIsCadModalOpen(true); setCadError(null); }}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center space-x-1.5 transition-all shadow-sm"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-blue-950 text-white flex items-center space-x-1.5 transition-all shadow-sm border border-slate-800"
             id="btn-import-cad"
           >
-            <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+            <FileCode className="w-3.5 h-3.5 text-sky-400" />
             <span>Import CAD Plan</span>
           </button>
         </div>
