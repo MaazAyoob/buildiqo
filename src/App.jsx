@@ -16,7 +16,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { CommercialBOQPage } from './pages/CommercialBOQPage';
 import { FloorPlanStudioPage } from './pages/FloorPlanStudioPage';
 import { PaymentProcessingScreen } from './components/common/PaymentProcessingScreen';
-import { useEstimateStore } from './store/useEstimateStore';
+import { useEstimateStore, ENABLE_SUBSCRIPTIONS } from './store/useEstimateStore';
 
 export function App() {
   const getInitialRoute = () => {
@@ -32,12 +32,14 @@ export function App() {
   const { loadProject, currentUser, subscription } = useEstimateStore();
 
   const setRoute = (route, step) => {
-    setCurrentRouteState(route);
+    // If subscriptions are disabled, divert any navigation to pricing toward planner
+    const targetRoute = (!ENABLE_SUBSCRIPTIONS && route === 'pricing') ? 'planner' : route;
+    setCurrentRouteState(targetRoute);
     if (step) {
       setPlannerInitialStep(step);
     }
-    if (window.location.hash.replace('#', '') !== route) {
-      window.location.hash = route;
+    if (window.location.hash.replace('#', '') !== targetRoute) {
+      window.location.hash = targetRoute;
     }
   };
 
@@ -46,7 +48,8 @@ export function App() {
       const hash = window.location.hash.replace('#', '').trim();
       const validRoutes = ['home', 'planner', 'floor-plan', 'dashboard', 'admin', 'settings', 'report', 'pricing', 'leads', 'commercial-boq'];
       if (validRoutes.includes(hash)) {
-        setCurrentRouteState(hash);
+        const targetRoute = (!ENABLE_SUBSCRIPTIONS && hash === 'pricing') ? 'planner' : hash;
+        setCurrentRouteState(targetRoute);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -64,32 +67,36 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentRoute, forceAuthScreen]);
 
-  // If user is not logged in, or explicitly requested auth screen, render Auth gateway
-  if (!currentUser || forceAuthScreen) {
+  // Public route check
+  const isPublicRoute = currentRoute === 'home';
+
+  // If user explicitly requested auth screen, or trying to access protected workspace without session, render Auth gateway
+  if ((!currentUser && !isPublicRoute) || forceAuthScreen) {
     return (
       <AuthPage 
         onAuthSuccess={(user) => {
           setForceAuthScreen(false);
-          // When customer logs in or registers: direct them straight to the pricing page
-          // Once they select a subscription, they gain access to the application
+          // Free Platform: Direct registered/logged-in users directly to their engineering workspace
           if (user?.isAdmin) {
             setRoute('leads');
           } else {
-            setRoute('pricing');
+            setRoute('planner');
           }
         }} 
       />
     );
   }
 
-  // If customer has a pending payment submitted awaiting admin manual approval, show Processing screen
-  if (!currentUser.isAdmin && subscription?.paymentStatus === 'pending') {
+  // If customer has a pending payment submitted awaiting admin manual approval, show Processing screen (only if subscriptions active)
+  if (ENABLE_SUBSCRIPTIONS && currentUser && !currentUser.isAdmin && subscription?.paymentStatus === 'pending') {
     return <PaymentProcessingScreen onProceedFree={() => setRoute('planner')} />;
   }
 
-  // Gating condition: If customer has NOT yet selected/confirmed a subscription in this session, show ONLY Pricing page (no navbar)
-  const isSubscriptionMandatory = !currentUser.isAdmin && !subscription?.isPlanConfirmed;
-  const effectiveRoute = (isSubscriptionMandatory && currentRoute !== 'commercial-boq') ? 'pricing' : currentRoute;
+  // Gating condition: If logged-in customer has NOT yet selected/confirmed a subscription, show ONLY Pricing page (disabled on free platform)
+  const isSubscriptionMandatory = ENABLE_SUBSCRIPTIONS && !!currentUser && !currentUser.isAdmin && !subscription?.isPlanConfirmed;
+  const effectiveRoute = isSubscriptionMandatory 
+    ? (currentRoute !== 'commercial-boq' ? 'pricing' : currentRoute)
+    : (currentRoute === 'pricing' ? 'planner' : currentRoute);
   const hideNavbar = isSubscriptionMandatory && currentRoute !== 'commercial-boq';
 
   return (
@@ -106,7 +113,7 @@ export function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className={`flex-1 w-full ${effectiveRoute === 'home' ? 'pt-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6'}`}>
         {effectiveRoute === 'home' && <LandingPage setRoute={setRoute} />}
         {effectiveRoute === 'planner' && <PlannerPage setRoute={setRoute} initialStep={plannerInitialStep} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}
         {effectiveRoute === 'floor-plan' && <FloorPlanStudioPage setRoute={setRoute} onOpenSavedModal={() => setIsSavedModalOpen(true)} />}

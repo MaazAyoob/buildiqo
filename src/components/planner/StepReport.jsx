@@ -14,8 +14,9 @@ import {
   Edit3,
   HardHat
 } from 'lucide-react';
-import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useEstimateStore';
+import { formatCurrency, formatNumber, useEstimateStore, ENABLE_SUBSCRIPTIONS } from '../../store/useEstimateStore';
 import { ExportOptionsBar } from '../common/ExportOptionsBar';
+import { BuildiqoLogo } from '../common/BuildiqoLogo';
 
 export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep }) {
   const { saveCurrentProject, captureCustomerLead, currentUser, subscription, updateState } = useEstimateStore();
@@ -25,7 +26,8 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [editingMetadata, setEditingMetadata] = useState(false);
 
-  const isFreePlan = subscription?.planId === 'free';
+  // When subscriptions are disabled, full report metrics are unmasked and free for all users
+  const isFreePlan = ENABLE_SUBSCRIPTIONS && subscription?.planId === 'free';
   const displayPrice = (val) => isFreePlan ? '₹00' : formatCurrency(val);
   const selectedMaterials = estimation?.selectedMaterials || {};
 
@@ -185,20 +187,20 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
       </div>
 
       {/* Export Options Bar (PDF, Excel, DXF, WhatsApp) - matching UI reference */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-3 no-print">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-5 sm:p-6 border border-blue-200/90 shadow-xs space-y-3 no-print">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
             <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center space-x-1.5">
               <span>Export Estimation Files</span>
-              <span className="text-[10px] text-blue-700 font-bold px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">
+              <span className="text-[10px] text-blue-700 font-bold px-2.5 py-0.5 rounded-full bg-blue-100/80 border border-blue-200">
                 Instant Download
               </span>
             </span>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-600 mt-0.5">
               Download formal PDF report, itemized Excel BOQ, AutoCAD DXF architectural floor plan, or share summary to WhatsApp.
             </p>
           </div>
-          <span className="text-[10px] text-slate-400 font-mono hidden md:block">
+          <span className="text-[10px] text-slate-500 font-mono hidden md:block">
             IS 456:2000 & IS 13920:2016 Compliant
           </span>
         </div>
@@ -208,23 +210,18 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
       </div>
 
       {/* Printable Report Document Card */}
-      <div className="bg-white rounded-2xl p-8 sm:p-12 border border-slate-200/90 shadow-sm space-y-10">
+      <div className="bg-white/95 rounded-2xl p-8 sm:p-12 border border-slate-200/90 shadow-xs space-y-10">
         
         {/* Document Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="space-y-3">
-            <div className="flex items-center space-x-3.5">
-              <img src="/buildiqo-logo.svg" alt="Buildiqo" className="w-28 h-10 object-contain object-left" />
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h1 className="text-xl font-bold text-slate-900 tracking-tight">Buildiqo.ai</h1>
-                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
-                    QS Audit Report
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 font-medium">Residential Construction Quantity & Cost Estimation</p>
-              </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <BuildiqoLogo variant="full" className="h-11 w-auto max-w-full" />
+              <span className="badge-brand self-start sm:self-auto">
+                Official QS Audit Report
+              </span>
             </div>
+            <p className="text-xs text-slate-500 font-medium">Deterministic IS 456 Quantity Survey &amp; Construction Cost Takeoff</p>
 
             {/* Professional & Company Identity (Architect / Contractor / Consultant) */}
             <div className="pt-1 space-y-1 text-xs">
@@ -285,42 +282,42 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
         </div>
 
         {/* Project and building configuration inputs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-slate-50/70 rounded-xl border border-slate-200/80">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-gradient-to-r from-blue-50/70 via-slate-50/90 to-indigo-50/60 rounded-xl border border-blue-200/80">
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Project Title</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Project Title</span>
             <span className="text-sm font-bold text-slate-900 mt-0.5 block">{safeState.projectName || 'My Residence'}</span>
             <span className="text-xs text-slate-500">{city?.name || safeState.city || 'Bengaluru'} ({city?.state || safeState.state || 'Karnataka'})</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Plot Dimensions & Area</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Plot Dimensions & Area</span>
             <span className="font-mono tabular-nums text-sm font-bold text-slate-900 mt-0.5 block">{safeState.plotWidth || 30} × {safeState.plotLength || 40} ft</span>
             <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(plotArea)} sq.ft ({safeState.facing || 'North'} Facing)</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Building & Structural Type</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Building & Structural Type</span>
             <span className="text-sm font-bold text-slate-900 mt-0.5 block">{buildingType?.name || 'Independent Residence'}</span>
             <span className="text-xs text-slate-500">{constructionType?.name || 'RCC Framed Structure'}</span>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Massing & Quality Tier</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Massing & Quality Tier</span>
             <span className="text-sm font-bold text-slate-900 mt-0.5 block uppercase">{tier || 'Standard'} Package</span>
             <span className="font-mono tabular-nums text-xs text-slate-500">{formatNumber(totalBuiltupArea)} sq.ft BUA ({safeState.numFloors || 2} Floors)</span>
           </div>
         </div>
 
         {/* Grand Total Cost Highlight Banner */}
-        <div className="bg-[#0B0F19] text-white rounded-xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-slate-800 shadow-md">
+        <div className="bg-gradient-to-br from-[#0B0F19] to-[#1E293B] text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-slate-700/80 shadow-md">
           <div>
             <span className="text-xs uppercase font-bold tracking-wider text-slate-400 block">
               Estimated Total Construction Investment
             </span>
-            <span className="font-mono tabular-nums text-3xl sm:text-4xl font-bold tracking-tight text-white mt-1 block">
+            <span className="font-mono tabular-nums text-3xl sm:text-4xl font-black tracking-tight text-white mt-1 block">
               {formatCurrency(grandTotalCost)}
             </span>
-            <p className="text-xs text-slate-400 mt-2 font-mono">
+            <p className="text-xs text-sky-400 mt-2 font-mono font-bold">
               {formatCurrency(costPerSqFt)} / sq.ft ({formatNumber(totalBuiltupArea)} sq.ft Built-Up Area)
             </p>
           </div>
@@ -353,9 +350,9 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           </div>
         </div>
 
-        <div className={`rounded-xl border p-4 ${coverageCheck?.isOverLimit ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}`}>
+        <div className={`rounded-xl border p-4 ${coverageCheck?.isOverLimit ? 'border-amber-300 bg-amber-50/80' : 'border-emerald-200 bg-emerald-50/80'}`}>
           <p className="text-xs font-extrabold text-slate-900">Ground coverage / setback sanity check</p>
-          <p className="text-[11px] text-gray-700 mt-1">{coverageCheck?.message || 'Ground coverage is within planning benchmark.'}</p>
+          <p className="text-[11px] text-slate-700 mt-1">{coverageCheck?.message || 'Ground coverage is within planning benchmark.'}</p>
         </div>
 
         {/* Primary Material Takeoff Table */}
@@ -365,9 +362,9 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
             <span>Key Material Quantity Takeoff & IS Standards</span>
           </h3>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200/90">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/90 shadow-2xs">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+              <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="py-2.5 px-4">Material Category</th>
                   <th className="py-2.5 px-4 text-right">Estimated Quantity</th>
@@ -377,11 +374,11 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {(materialSummary || []).map((m, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={idx} className="hover:bg-blue-50/30 even:bg-slate-50/40 transition-colors">
                     <td className="py-2.5 px-4 font-semibold text-slate-900">{m?.label}</td>
                     <td className="py-2.5 px-4 font-mono tabular-nums font-bold text-blue-700 text-right">{m?.qty}</td>
                     <td className="py-2.5 px-4 text-slate-600">{m?.benchmark}</td>
-                    <td className="py-2.5 px-4 font-mono text-slate-400 text-xs">{m?.standard}</td>
+                    <td className="py-2.5 px-4 font-mono text-slate-500 text-xs">{m?.standard}</td>
                   </tr>
                 ))}
               </tbody>

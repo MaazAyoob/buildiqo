@@ -16,7 +16,7 @@ import {
   Crown
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { useEstimateStore, formatCurrency, formatNumber } from '../store/useEstimateStore';
+import { useEstimateStore, formatCurrency, formatNumber, ENABLE_SUBSCRIPTIONS } from '../store/useEstimateStore';
 import { StepPlotDetails } from '../components/planner/StepPlotDetails';
 import { StepSpaces } from '../components/planner/StepSpaces';
 import { StepMaterials } from '../components/planner/StepMaterials';
@@ -84,7 +84,8 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
     }
   }, [initialStep]);
 
-  const isFreePlan = subscription?.planId === 'free' && !currentUser?.isGuest && !currentUser?.isAdmin;
+  // Subscription gate check: only active if ENABLE_SUBSCRIPTIONS is explicitly enabled
+  const isFreePlan = ENABLE_SUBSCRIPTIONS && subscription?.planId === 'free' && !currentUser?.isGuest && !currentUser?.isAdmin;
 
   const allSteps = [
     { id: 1, stepNum: '01', name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
@@ -162,44 +163,74 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
   return (
     <div className="space-y-6 pb-32 animate-fadeIn">
       
-      {/* Compact Engineering Metrics Strip (Section 12 Specification) */}
-      <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-slate-200/90 shadow-xs no-print">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-blue-600" />
-            <span className="text-xs font-bold text-slate-900 tracking-tight">{state.projectName || 'Residential Villa Estimate'}</span>
-            <span className="text-slate-300">|</span>
-            <span className="text-[11px] text-slate-500 font-medium">{state.city || 'Bengaluru'} ({state.tier || 'Standard'})</span>
+      {/* Premium Engineering Workspace Header Strip */}
+      <div className="bg-gradient-to-r from-blue-50/90 via-slate-50/90 to-indigo-50/80 rounded-2xl p-4 sm:p-5 border border-blue-200/90 shadow-xs no-print">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          
+          {/* Project Title & Authority Scope */}
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0">
+              <Box className="w-5 h-5 text-sky-200" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+                  {state.projectName || 'Residential Villa Engineering Estimate'}
+                </h1>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100/90 text-emerald-800 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
+                  IS 456 Verified
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 text-[11px] text-slate-600 mt-0.5">
+                <span className="font-semibold text-blue-700">{state.city || 'Bengaluru'}</span>
+                <span className="text-slate-300">•</span>
+                <span className="capitalize">{state.state || 'Karnataka'}</span>
+                <span className="text-slate-300">•</span>
+                <span className="px-1.5 py-0.2 rounded bg-blue-100/70 text-blue-800 font-semibold text-[10px] uppercase">
+                  {state.tier || 'standard'} Tier
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-6 sm:space-x-8 text-right">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Total Usable Carpet</span>
+          {/* Quick Engineering Metric Counters */}
+          <div className="flex items-center flex-wrap sm:flex-nowrap gap-3 sm:gap-4">
+            <div className="bg-white/90 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-slate-200/90 text-left sm:text-right shadow-xs min-w-[110px]">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Usable Carpet</span>
               <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-slate-900">
                 {formatNumber(estimation.totalCarpetArea)} <span className="text-[10px] font-sans font-normal text-slate-500">sq.ft</span>
               </span>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Total Built-Up Area</span>
+
+            <div className="bg-white/90 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-slate-200/90 text-left sm:text-right shadow-xs min-w-[110px]">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Total Built-Up (BUA)</span>
               <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-slate-900">
                 {formatNumber(estimation.totalBuiltupArea)} <span className="text-[10px] font-sans font-normal text-slate-500">sq.ft</span>
               </span>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Estimated Cost</span>
-              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-blue-600">
+
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white px-4 py-2 rounded-xl text-left sm:text-right shadow-md shadow-blue-500/20 min-w-[140px]">
+              <span className="text-[10px] text-sky-200 uppercase tracking-wider block font-bold">Live Estimated Cost</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-white tracking-tight">
                 {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.grandTotalCost)}
               </span>
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* Professional Project-Progress Stepper (Section 11 Specification) */}
-      <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/90 shadow-xs no-print">
+      {/* Professional Project-Progress Stepper with Visual Continuity */}
+      <div className="bg-white/90 backdrop-blur-xs rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs no-print">
         <div className="relative">
-          {/* Connecting line behind step circles */}
-          <div className="hidden lg:block absolute top-1/2 left-6 right-6 -translate-y-1/2 h-0.5 bg-slate-100 -z-0" />
+          {/* Subtle Desktop Connector Line */}
+          <div className="hidden lg:block absolute top-1/2 left-8 right-8 -translate-y-1/2 h-1 bg-slate-100 rounded-full -z-0">
+            <div 
+              className="h-full bg-blue-600 rounded-full transition-all duration-300"
+              style={{ width: `${Math.max(5, ((currentStep - 1) / (allSteps.length - 1)) * 100)}%` }}
+            />
+          </div>
           
           <div className={`grid gap-2 sm:gap-3 relative z-10 ${isFreePlan ? 'grid-cols-2 max-w-lg mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
             {steps.map((step, sIdx) => {
@@ -210,32 +241,32 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
                 <button
                   key={step.id}
                   onClick={() => handleStepClick(step.id)}
-                  className={`p-2.5 sm:p-3 rounded-lg text-left transition-all flex items-center space-x-2.5 border group ${
+                  className={`p-2.5 sm:p-3 rounded-xl text-left transition-all flex items-center space-x-2.5 border group relative ${
                     isCurrent
-                      ? 'bg-blue-50/70 border-blue-600 text-blue-900 shadow-2xs'
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-500/30'
                       : isCompleted
-                      ? 'bg-white border-slate-200 text-slate-900 hover:border-slate-300'
-                      : 'bg-slate-50/60 border-slate-200/70 text-slate-400 hover:border-slate-300'
+                      ? 'bg-blue-50/80 border-blue-200 text-blue-950 hover:bg-blue-100/80 hover:border-blue-300'
+                      : 'bg-slate-50/80 border-slate-200/80 text-slate-500 hover:bg-white hover:border-slate-300'
                   }`}
                 >
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-all ${
                     isCurrent
-                      ? 'bg-blue-600 text-white shadow-xs'
+                      ? 'bg-white text-blue-700 shadow-xs'
                       : isCompleted
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'bg-white border border-slate-200 text-slate-400'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-slate-200 text-slate-500'
                   }`}>
                     {isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                      <CheckCircle2 className="w-4 h-4 text-white" />
                     ) : (
                       step.stepNum
                     )}
                   </div>
                   <div className="overflow-hidden flex-1 min-w-0">
-                    <span className={`text-xs font-semibold block truncate ${isCurrent ? 'text-blue-900 font-bold' : isCompleted ? 'text-slate-900' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-bold block truncate ${isCurrent ? 'text-white' : isCompleted ? 'text-blue-900' : 'text-slate-700'}`}>
                       {step.name}
                     </span>
-                    <span className="text-[10px] text-slate-400 block truncate">
+                    <span className={`text-[10px] block truncate ${isCurrent ? 'text-sky-100' : isCompleted ? 'text-blue-600/80' : 'text-slate-400'}`}>
                       {step.desc}
                     </span>
                   </div>
@@ -300,40 +331,40 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
         )}
       </div>
 
-      {/* Sticky Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 py-3 px-4 sm:px-8 shadow-card no-print">
+      {/* Sticky Bottom Engineering Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-blue-100/90 py-3.5 px-4 sm:px-8 shadow-[0_-4px_24px_-4px_rgba(37,99,235,0.08)] no-print">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           
-          {/* Active Price Ticker */}
+          {/* Active Live Price Ticker */}
           <div className="flex items-center space-x-4">
             <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold block">
                 Estimated Construction Cost
               </span>
               <div className="flex items-baseline space-x-2">
-                <span className="text-xl font-bold font-mono tabular-nums text-slate-900">
+                <span className="text-xl sm:text-2xl font-black font-mono tabular-nums text-slate-900 tracking-tight">
                   {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.grandTotalCost)}
                 </span>
-                <span className="text-xs font-mono tabular-nums text-slate-500">
-                  ({(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.costPerSqFt)} / sq.ft)
+                <span className="text-xs font-mono tabular-nums text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                  {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.costPerSqFt)} / sq.ft
                 </span>
               </div>
             </div>
 
-            <div className="hidden md:block h-7 w-px bg-slate-200" />
+            <div className="hidden md:block h-8 w-px bg-slate-200" />
 
-            <div className="hidden md:block text-xs text-slate-500">
-              <span className="font-semibold text-slate-700 font-mono tabular-nums block">{formatNumber(estimation.totalBuiltupArea)} sq.ft BUA</span>
-              <span className="text-[11px]">{estimation.city?.name} • {state.tier} tier</span>
+            <div className="hidden md:block text-xs text-slate-600">
+              <span className="font-bold text-slate-800 font-mono tabular-nums block">{formatNumber(estimation.totalBuiltupArea)} sq.ft BUA</span>
+              <span className="text-[11px] text-slate-500">{estimation.city?.name} • {state.tier} tier</span>
             </div>
           </div>
 
           {/* Stepper Actions Buttons */}
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
             {currentStep > 1 && (
               <button
                 onClick={handlePrev}
-                className="px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 font-semibold text-xs flex items-center space-x-1.5 transition-all active:scale-[0.98]"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-[0.98] shadow-2xs"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
@@ -342,7 +373,7 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
 
             <button
               onClick={() => saveCurrentProject(state.projectName)}
-              className="px-3.5 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold text-xs flex items-center space-x-1.5 transition-all hidden sm:flex active:scale-[0.98]"
+              className="px-4 py-2.5 rounded-xl border border-blue-200/80 bg-blue-50/60 text-blue-800 hover:bg-blue-100/70 font-bold text-xs flex items-center space-x-1.5 transition-all hidden sm:flex active:scale-[0.98]"
               title="Save project"
             >
               <Bookmark className="w-3.5 h-3.5 text-blue-600" />
@@ -352,27 +383,27 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
             {currentStep < 6 ? (
               <button
                 onClick={handleNext}
-                className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-semibold text-xs shadow-xs hover:shadow flex items-center space-x-1.5 transition-all active:scale-[0.98]"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center space-x-2 transition-all active:scale-[0.98]"
               >
                 {isFreePlan && currentStep === 1 ? (
                   <>
-                    <FileCheck2 className="w-3.5 h-3.5 text-blue-200" />
+                    <FileCheck2 className="w-4 h-4 text-sky-200" />
                     <span>View Summary Report</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
+                    <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
                   </>
                 ) : (
                   <>
                     <span>Continue to {allSteps[currentStep]?.name}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-blue-200" />
+                    <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
                   </>
                 )}
               </button>
             ) : (
               <button
                 onClick={() => window.print()}
-                className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-semibold text-xs shadow-xs hover:shadow flex items-center space-x-1.5 transition-all active:scale-[0.98]"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center space-x-2 transition-all active:scale-[0.98]"
               >
-                <Printer className="w-3.5 h-3.5 text-blue-200" />
+                <Printer className="w-4 h-4 text-sky-200" />
                 <span>Print Formal Report</span>
               </button>
             )}
@@ -381,8 +412,8 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
         </div>
       </div>
 
-      {/* Choose your plan to start estimating Modal (Triggered when Free user clicks next steps) */}
-      {showUpgradeModal && (
+      {/* Choose your plan to start estimating Modal (Retained modularly for future subscription activation) */}
+      {ENABLE_SUBSCRIPTIONS && showUpgradeModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-6 text-left animate-fadeIn max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -468,15 +499,17 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
       )}
 
       {/* Payment QR Code Modal */}
-      <PaymentModal
-        isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        selectedPlan={selectedPlanForPayment}
-        onPaymentSubmitted={() => {
-          setPaymentModalOpen(false);
-          setShowUpgradeModal(false);
-        }}
-      />
+      {ENABLE_SUBSCRIPTIONS && (
+        <PaymentModal
+          isOpen={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          selectedPlan={selectedPlanForPayment}
+          onPaymentSubmitted={() => {
+            setPaymentModalOpen(false);
+            setShowUpgradeModal(false);
+          }}
+        />
+      )}
 
     </div>
   );

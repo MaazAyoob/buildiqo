@@ -84,7 +84,20 @@ export function getInitialLeads() {
   return [];
 }
 
+// Feature Flag: Set to false to operate Buildiqo as a completely free platform without paywalls
+export const ENABLE_SUBSCRIPTIONS = false;
+
 export function getActiveSubscription() {
+  if (!ENABLE_SUBSCRIPTIONS) {
+    return {
+      planId: 'free_platform',
+      name: 'Free Platform Access',
+      billingCycle: 'free',
+      status: 'active',
+      renewsAt: 'Free Forever',
+      isPlanConfirmed: true
+    };
+  }
   try {
     const saved = localStorage.getItem(STORAGE_KEY_SUB);
     if (saved) return JSON.parse(saved);
@@ -219,9 +232,13 @@ export function useEstimateStore() {
       try {
         const meRes = await apiRequest('/api/auth/me');
         if (meRes.success && meRes.user) {
-          globalAuth = meRes.user;
+          globalAuth = !ENABLE_SUBSCRIPTIONS
+            ? { ...meRes.user, hasSelectedPlan: true }
+            : meRes.user;
           if (meRes.subscription) {
-            globalSub = meRes.subscription;
+            globalSub = !ENABLE_SUBSCRIPTIONS
+              ? { ...meRes.subscription, isPlanConfirmed: true, status: 'active' }
+              : meRes.subscription;
           }
           notify();
         }
@@ -320,14 +337,18 @@ export function useEstimateStore() {
 
       if (res.success && res.token) {
         localStorage.setItem('buildiqo_token', res.token);
-        globalAuth = res.user;
+        globalAuth = !ENABLE_SUBSCRIPTIONS
+          ? { ...res.user, hasSelectedPlan: true }
+          : res.user;
         if (res.subscription) {
-          globalSub = res.subscription;
+          globalSub = !ENABLE_SUBSCRIPTIONS
+            ? { ...res.subscription, isPlanConfirmed: true, status: 'active' }
+            : res.subscription;
         }
         notify();
         // Fetch approved rates for current user session
         fetchApprovedRates(globalState.state || 'Karnataka');
-        return { success: true, user: res.user };
+        return { success: true, user: globalAuth };
       }
       return { success: false, error: res.error || 'Invalid credentials' };
     } catch (err) {
@@ -344,12 +365,16 @@ export function useEstimateStore() {
 
       if (res.success && res.token) {
         localStorage.setItem('buildiqo_token', res.token);
-        globalAuth = res.user;
+        globalAuth = !ENABLE_SUBSCRIPTIONS
+          ? { ...res.user, hasSelectedPlan: true }
+          : res.user;
         if (res.subscription) {
-          globalSub = res.subscription;
+          globalSub = !ENABLE_SUBSCRIPTIONS
+            ? { ...res.subscription, isPlanConfirmed: true, status: 'active' }
+            : res.subscription;
         }
         notify();
-        return { success: true, user: res.user };
+        return { success: true, user: globalAuth };
       }
     } catch (err) {
       // Offline fallback: save locally
@@ -368,7 +393,7 @@ export function useEstimateStore() {
         password: userData.password,
         avatar: userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
         isAdmin: false,
-        hasSelectedPlan: false
+        hasSelectedPlan: true
       };
 
       globalUsers = [...globalUsers, newUser];
@@ -381,11 +406,11 @@ export function useEstimateStore() {
         firmName: newUser.firmName,
         avatar: newUser.avatar,
         isAdmin: false,
-        hasSelectedPlan: false
+        hasSelectedPlan: true
       };
       globalSub = {
         ...globalSub,
-        isPlanConfirmed: false
+        isPlanConfirmed: true
       };
       notify();
       return { success: true, user: globalAuth };

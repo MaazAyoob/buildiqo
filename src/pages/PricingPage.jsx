@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useEstimateStore } from '../store/useEstimateStore';
 import { PaymentModal } from '../components/common/PaymentModal';
+import { BuildiqoLogo } from '../components/common/BuildiqoLogo';
 
 export function PricingPage({ setRoute, isMandatoryGate = false }) {
   const { subscription, updateSubscription, currentUser, logout } = useEstimateStore();
@@ -148,18 +149,7 @@ export function PricingPage({ setRoute, isMandatoryGate = false }) {
       {isMandatoryGate && (
         <div className="flex items-center justify-between pb-6 border-b border-slate-200">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-black text-xl tracking-tight text-slate-900">Buildiqo<span className="text-blue-600">.ai</span></span>
-                <span className="text-[10px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                  QS Engine
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500">Civil Construction Planning & BOQ</p>
-            </div>
+            <BuildiqoLogo variant="horizontal" className="h-10" />
           </div>
 
           <div className="flex items-center space-x-3">

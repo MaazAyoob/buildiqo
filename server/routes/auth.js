@@ -91,15 +91,15 @@ router.post('/register', async (req, res) => {
       firmName: firmName || '',
       avatar,
       isAdmin: false,
-      hasSelectedPlan: false
+      hasSelectedPlan: true
     });
 
     const subscription = await Subscription.create({
       userId: user._id,
       planId: 'free',
-      name: 'Starter Plan',
+      name: 'Free Platform Access',
       status: 'active',
-      isPlanConfirmed: false
+      isPlanConfirmed: true
     });
 
     const token = jwt.sign(
@@ -147,8 +147,9 @@ router.post('/login', async (req, res) => {
       subscription = await Subscription.create({
         userId: user._id,
         planId: user.isAdmin ? 'enterprise' : 'free',
-        name: user.isAdmin ? 'Enterprise Super Admin' : 'Starter Plan',
-        isPlanConfirmed: user.isAdmin
+        name: user.isAdmin ? 'Enterprise Super Admin' : 'Free Platform Access',
+        status: 'active',
+        isPlanConfirmed: true
       });
     }
 

@@ -23,8 +23,6 @@ import { BUILDING_TYPES, CONSTRUCTION_TYPES, AREA_UNITS } from '../../data/defau
 import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useEstimateStore';
 
 export function StepPlotDetails({ state, updateState, estimation }) {
-  const { subscription } = useEstimateStore();
-  const isFreePlan = subscription?.planId === 'free';
   const [errors, setErrors] = useState({});
 
   const plotPresets = [
@@ -94,33 +92,33 @@ export function StepPlotDetails({ state, updateState, estimation }) {
     <div className="space-y-8 animate-fadeIn">
       
       {/* Top Banner / Heading */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-extrabold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
                 Site setup
               </span>
-              <h2 className="text-xl font-extrabold text-slate-900">Step 1: Site & Building Setup</h2>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 1: Site & Building Setup</h2>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Enter site project details, plot dimensions, building typology, and target construction package.
             </p>
           </div>
-          <div className="flex items-center space-x-2 bg-blue-50/60 px-3.5 py-2 rounded-xl border border-blue-200 shrink-0">
-            <ShieldCheck className="w-5 h-5 text-blue-800" />
+          <div className="flex items-center space-x-2.5 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-blue-200/90 shadow-xs shrink-0">
+            <ShieldCheck className="w-5 h-5 text-blue-600" />
             <div>
               <span className="text-[11px] font-bold text-slate-900 block">IS 456 & NBC 2016 Compliant</span>
-              <span className="text-[10px] text-blue-700">Deterministic Quantity Algorithm</span>
+              <span className="text-[10px] text-blue-700 font-medium">Deterministic Quantity Algorithm</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Project identity and site location */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-4">
         <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-          <Building className="w-4 h-4 text-blue-800" />
+          <Building className="w-4 h-4 text-blue-600" />
           <span>Project Identification & Site Location</span>
         </h3>
 
@@ -128,9 +126,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           
           {/* Project Name */}
           <div className="sm:col-span-1">
-            <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
               <span>Project Name *</span>
-              <span className="text-[10px] text-blue-800 font-semibold">Mandatory</span>
+              <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.2 rounded">Mandatory</span>
             </label>
             <input
               type="text"
@@ -140,23 +138,23 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                 clearError('projectName');
               }}
               placeholder="e.g. Skyline Residence / Green Villa"
-              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-slate-50/50"
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/60 focus:bg-white transition-all"
             />
           </div>
 
           {/* State Selector (Authoritative Pricing Scope) */}
           <div className="sm:col-span-1">
-            <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
               <span className="flex items-center space-x-1.5">
-                <MapPin className="w-3.5 h-3.5 text-blue-800" />
+                <MapPin className="w-3.5 h-3.5 text-blue-600" />
                 <span>State (Pricing Authority) *</span>
               </span>
-              <span className="text-[10px] text-green-700 font-semibold bg-green-50 px-1.5 py-0.2 rounded">Live Verified</span>
+              <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">Live Verified</span>
             </label>
             <select
               value={state.state || 'Karnataka'}
               onChange={(e) => updateState({ state: e.target.value })}
-              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-white cursor-pointer"
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white cursor-pointer transition-all"
             >
               {INDIAN_STATES.map(s => (
                 <option key={s.id} value={s.name}>
@@ -168,12 +166,12 @@ export function StepPlotDetails({ state, updateState, estimation }) {
 
           {/* Location Selector (Physical Custom Input) */}
           <div className="sm:col-span-1">
-            <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
               <span className="flex items-center space-x-1.5">
-                <Building className="w-3.5 h-3.5 text-gray-500" />
+                <Building className="w-3.5 h-3.5 text-slate-500" />
                 <span>City / Site Location</span>
               </span>
-              <span className="text-[10px] text-gray-500 font-semibold">Physical Entry</span>
+              <span className="text-[10px] text-slate-500 font-semibold">Physical Entry</span>
             </label>
             <input
               type="text"
@@ -187,19 +185,19 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                 });
               }}
               placeholder="Enter your city (e.g. Bengaluru, Mumbai, Pune)"
-              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-slate-50/50"
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/60 focus:bg-white transition-all"
             />
           </div>
 
           {/* Area Unit Selector */}
           <div className="sm:col-span-1">
-            <label className="text-xs font-bold text-gray-700 mb-1.5 block">
+            <label className="text-xs font-bold text-slate-700 mb-1.5 block">
               Measurement Unit
             </label>
             <select
               value={state.areaUnit || 'sqft'}
               onChange={(e) => updateState({ areaUnit: e.target.value })}
-              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-white"
+              className="w-full px-3.5 py-2.5 text-xs font-bold text-slate-900 rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
             >
               {AREA_UNITS.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
@@ -211,9 +209,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
       </div>
 
       {/* Building and construction typology */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-4">
         <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-          <HardHat className="w-4 h-4 text-blue-800" />
+          <HardHat className="w-4 h-4 text-blue-600" />
           <span>Building Typology & Structural Construction Type</span>
         </h3>
 
@@ -221,7 +219,7 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           
           {/* Building Type */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-2 block">Building Type</label>
+            <label className="text-xs font-bold text-slate-700 mb-2 block">Building Type</label>
             <div className="space-y-2">
               {BUILDING_TYPES.map(bt => {
                 const isSelected = (state.buildingType || 'villa_duplex') === bt.id;
@@ -229,18 +227,20 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                   <div
                     key={bt.id}
                     onClick={() => updateState({ buildingType: bt.id })}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5 ${
-                      isSelected ? 'border-blue-700 bg-blue-50/60/80 ring-2 ring-blue-700/20' : 'border-slate-200 hover:bg-slate-50'
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start space-x-3 ${
+                      isSelected 
+                        ? 'border-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20 shadow-2xs' 
+                        : 'border-slate-200/90 hover:border-blue-200 hover:bg-slate-50/70 bg-white'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
-                      isSelected ? 'border-stone-900 bg-blue-600 text-white' : 'border-gray-300'
+                      isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
                     }`}>
                       {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">{bt.name}</p>
-                      <p className="text-[10px] text-gray-500">{bt.desc}</p>
+                      <p className={`text-xs font-bold ${isSelected ? 'text-blue-950' : 'text-slate-900'}`}>{bt.name}</p>
+                      <p className="text-[10px] text-slate-500">{bt.desc}</p>
                     </div>
                   </div>
                 );
@@ -250,7 +250,7 @@ export function StepPlotDetails({ state, updateState, estimation }) {
 
           {/* Construction Type */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-2 block">Structural Construction Type</label>
+            <label className="text-xs font-bold text-slate-700 mb-2 block">Structural Construction Type</label>
             <div className="space-y-2">
               {CONSTRUCTION_TYPES.map(ct => {
                 const isSelected = (state.constructionType || 'rcc_framed') === ct.id;
@@ -258,18 +258,20 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                   <div
                     key={ct.id}
                     onClick={() => updateState({ constructionType: ct.id })}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5 ${
-                      isSelected ? 'border-blue-700 bg-blue-50/60/80 ring-2 ring-blue-700/20' : 'border-slate-200 hover:bg-slate-50'
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start space-x-3 ${
+                      isSelected 
+                        ? 'border-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20 shadow-2xs' 
+                        : 'border-slate-200/90 hover:border-blue-200 hover:bg-slate-50/70 bg-white'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
-                      isSelected ? 'border-stone-900 bg-blue-600 text-white' : 'border-gray-300'
+                      isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
                     }`}>
                       {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">{ct.name}</p>
-                      <p className="text-[10px] text-gray-500">{ct.desc}</p>
+                      <p className={`text-xs font-bold ${isSelected ? 'text-blue-950' : 'text-slate-900'}`}>{ct.name}</p>
+                      <p className="text-[10px] text-slate-500">{ct.desc}</p>
                     </div>
                   </div>
                 );
@@ -284,20 +286,20 @@ export function StepPlotDetails({ state, updateState, estimation }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left Column: Plot Dimensions & Presets (7 cols) */}
-        <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+        <div className="lg:col-span-7 bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-              <Ruler className="w-4 h-4 text-blue-800" />
+              <Ruler className="w-4 h-4 text-blue-600" />
               <span>Plot Geometry & Dimensions (L × W)</span>
             </h3>
-            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
               {formatNumber(currentPlotArea)} sq.ft ({((currentPlotArea) / 9).toFixed(1)} sq.yd)
             </span>
           </div>
 
           {/* Quick Presets */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 mb-2 block">Standard Plot Presets</label>
+            <label className="text-xs font-bold text-slate-700 mb-2 block">Standard Plot Presets</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {plotPresets.map((p) => {
                 const isActive = state.plotWidth === p.w && state.plotLength === p.l;
@@ -307,12 +309,12 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                     onClick={() => handlePresetClick(p.w, p.l)}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       isActive 
-                        ? 'border-blue-700 bg-blue-50/60/80 ring-2 ring-blue-700/20' 
-                        : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                        ? 'border-blue-600 bg-blue-50/90 text-blue-950 ring-2 ring-blue-500/25 shadow-xs' 
+                        : 'border-slate-200/90 hover:border-blue-300 hover:bg-slate-50 bg-white'
                     }`}
                   >
                     <span className="text-xs font-extrabold text-slate-900 block">{p.label} ft</span>
-                    <span className="text-[10px] text-gray-500">{p.tag}</span>
+                    <span className="text-[10px] text-slate-500">{p.tag}</span>
                   </button>
                 );
               })}
@@ -322,9 +324,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           {/* Custom dimension inputs with validation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Plot Width (Frontage) *</span>
-                <span className="text-[11px] text-gray-400">Feet (ft)</span>
+                <span className="text-[11px] text-slate-400">Feet (ft)</span>
               </label>
               <div className="relative">
                 <input
@@ -337,16 +339,16 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                     if (val >= 0) updateState({ plotWidth: val });
                     clearError('dimensions');
                   }}
-                  className="w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-slate-50/50"
+                  className="w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/60 focus:bg-white transition-all"
                 />
-                <span className="absolute right-3.5 top-2.5 text-xs text-gray-400 font-medium">ft</span>
+                <span className="absolute right-3.5 top-2.5 text-xs text-slate-400 font-medium">ft</span>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Plot Depth (Length) *</span>
-                <span className="text-[11px] text-gray-400">Feet (ft)</span>
+                <span className="text-[11px] text-slate-400">Feet (ft)</span>
               </label>
               <div className="relative">
                 <input
@@ -359,9 +361,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                     if (val >= 0) updateState({ plotLength: val });
                     clearError('dimensions');
                   }}
-                  className="w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-slate-50/50"
+                  className="w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/60 focus:bg-white transition-all"
                 />
-                <span className="absolute right-3.5 top-2.5 text-xs text-gray-400 font-medium">ft</span>
+                <span className="absolute right-3.5 top-2.5 text-xs text-slate-400 font-medium">ft</span>
               </div>
             </div>
           </div>
@@ -369,14 +371,14 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           {/* Road Width & Facing */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center space-x-1.5">
-                <Compass className="w-3.5 h-3.5 text-blue-800" />
+              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                <Compass className="w-3.5 h-3.5 text-blue-600" />
                 <span>Plot Orientation Facing</span>
               </label>
               <select
                 value={state.facing || 'North'}
                 onChange={(e) => updateState({ facing: e.target.value })}
-                className="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-white"
+                className="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
               >
                 <option value="North">North Facing (Auspicious / Optimal Light)</option>
                 <option value="East">East Facing (Morning Sun / Vastu Compliant)</option>
@@ -390,13 +392,13 @@ export function StepPlotDetails({ state, updateState, estimation }) {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-700 mb-1.5 block">
+              <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                 Front Road Width (ft)
               </label>
               <select
                 value={state.roadWidth || 30}
                 onChange={(e) => updateState({ roadWidth: Number(e.target.value) })}
-                className="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-white"
+                className="w-full px-3.5 py-2.5 text-sm font-medium rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
               >
                 <option value="20">20 ft (Narrow Lane / FAR 1.5)</option>
                 <option value="30">30 ft (Standard Residential / FAR 1.75)</option>
@@ -408,17 +410,17 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           </div>
 
           {/* Number of Floors with Add & Remove Option */}
-          <div className="pt-3 border-t border-slate-200">
+          <div className="pt-4 border-t border-slate-200/80">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
-                <Layers className="w-4 h-4 text-blue-800" />
+              <label className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+                <Layers className="w-4 h-4 text-blue-600" />
                 <span>Elevation Floors (Add / Remove Floors)</span>
               </label>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={handleRemoveFloor}
                   disabled={(state.numFloors || 2) <= 1}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-gray-700 hover:bg-slate-100/60 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1"
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1 transition-all"
                   title="Remove top floor"
                 >
                   <span>- Remove Floor</span>
@@ -426,10 +428,10 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                 <button
                   onClick={handleAddFloor}
                   disabled={(state.numFloors || 2) >= 6}
-                  className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1"
+                  className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1 transition-all shadow-xs"
                   title="Add new floor"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 text-sky-200" />
                   <span>Add Floor</span>
                 </button>
               </div>
@@ -444,8 +446,8 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                     onClick={() => handleFloorsChange(num)}
                     className={`py-2.5 rounded-xl border text-center font-bold text-xs transition-all ${
                       isSelected
-                        ? 'bg-blue-600 text-white border-stone-900 shadow-sm'
-                        : 'border-slate-200 text-gray-700 hover:bg-slate-100/60'
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600 shadow-md shadow-blue-500/20 ring-1 ring-blue-500/30'
+                        : 'border-slate-200/90 text-slate-700 bg-white hover:bg-slate-50 hover:border-blue-200'
                     }`}
                   >
                     {num === 1 ? 'G Only' : `G + ${num - 1}`}
@@ -461,9 +463,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
         <div className="lg:col-span-5 space-y-6">
           
           {/* Soil Condition Card */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-4">
             <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-              <Trees className="w-4 h-4 text-blue-800" />
+              <Trees className="w-4 h-4 text-blue-600" />
               <span>Soil Strata & Foundation Type</span>
             </h3>
 
@@ -474,20 +476,20 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                   <div
                     key={s.id}
                     onClick={() => updateState({ soilType: s.id })}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5 ${
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start space-x-3 ${
                       isSelected
-                        ? 'border-blue-700 bg-blue-50/60/80 ring-2 ring-blue-700/20'
-                        : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                        ? 'border-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20 shadow-2xs'
+                        : 'border-slate-200/90 hover:border-blue-200 hover:bg-slate-50/70 bg-white'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
-                      isSelected ? 'border-stone-900 bg-blue-600 text-white' : 'border-gray-300'
+                      isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
                     }`}>
                       {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">{s.name}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">{s.description}</p>
+                      <p className={`text-xs font-bold ${isSelected ? 'text-blue-950' : 'text-slate-900'}`}>{s.name}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{s.description}</p>
                     </div>
                   </div>
                 );
@@ -496,10 +498,10 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           </div>
 
           {/* Built-up Area Target Mode */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-3">
+          <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900">Target Built-up Area (BUA)</span>
-              <span className="text-[10px] font-bold text-blue-800">Auto / Override</span>
+              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">Auto / Override</span>
             </div>
             <div className="flex items-center space-x-2">
               <input
@@ -507,18 +509,18 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                 value={state.targetBuaInput || ''}
                 onChange={(e) => updateState({ targetBuaInput: Number(e.target.value) || 0 })}
                 placeholder={`Auto: ${formatNumber(estimation.totalBuiltupArea)} sq.ft`}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-slate-50/50"
+                className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-slate-50/60 focus:bg-white transition-all"
               />
               {state.targetBuaInput > 0 && (
                 <button
                   onClick={() => updateState({ targetBuaInput: 0 })}
-                  className="px-2 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-100 rounded-lg shrink-0"
+                  className="px-2 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg shrink-0 transition-colors"
                 >
                   Reset Auto
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-gray-500">
+            <p className="text-[10px] text-slate-500">
               Leave blank to automatically calculate BUA from individual room layouts in Step 2.
             </p>
           </div>
@@ -528,13 +530,13 @@ export function StepPlotDetails({ state, updateState, estimation }) {
       </div>
 
       {/* Quality Tier Selector (Full Width) */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-6">
         <div>
           <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-blue-800" />
+            <Sparkles className="w-5 h-5 text-amber-500" />
             <span>Select Construction Quality Tier</span>
           </h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Choose a curated material & finish tier. You can also customize individual items in Step 3.
           </p>
         </div>
@@ -548,34 +550,34 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                 onClick={() => updateState({ tier: tierKey })}
                 className={`relative rounded-2xl p-5 border-2 cursor-pointer transition-all flex flex-col justify-between ${
                   isSelected
-                    ? 'border-stone-900 bg-blue-50/60/60 shadow-md ring-2 ring-stone-900/10'
-                    : 'border-slate-200 hover:border-blue-400 bg-white hover:bg-slate-50/50'
+                    ? 'border-blue-600 bg-gradient-to-b from-blue-50/80 to-white shadow-md ring-2 ring-blue-500/20'
+                    : 'border-slate-200/90 hover:border-blue-300 bg-white hover:bg-slate-50/70'
                 }`}
               >
                 {isSelected && (
                   <div className="absolute -top-3 right-4 bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm flex items-center space-x-1">
-                    <CheckCircle2 className="w-3 h-3 text-amber-200" />
+                    <CheckCircle2 className="w-3 h-3 text-sky-200" />
                     <span>Selected</span>
                   </div>
                 )}
 
                 <div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-100 text-gray-700 inline-block mb-2">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 inline-block mb-2">
                     {tierInfo.badge}
                   </span>
                   <h4 className="text-base font-extrabold text-slate-900">{tierInfo.name}</h4>
                   <div className="mt-2 text-slate-900 flex items-baseline space-x-1">
-                    <span className="text-xl font-extrabold">{formatCurrency(tierInfo.ratePerSqFt)}</span>
-                    <span className="text-xs text-gray-500 font-medium">/ sq.ft</span>
+                    <span className="text-xl font-extrabold font-mono tabular-nums">{formatCurrency(tierInfo.ratePerSqFt)}</span>
+                    <span className="text-xs text-slate-500 font-medium">/ sq.ft</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">{tierInfo.desc}</p>
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">{tierInfo.desc}</p>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-200 space-y-1.5">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Key Specifications:</span>
+                <div className="mt-4 pt-4 border-t border-slate-200/80 space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Key Specifications:</span>
                   {tierInfo.highlights.slice(0, 4).map((h, i) => (
-                    <div key={i} className="flex items-center space-x-1.5 text-xs text-gray-700">
-                      <Check className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                    <div key={i} className="flex items-center space-x-1.5 text-xs text-slate-700">
+                      <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                       <span>{h}</span>
                     </div>
                   ))}
@@ -587,104 +589,104 @@ export function StepPlotDetails({ state, updateState, estimation }) {
       </div>
 
       {/* Ancillary Works & Extra Provisions (Add / Remove Options) */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white/95 rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-blue-200 transition-colors space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-            <Building className="w-4 h-4 text-blue-800" />
+            <Building className="w-4 h-4 text-blue-600" />
             <span>Site Infrastructure & Ancillary Works (Add / Remove)</span>
           </h3>
-          <span className="text-xs text-gray-500 font-semibold">Toggle items to add or remove from BOQ</span>
+          <span className="text-xs text-slate-500 font-semibold">Toggle items to add or remove from BOQ</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
           
           <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-            state.includeCompoundWall !== false ? 'border-stone-900 bg-blue-50/60/50' : 'border-slate-200 bg-white opacity-70'
+            state.includeCompoundWall !== false ? 'border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200/90 bg-white opacity-70 hover:opacity-100'
           }`}>
             <div>
-              <p className="text-xs font-bold text-gray-900">Compound Boundary Wall</p>
-              <p className="text-[11px] text-gray-500">5ft high wall + designer gate</p>
+              <p className="text-xs font-bold text-slate-900">Compound Boundary Wall</p>
+              <p className="text-[11px] text-slate-500">5ft high wall + designer gate</p>
             </div>
             <input
               type="checkbox"
               checked={state.includeCompoundWall !== false}
               onChange={(e) => updateState({ includeCompoundWall: e.target.checked })}
-              className="w-4 h-4 text-blue-800 rounded focus:ring-stone-900"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
             />
           </label>
 
           <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-            state.includeSump !== false ? 'border-stone-900 bg-blue-50/60/50' : 'border-slate-200 bg-white opacity-70'
+            state.includeSump !== false ? 'border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200/90 bg-white opacity-70 hover:opacity-100'
           }`}>
             <div>
-              <p className="text-xs font-bold text-gray-900">Underground Water Sump</p>
-              <p className="text-[11px] text-gray-500">8,000 Litres RCC Tank</p>
+              <p className="text-xs font-bold text-slate-900">Underground Water Sump</p>
+              <p className="text-[11px] text-slate-500">8,000 Litres RCC Tank</p>
             </div>
             <input
               type="checkbox"
               checked={state.includeSump !== false}
               onChange={(e) => updateState({ includeSump: e.target.checked })}
-              className="w-4 h-4 text-blue-800 rounded focus:ring-stone-900"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
             />
           </label>
 
           <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-            state.includeOverheadTank !== false ? 'border-stone-900 bg-blue-50/60/50' : 'border-slate-200 bg-white opacity-70'
+            state.includeOverheadTank !== false ? 'border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200/90 bg-white opacity-70 hover:opacity-100'
           }`}>
             <div>
-              <p className="text-xs font-bold text-gray-900">Overhead Storage Tank</p>
-              <p className="text-[11px] text-gray-500">2,000 Litres Multi-layer Tank</p>
+              <p className="text-xs font-bold text-slate-900">Overhead Storage Tank</p>
+              <p className="text-[11px] text-slate-500">2,000 Litres Multi-layer Tank</p>
             </div>
             <input
               type="checkbox"
               checked={state.includeOverheadTank !== false}
               onChange={(e) => updateState({ includeOverheadTank: e.target.checked })}
-              className="w-4 h-4 text-blue-800 rounded focus:ring-stone-900"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
             />
           </label>
 
           <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-            state.includeRainwaterHarvesting !== false ? 'border-stone-900 bg-blue-50/60/50' : 'border-slate-200 bg-white opacity-70'
+            state.includeRainwaterHarvesting !== false ? 'border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200/90 bg-white opacity-70 hover:opacity-100'
           }`}>
             <div>
-              <p className="text-xs font-bold text-gray-900">Rainwater Harvesting System</p>
-              <p className="text-[11px] text-gray-500">Percolation pit & dual filters</p>
+              <p className="text-xs font-bold text-slate-900">Rainwater Harvesting System</p>
+              <p className="text-[11px] text-slate-500">Percolation pit & dual filters</p>
             </div>
             <input
               type="checkbox"
               checked={state.includeRainwaterHarvesting !== false}
               onChange={(e) => updateState({ includeRainwaterHarvesting: e.target.checked })}
-              className="w-4 h-4 text-blue-800 rounded focus:ring-stone-900"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
             />
           </label>
 
           <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-            !!state.includeSolarPower ? 'border-stone-900 bg-blue-50/60/50' : 'border-slate-200 bg-white opacity-70'
+            !!state.includeSolarPower ? 'border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200/90 bg-white opacity-70 hover:opacity-100'
           }`}>
             <div>
-              <p className="text-xs font-bold text-gray-900">Rooftop Solar Power System</p>
-              <p className="text-[11px] text-gray-500">3 kW On-Grid Solar Plant</p>
+              <p className="text-xs font-bold text-slate-900">Rooftop Solar Power System</p>
+              <p className="text-[11px] text-slate-500">3 kW On-Grid Solar Plant</p>
             </div>
             <input
               type="checkbox"
               checked={!!state.includeSolarPower}
               onChange={(e) => updateState({ includeSolarPower: e.target.checked })}
-              className="w-4 h-4 text-blue-800 rounded focus:ring-stone-900"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
             />
           </label>
 
           <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-            !!state.includeBorewell ? 'border-stone-900 bg-blue-50/60/50' : 'border-slate-200 bg-white opacity-70'
+            !!state.includeBorewell ? 'border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200/90 bg-white opacity-70 hover:opacity-100'
           }`}>
             <div>
-              <p className="text-xs font-bold text-gray-900">Borewell & Submersible Pump</p>
-              <p className="text-[11px] text-gray-500">600 ft drilling + 3HP pump</p>
+              <p className="text-xs font-bold text-slate-900">Borewell & Submersible Pump</p>
+              <p className="text-[11px] text-slate-500">600 ft drilling + 3HP pump</p>
             </div>
             <input
               type="checkbox"
               checked={!!state.includeBorewell}
               onChange={(e) => updateState({ includeBorewell: e.target.checked })}
-              className="w-4 h-4 text-blue-800 rounded focus:ring-stone-900"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
             />
           </label>
 

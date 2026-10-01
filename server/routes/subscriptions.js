@@ -11,9 +11,16 @@ router.get('/me', requireAuth, async (req, res) => {
       sub = await Subscription.create({
         userId: req.user.id,
         planId: 'free',
-        name: 'Starter Plan',
-        isPlanConfirmed: false
+        name: 'Free Platform Access',
+        status: 'active',
+        isPlanConfirmed: true
       });
+    } else if (!sub.isPlanConfirmed) {
+      sub = await Subscription.findOneAndUpdate(
+        { userId: req.user.id },
+        { isPlanConfirmed: true, status: 'active' },
+        { new: true }
+      );
     }
     res.json({ success: true, subscription: sub });
   } catch (err) {
