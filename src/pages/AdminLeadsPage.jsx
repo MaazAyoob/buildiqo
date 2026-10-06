@@ -26,6 +26,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useEstimateStore, formatCurrency, formatNumber } from '../store/useEstimateStore';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 export function AdminLeadsPage({ setRoute }) {
   const { 
@@ -99,18 +100,17 @@ export function AdminLeadsPage({ setRoute }) {
     <div className="space-y-8 animate-fadeIn pb-16 text-left max-w-7xl mx-auto">
       
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-3xl p-6 sm:p-8 border border-blue-200/90 shadow-card-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-wider border border-blue-200">
-              Admin Portal
-            </span>
-            <h1 className="text-2xl font-black text-slate-900">
-              Platform Administration & Verification Portal
-            </h1>
+          <div className="flex items-center space-x-2.5">
+            <StatusBadge status="brand" dot={false}>Admin Portal</StatusBadge>
+            <StatusBadge status="emerald" size="sm">Auth Verified</StatusBadge>
           </div>
-          <p className="text-xs text-slate-500 font-medium mt-1">
-            Logged in as <strong>{currentUser?.name || 'Platform Owner (admin@buildiqo.ai)'}</strong>. Manually review UPI payment screenshots and customer inquiries.
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+            Platform Administration &amp; Verification Portal
+          </h1>
+          <p className="text-xs text-slate-600 font-medium mt-1">
+            Logged in as <strong className="text-slate-900">{currentUser?.name || 'Platform Owner (admin@buildiqo.ai)'}</strong>. Review customer requirement inquiries and verified transactions.
           </p>
         </div>
 
@@ -119,8 +119,8 @@ export function AdminLeadsPage({ setRoute }) {
             onClick={() => { setActiveTab('payments'); setSearchTerm(''); }}
             className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center space-x-2 ${
               activeTab === 'payments'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white shadow-brand'
+                : 'bg-white/95 text-slate-700 hover:bg-slate-100/80 border border-slate-200'
             }`}
           >
             <CreditCard className="w-4 h-4" />
@@ -136,8 +136,8 @@ export function AdminLeadsPage({ setRoute }) {
             onClick={() => { setActiveTab('leads'); setSearchTerm(''); }}
             className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center space-x-2 ${
               activeTab === 'leads'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white shadow-brand'
+                : 'bg-white/95 text-slate-700 hover:bg-slate-100/80 border border-slate-200'
             }`}
           >
             <Inbox className="w-4 h-4" />

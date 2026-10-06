@@ -17,6 +17,7 @@ import {
 import { formatCurrency, formatNumber, useEstimateStore, ENABLE_SUBSCRIPTIONS } from '../../store/useEstimateStore';
 import { ExportOptionsBar } from '../common/ExportOptionsBar';
 import { BuildiqoLogo } from '../common/BuildiqoLogo';
+import { StatusBadge } from '../ui/StatusBadge';
 
 export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep }) {
   const { saveCurrentProject, captureCustomerLead, currentUser, subscription, updateState } = useEstimateStore();
@@ -139,16 +140,16 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
     <div className="space-y-8 animate-fadeIn">
       
       {/* Top Action Bar (No-Print) */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm no-print">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-card-subtle no-print">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-extrabold uppercase tracking-wider">
-                Estimate report
-              </span>
-              <h2 className="text-xl font-extrabold text-slate-900">Step 6: Construction Estimate Summary & Report</h2>
+            <div className="flex items-center space-x-2.5">
+              <StatusBadge status="brand" dot={false}>
+                Summary Report • Phase 06
+              </StatusBadge>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 6: Construction Estimate Summary &amp; Report</h2>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Review your complete project inputs, building specifications, material takeoff, and formal BOQ schedule.
             </p>
           </div>
@@ -156,9 +157,9 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={handlePrint}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-slate-900 shadow-sm flex items-center space-x-1.5 transition-all"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-brand flex items-center space-x-1.5 transition-all active:scale-[0.98]"
             >
-              <Printer className="w-4 h-4 text-amber-200" />
+              <Printer className="w-4 h-4 text-sky-200" />
               <span>Print / Save PDF</span>
             </button>
 
@@ -166,20 +167,20 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
               onClick={handleSave}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center space-x-1.5 ${
                 savedSuccess
-                  ? 'bg-green-100 text-green-800 border-green-300'
-                  : 'bg-white border-slate-200 text-gray-700 hover:bg-slate-100/60'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-2xs'
               }`}
             >
-              {savedSuccess ? <Check className="w-4 h-4 text-green-700" /> : <Bookmark className="w-4 h-4 text-blue-800" />}
+              {savedSuccess ? <Check className="w-4 h-4 text-emerald-600" /> : <Bookmark className="w-4 h-4 text-blue-600" />}
               <span>{savedSuccess ? 'Saved to Projects!' : 'Save Estimation'}</span>
             </button>
 
             <button
               onClick={handleShare}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100/60 hover:bg-slate-100 text-gray-700 flex items-center space-x-1.5 transition-colors"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100/80 hover:bg-slate-100 text-slate-700 flex items-center space-x-1.5 transition-colors border border-slate-200/60"
               title="Copy shareable link"
             >
-              <Share2 className="w-3.5 h-3.5 text-gray-600" />
+              <Share2 className="w-3.5 h-3.5 text-slate-600" />
               <span>{copiedLink ? 'Copied Link!' : 'Share'}</span>
             </button>
           </div>

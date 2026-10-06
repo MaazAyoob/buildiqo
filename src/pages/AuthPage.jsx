@@ -525,7 +525,7 @@ export function AuthPage({ onAuthSuccess }) {
                   disabled={isLoading}
                   className="w-full btn-brand-primary py-3 text-xs shadow-brand hover:shadow-brand-hover active:scale-[0.98]"
                 >
-                  <span>{isLoading ? 'Creating Account...' : 'Create Account & Choose Plan'}</span>
+                  <span>{isLoading ? 'Creating Account...' : 'Create Account & Open Workspace'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 

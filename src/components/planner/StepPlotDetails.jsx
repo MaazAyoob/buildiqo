@@ -21,6 +21,7 @@ import { INDIAN_STATES, normalizeStateName } from '../../data/states';
 import { TIER_BENCHMARKS } from '../../data/materials';
 import { BUILDING_TYPES, CONSTRUCTION_TYPES, AREA_UNITS } from '../../data/defaults';
 import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useEstimateStore';
+import { StatusBadge } from '../ui/StatusBadge';
 
 export function StepPlotDetails({ state, updateState, estimation }) {
   const [errors, setErrors] = useState({});
@@ -92,23 +93,26 @@ export function StepPlotDetails({ state, updateState, estimation }) {
     <div className="space-y-8 animate-fadeIn">
       
       {/* Top Banner / Heading */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-card-subtle">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
-                Site setup
-              </span>
+            <div className="flex items-center space-x-2.5">
+              <StatusBadge status="brand" dot={false}>
+                Site Setup • Phase 01
+              </StatusBadge>
               <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 1: Site & Building Setup</h2>
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              Enter site project details, plot dimensions, building typology, and target construction package.
+              Configure project identity, regional authority jurisdiction, plot geometry, building typology, and target finishes.
             </p>
           </div>
-          <div className="flex items-center space-x-2.5 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-blue-200/90 shadow-xs shrink-0">
+          <div className="flex items-center space-x-2.5 bg-white/95 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-blue-200/90 shadow-2xs shrink-0">
             <ShieldCheck className="w-5 h-5 text-blue-600" />
             <div>
-              <span className="text-[11px] font-bold text-slate-900 block">IS 456 & NBC 2016 Compliant</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-slate-900 block">IS 456 &amp; NBC 2016 Compliant</span>
+                <StatusBadge status="emerald" size="sm">Verified</StatusBadge>
+              </div>
               <span className="text-[10px] text-blue-700 font-medium">Deterministic Quantity Algorithm</span>
             </div>
           </div>

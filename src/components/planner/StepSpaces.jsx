@@ -37,6 +37,7 @@ import { DEFAULT_ROOM_TYPES } from '../../data/defaults';
 import { formatNumber } from '../../store/useEstimateStore';
 import { extractFloorPlanDXF } from '../../services/floorplanService';
 import { AiFloorplanModal } from './AiFloorplanModal';
+import { StatusBadge } from '../ui/StatusBadge';
 
 const ICON_MAP = {
   BedDouble,
@@ -298,26 +299,26 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
       
       {/* Top Banner */}
       {/* Top Banner / Heading */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-card-subtle">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
-                Space planning
-              </span>
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 2: Floor Spaces & Room Configuration</h2>
+            <div className="flex items-center space-x-2.5">
+              <StatusBadge status="brand" dot={false}>
+                Spaces &amp; Layout • Phase 02
+              </StatusBadge>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 2: Floor Spaces &amp; Room Configuration</h2>
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              Add, edit, or remove spaces per floor. Live Carpet Area and Built-up Area compute automatically.
+              Add, edit, or remove spaces per floor. Live Carpet Area and Built-up Area compute automatically with architectural efficiency ratios.
             </p>
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-slate-200/90 text-right shadow-xs">
+            <div className="bg-white/95 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-slate-200/90 text-right shadow-2xs">
               <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold block">Total Usable Carpet</span>
               <span className="text-sm font-extrabold font-mono tabular-nums text-slate-900">{formatNumber(estimation.totalCarpetArea)} sq.ft</span>
             </div>
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-xl text-right shadow-md shadow-blue-500/20">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-xl text-right shadow-brand">
               <span className="text-[10px] text-sky-200 uppercase tracking-wider font-extrabold block">Total Built-Up Area</span>
               <span className="text-sm font-extrabold font-mono tabular-nums">{formatNumber(estimation.totalBuiltupArea)} sq.ft</span>
             </div>
@@ -326,20 +327,20 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
       </div>
 
       {/* AI Floor Plan Studio Gateway Card */}
-      <div className="bg-gradient-to-r from-blue-50/95 via-indigo-50/60 to-white rounded-2xl p-5 sm:p-6 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-300 transition-colors">
+      <div className="bg-gradient-to-r from-blue-50/95 via-indigo-50/60 to-white rounded-2xl p-5 sm:p-6 border border-blue-200/90 shadow-card-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-300 transition-colors">
         <div className="flex items-start space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0 mt-0.5">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/25 shrink-0 mt-0.5 border border-blue-400/30">
             <Sparkles className="w-5 h-5 text-amber-300" />
           </div>
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded border border-blue-200">
-                ✦ AI ENGINE
-              </span>
-              <h3 className="text-sm font-bold tracking-tight text-slate-900">AI FLOOR PLAN STUDIO</h3>
+              <StatusBadge status="violet" size="sm">
+                ✦ AI ENGINE ACTIVE
+              </StatusBadge>
+              <h3 className="text-sm font-extrabold tracking-tight text-slate-900">AI FLOOR PLAN STUDIO</h3>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed font-normal max-w-xl">
-              Create or import a conceptual floor plan using Buildiqo AI. Generate rooms, circulation, doors, windows and multi-floor layouts.
+              Generate room polygons, circulation corridors, doors, windows, and multi-floor plans automatically. Instant CAD export and 1-click sync to your live estimate.
             </p>
           </div>
         </div>
@@ -350,7 +351,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
               if (typeof setRoute === 'function') setRoute('floor-plan');
               else window.location.hash = 'floor-plan';
             }}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white flex items-center space-x-2 shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-[0.98]"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white flex items-center space-x-2 shadow-brand hover:shadow-lg transition-all active:scale-[0.98]"
             id="btn-open-floorplan-studio"
           >
             <span>Open Floor Plan Studio</span>

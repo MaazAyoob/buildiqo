@@ -14,6 +14,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '../../store/useEstimateStore';
+import { StatusBadge } from '../ui/StatusBadge';
 
 export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
   const [expandedCategories, setExpandedCategories] = useState({ 0: true, 1: true, 2: true, 7: true });
@@ -75,17 +76,17 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
     <div className="space-y-8 animate-fadeIn">
       
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-card-subtle">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
-                Quantity schedule
-              </span>
+            <div className="flex items-center space-x-2.5">
+              <StatusBadge status="brand" dot={false}>
+                Quantity Schedule • Phase 04
+              </StatusBadge>
               <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 4: Itemized Bill of Quantities (BOQ)</h2>
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              Deterministic quantity takeoff, trade labor, add/remove scope items, and milestone cashflow schedule.
+              Deterministic quantity takeoff, trade labor, custom architectural scopes, and milestone cashflow schedule.
             </p>
           </div>
 
@@ -102,49 +103,49 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
       {/* Cost Split Summary Cards with Architectural Accents */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-blue-600 shadow-xs hover:border-blue-300 transition-colors space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Direct Materials</span>
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-4 border-t-blue-600 shadow-card-subtle hover:border-blue-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 block">Direct Materials</span>
           <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">{formatCurrency(directMaterialCost)}</span>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
             <span className="text-[11px]">IS standard materials</span>
-            <span className="font-mono tabular-nums font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">
+            <StatusBadge status="brand" size="sm">
               {grandTotalCost > 0 ? Math.round((directMaterialCost / grandTotalCost) * 100) : 0}%
-            </span>
+            </StatusBadge>
           </div>
         </div>
 
-        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-blue-700 shadow-xs hover:border-blue-300 transition-colors space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Trade Labor</span>
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-4 border-t-blue-800 shadow-card-subtle hover:border-blue-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 block">Trade Labor</span>
           <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">{formatCurrency(totalLaborCost)}</span>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
-            <span className="text-[11px]">Skilled masonry & MEP</span>
-            <span className="font-mono tabular-nums font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded">
+            <span className="text-[11px]">Skilled masonry &amp; MEP</span>
+            <StatusBadge status="brand" size="sm">
               {grandTotalCost > 0 ? Math.round((totalLaborCost / grandTotalCost) * 100) : 0}%
-            </span>
+            </StatusBadge>
           </div>
         </div>
 
-        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-amber-500 shadow-xs hover:border-amber-300 transition-colors space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Site Amenities & Custom</span>
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-4 border-t-amber-500 shadow-card-subtle hover:border-amber-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 block">Site Amenities &amp; Custom</span>
           <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">{formatCurrency(ancillaryCost)}</span>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
             <span className="text-[11px]">Sump, wall, custom</span>
-            <span className="font-mono tabular-nums font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">
+            <StatusBadge status="amber" size="sm">
               {grandTotalCost > 0 ? Math.round((ancillaryCost / grandTotalCost) * 100) : 0}%
-            </span>
+            </StatusBadge>
           </div>
         </div>
 
-        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-3 border-t-indigo-600 shadow-xs hover:border-indigo-300 transition-colors space-y-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Engineering & Margin</span>
+        <div className="bg-white/95 rounded-2xl p-4.5 border border-slate-200/90 border-t-4 border-t-indigo-600 shadow-card-subtle hover:border-indigo-300 transition-colors space-y-1.5">
+          <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 block">Engineering &amp; Margin</span>
           <span className="font-mono tabular-nums text-lg font-black text-slate-900 block">
             {formatCurrency(architectureFee + contractorMargin + contingencyBuffer)}
           </span>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1.5 border-t border-slate-100">
             <span className="text-[11px]">Design, supervision, buffer</span>
-            <span className="font-mono tabular-nums font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded">
+            <StatusBadge status="violet" size="sm">
               {grandTotalCost > 0 ? Math.round(((architectureFee + contractorMargin + contingencyBuffer) / grandTotalCost) * 100) : 0}%
-            </span>
+            </StatusBadge>
           </div>
         </div>
 

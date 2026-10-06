@@ -204,6 +204,8 @@ function notify() {
   } catch (e) {}
 }
 
+let hasSyncedBackend = false;
+
 export function useEstimateStore() {
   const [, setTick] = useState(0);
 
@@ -215,8 +217,11 @@ export function useEstimateStore() {
     };
   }, []);
 
-  // Sync with backend on component mount
+  // Sync with backend once on application mount
   useEffect(() => {
+    if (hasSyncedBackend) return;
+    hasSyncedBackend = true;
+
     const syncWithBackend = async () => {
       // Always fetch approved live state rates, including for unauthenticated / guest visitors
       try {

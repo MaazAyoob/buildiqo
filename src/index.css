@@ -169,6 +169,115 @@
     gap: 0.35rem;
   }
 
+  /* Emerald Success & Approved Rates Badge */
+  .badge-emerald {
+    background-color: #ECFDF5;
+    color: #047857;
+    border: 1px solid #A7F3D0;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* Violet AI Badge */
+  .badge-violet {
+    background-color: #F5F3FF;
+    color: #6D28D9;
+    border: 1px solid #DDD6FE;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* Blueprint Cyan Badge */
+  .badge-cyan {
+    background-color: #F0F9FF;
+    color: #0369A1;
+    border: 1px solid #BAE6FD;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* Rose Danger Badge */
+  .badge-rose {
+    background-color: #FFF1F2;
+    color: #BE123C;
+    border: 1px solid #FECDD3;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* AI Dedicated Action Button */
+  .btn-ai-action {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #7C3AED 100%);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.3);
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-ai-action:hover {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #6D28D9 100%);
+    box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-ai-action:active {
+    transform: translateY(0);
+  }
+
+  /* Amber Construction Intelligence Button */
+  .btn-brand-amber {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.3);
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-brand-amber:hover {
+    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+    box-shadow: 0 6px 20px 0 rgba(245, 158, 11, 0.42);
+    transform: translateY(-1px);
+  }
+
   /* Engineering Workspace Layered Panel */
   .panel-engineering {
     background: linear-gradient(135deg, rgba(239, 246, 255, 0.6) 0%, rgba(248, 250, 252, 0.95) 100%);
@@ -209,6 +318,24 @@
     box-shadow: 0 2px 8px -2px rgba(245, 158, 11, 0.05);
   }
 
+  .card-metric-emerald {
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.4) 0%, #FFFFFF 100%);
+    border: 1px solid rgba(167, 243, 208, 0.8);
+    border-top: 3px solid #10B981;
+    border-radius: 0.875rem;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.05);
+  }
+
+  .card-metric-violet {
+    background: linear-gradient(180deg, rgba(245, 243, 255, 0.4) 0%, #FFFFFF 100%);
+    border: 1px solid rgba(221, 214, 254, 0.8);
+    border-top: 3px solid #8B5CF6;
+    border-radius: 0.875rem;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px -2px rgba(139, 92, 246, 0.05);
+  }
+
   .card-metric-dark {
     background: linear-gradient(135deg, #0B0F19 0%, #0F172A 100%);
     border: 1px solid rgba(30, 41, 59, 0.9);
@@ -217,6 +344,14 @@
     padding: 1rem 1.25rem;
     color: #FFFFFF;
     box-shadow: 0 8px 24px -4px rgba(11, 15, 25, 0.3);
+  }
+
+  /* Subtle Blueprint Technical Grid Background */
+  .bg-blueprint-grid {
+    background-image: 
+      linear-gradient(to right, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 

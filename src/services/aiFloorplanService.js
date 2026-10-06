@@ -5,7 +5,7 @@
  */
 
 import { apiRequest } from '../utils/apiClient';
-
+import { solveFloorplanLocally } from '../utils/localFloorplanSolver';
 
 /**
  * Generates an AI-assisted architectural floor plan layout.
@@ -13,22 +13,37 @@ import { apiRequest } from '../utils/apiClient';
  * @returns {Promise<Object>} Generated layout response including SVG, floors, and warnings
  */
 export async function generateFloorPlanAI(payload) {
-  return await apiRequest('/api/floorplan/generate', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
+  try {
+    const res = await apiRequest('/api/floorplan/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    if (res && res.success) return res;
+    return solveFloorplanLocally(payload);
+  } catch (err) {
+    console.warn('[aiFloorplanService] Backend solver unreachable, engaging resilient client architectural solver:', err.message);
+    return solveFloorplanLocally(payload);
+  }
 }
 
 /**
  * Re-runs the deterministic solver with a new seed on identical requirements.
  * @param {string} generationId
  * @param {number} [seed]
+ * @param {Object} [fallbackPayload]
  */
-export async function regenerateFloorPlanAI(generationId, seed) {
-  return await apiRequest('/api/floorplan/regenerate', {
-    method: 'POST',
-    body: JSON.stringify({ generation_id: generationId, seed })
-  });
+export async function regenerateFloorPlanAI(generationId, seed, fallbackPayload = null) {
+  try {
+    return await apiRequest('/api/floorplan/regenerate', {
+      method: 'POST',
+      body: JSON.stringify({ generation_id: generationId, seed })
+    });
+  } catch (err) {
+    if (fallbackPayload) {
+      return solveFloorplanLocally({ ...fallbackPayload, seed });
+    }
+    throw err;
+  }
 }
 
 /**

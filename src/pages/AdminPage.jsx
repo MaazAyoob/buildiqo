@@ -35,6 +35,7 @@ import {
 import { apiRequest } from '../utils/apiClient';
 import { useEstimateStore, formatCurrency } from '../store/useEstimateStore';
 import { INDIAN_STATES } from '../data/states';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 export function AdminPage() {
   const { currentUser } = useEstimateStore();
@@ -137,7 +138,7 @@ export function AdminPage() {
       fetchLocations();
       fetchCandidates();
     }
-  }, [currentUser, adminState]);
+  }, [currentUser?.isAdmin, adminState]);
 
   // Current cities for selected state
   const currentStateObj = locations.find(l => l.stateName?.toLowerCase() === selectedState?.toLowerCase() || l.stateId === selectedState);
@@ -444,14 +445,14 @@ export function AdminPage() {
     <div className="space-y-6 pb-20">
       
       {/* Page Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold mb-3">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>AUTHORITATIVE MATERIAL PRICING SYSTEM</span>
+          <div className="flex items-center space-x-2.5 mb-3">
+            <StatusBadge status="brand" dot={false}>Authoritative Material Pricing System</StatusBadge>
+            <StatusBadge status="emerald" size="sm">Admin Role</StatusBadge>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            Material Price Master & AI Regional Research
+            Material Price Master &amp; AI Regional Research
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
             Manage production procurement rates with append-only audit histories, or research regional Indian prices using Google Gemini Search Grounding. AI results produce unapproved candidates; only explicit admin approval updates production rates.
@@ -463,7 +464,7 @@ export function AdminPage() {
               onClick={() => setActiveTab('rates')}
               className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center space-x-2 transition-all ${
                 activeTab === 'rates'
-                  ? 'bg-blue-600 text-white shadow-md'
+                  ? 'bg-blue-600 text-white shadow-brand'
                   : 'bg-white/10 text-slate-300 hover:bg-white/20'
               }`}
             >
@@ -478,7 +479,7 @@ export function AdminPage() {
               onClick={() => setActiveTab('research')}
               className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center space-x-2 transition-all ${
                 activeTab === 'research'
-                  ? 'bg-blue-600 text-white shadow-md'
+                  ? 'bg-blue-600 text-white shadow-brand'
                   : 'bg-white/10 text-slate-300 hover:bg-white/20'
               }`}
             >

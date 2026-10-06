@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { MATERIAL_CATEGORIES, TIER_BENCHMARKS } from '../../data/materials';
 import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useEstimateStore';
+import { StatusBadge } from '../ui/StatusBadge';
 
 export function StepMaterials({ state, updateState, estimation }) {
   const { toggleBenchmarkMode, isBenchmarkMode, isSnapshotMode, pricingStatus } = useEstimateStore();
@@ -120,17 +121,17 @@ export function StepMaterials({ state, updateState, estimation }) {
       )}
 
       {/* Top Banner / Heading */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-xs">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-6 border border-blue-200/90 shadow-card-subtle">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-xs">
-                Specifications
-              </span>
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 3: Materials & Specifications</h2>
+            <div className="flex items-center space-x-2.5">
+              <StatusBadge status="brand" dot={false}>
+                Specifications • Phase 03
+              </StatusBadge>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Step 3: Materials &amp; Specifications</h2>
             </div>
             <p className="text-xs text-slate-600 mt-1">
-              Select brands, grades, finishes, and warranties. Customize individual materials or apply package presets.
+              Select verified structural brands, grades, architectural finishes, and warranties. Customize individual materials or apply curated benchmark tiers.
             </p>
           </div>
 

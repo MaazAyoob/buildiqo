@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { INDIAN_STATES } from '../data/states';
 import { apiRequest } from '../utils/apiClient';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 export function CommercialBOQPage({ setRoute }) {
   // Page Workflow State: 'upload' | 'parsing' | 'summary' | 'editor'
@@ -547,10 +548,10 @@ export function CommercialBOQPage({ setRoute }) {
     <div className="space-y-6 pb-20">
       
       {/* ================= TOP HEADER BANNER ================= */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl border border-blue-200/90 shadow-xs p-5 sm:p-6 transition-all">
+      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl border border-blue-200/90 shadow-card-subtle p-5 sm:p-6 transition-all">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white border border-blue-400/30 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 text-white border border-blue-400/30 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
               <FileSpreadsheet className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -558,16 +559,11 @@ export function CommercialBOQPage({ setRoute }) {
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Commercial BOQ Workspace
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
-                  Live QS Engine
-                </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-50 border border-amber-200/80 text-amber-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Contract Intelligence
-                </span>
+                <StatusBadge status="brand" dot={false}>Live QS Engine</StatusBadge>
+                <StatusBadge status="amber" size="sm">Contract Intelligence</StatusBadge>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
-                Multi-discipline Excel import, material rate intelligence & live contract editor.
+                Multi-discipline Excel import, material rate intelligence &amp; live contract editor.
               </p>
             </div>
           </div>
@@ -575,7 +571,7 @@ export function CommercialBOQPage({ setRoute }) {
           {/* Pricing State Authority & File Info */}
           {boqData && (
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+              <div className="flex items-center space-x-2 bg-white/95 border border-slate-200 px-3 py-1.5 rounded-xl text-xs shadow-2xs">
                 <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
                 <span className="text-slate-500 font-semibold">Pricing State:</span>
                 <select
@@ -589,7 +585,7 @@ export function CommercialBOQPage({ setRoute }) {
                 </select>
               </div>
 
-              <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+              <div className="flex items-center space-x-2 bg-white/95 border border-slate-200 px-3 py-1.5 rounded-xl text-xs shadow-2xs">
                 <FileText className="w-4 h-4 text-slate-500 shrink-0" />
                 <span className="text-slate-700 font-medium truncate max-w-[150px] sm:max-w-[200px]" title={boqData.fileName}>
                   {boqData.fileName || 'Uploaded BOQ'}
