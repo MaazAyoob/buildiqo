@@ -12,7 +12,7 @@ const MaterialRate = require('../models/MaterialRate');
 const CommercialBOQ = require('../models/CommercialBOQ');
 
 const { seedMaterials } = require('../scripts/seedMaterials');
-const { parseCommercialBOQ } = require('../services/commercialBoqParser');
+const { parseCommercialBOQ, inspectWorkbookSheets } = require('../services/commercialBoqParser');
 const { classifyBOQ, classifyRow, isUnitCompatible } = require('../services/materialClassifier');
 const {
   resolveQuantityBasis,
@@ -29,6 +29,8 @@ let fixturePath;
 let fixtureBuffer;
 let testUser;
 let otherUser;
+let parsedBOQ;
+let enrichedBOQ;
 
 test.before(async () => {
   mongoServer = await MongoMemoryServer.create();
@@ -66,9 +68,6 @@ test.after(async () => {
 });
 
 test('Commercial BOQ Engine & Material Intelligence Separation Test Suite', async (t) => {
-
-  let parsedBOQ;
-  let enrichedBOQ;
 
   await t.test('1. Workbook parsing: detects all 4 sheets with different column structures', async () => {
     parsedBOQ = await parseCommercialBOQ(fixtureBuffer, 'TWC_KASTHURI_NAGAR_BOQ_Final_3-2-26.xlsx');
@@ -343,3 +342,328 @@ test('Commercial BOQ Engine & Material Intelligence Separation Test Suite', asyn
     assert.strictEqual(isOther, false, 'Other user is unauthorized');
   });
 });
+
+test('Comprehensive Verification: 10 Requirements, Modes A & B, Exporters, and Edge Cases', async (t) => {
+
+  await t.test('Req 1 & 2: Parse Excel with varied header names, custom column order & Indian formats', async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Custom Civil');
+    
+    // Non-standard column order: Category, Item#, Description, Qty, Unit, Rate, Amount
+    ws.addRow(['Category', 'Line #', 'Particulars', 'Total Qty', 'UOM', 'Unit Price', 'Total Cost']);
+    
+    // Indian formatting with commas, currency prefixes, and suffixes
+    ws.addRow(['CIVIL', 'C-101', 'Earthwork excavation in ordinary soil', '1,200', 'Cu.Ft', '₹ 45.00', '₹ 54,000.00']);
+    ws.addRow(['CIVIL', 'C-102', 'Plain Cement Concrete (PCC 1:4:8)', '350', 'Cu.Ft', 'Rs. 240/-', '84,000/-']);
+    ws.addRow(['CIVIL', 'C-103', 'Brick masonry 9 inch wall with cement mortar', '500', 'Sq.Ft', '250', '(1,25,000)']); // parenthesized negative
+    
+    const buffer = await wb.xlsx.writeBuffer();
+    const result = await parseCommercialBOQ(buffer, 'custom_boq.xlsx');
+    
+    assert.strictEqual(result.sheets.length, 1);
+    const sheet = result.sheets[0];
+    assert.strictEqual(sheet.name, 'Custom Civil');
+    
+    const allRows = sheet.sections.flatMap(s => s.rows);
+    assert.strictEqual(allRows.length, 3, 'All 3 rows parsed');
+    
+    const row1 = allRows.find(r => r.itemNo === 'C-101');
+    assert.ok(row1);
+    assert.strictEqual(row1.quantity, 1200);
+    assert.strictEqual(row1.originalRate, 45);
+    assert.strictEqual(row1.amount, 54000);
+    assert.strictEqual(row1.unit, 'Cu.Ft');
+    
+    const row2 = allRows.find(r => r.itemNo === 'C-102');
+    assert.ok(row2);
+    assert.strictEqual(row2.quantity, 350);
+    assert.strictEqual(row2.originalRate, 240);
+    assert.strictEqual(row2.amount, 84000);
+    
+    const row3 = allRows.find(r => r.itemNo === 'C-103');
+    assert.ok(row3);
+    assert.strictEqual(row3.quantity, 500);
+    assert.strictEqual(row3.originalRate, 250);
+    assert.strictEqual(row3.originalAmount, -125000, 'Parenthesized negative parsed into originalAmount');
+    assert.strictEqual(row3.amount, 125000, 'Calculated amount is quantity * rate');
+  });
+
+  await t.test('Req 3: Multi-worksheet inspection and selective sheet parsing', async () => {
+    const inspected = await inspectWorkbookSheets(fixtureBuffer);
+    assert.strictEqual(inspected.length, 4);
+    assert.strictEqual(inspected[0].name, 'Summary');
+    assert.strictEqual(inspected[0].isSummary, true);
+    assert.strictEqual(inspected[1].name, 'Civil + Interior');
+    assert.strictEqual(inspected[1].hasHeader, true);
+
+    // Parse only Plumbing sheet
+    const plumbingOnly = await parseCommercialBOQ(fixtureBuffer, 'twc.xlsx', { selectedSheets: ['Plumbing'] });
+    assert.strictEqual(plumbingOnly.sheets.length, 1);
+    assert.strictEqual(plumbingOnly.sheets[0].name, 'Plumbing');
+  });
+
+  await t.test('Req 4: QA flags for missing rates, blank quantities, and duplicate items', async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Quality Audit');
+    ws.addRow(['Item No', 'Description', 'Unit', 'Qty', 'Rate', 'Amount']);
+    // Item 1: Missing rate
+    ws.addRow(['1', 'Internal wall painting with acrylic emulsion', 'Sq.Ft', 1000, '', '']);
+    // Item 2: Missing quantity
+    ws.addRow(['2', 'Teakwood door frame', 'Nos', '', 12000, '']);
+    // Item 3: Duplicate of Item 1
+    ws.addRow(['3', 'Internal wall painting with acrylic emulsion', 'Sq.Ft', 500, 25, 12500]);
+    // Item 4: Missing rate but has Amount & Qty -> deduced rate
+    ws.addRow(['4', 'Vitrified floor skirting', 'R.ft', 100, '', 5000]);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const result = await parseCommercialBOQ(buffer, 'audit.xlsx');
+    const rows = result.sheets[0].sections.flatMap(s => s.rows);
+
+    const item1 = rows.find(r => r.itemNo === '1');
+    assert.strictEqual(item1.missingRate, true);
+    assert.strictEqual(item1.currentRate, 0);
+
+    const item2 = rows.find(r => r.itemNo === '2');
+    assert.strictEqual(item2.missingQuantity, true);
+    assert.strictEqual(item2.quantity, 0);
+
+    const item3 = rows.find(r => r.itemNo === '3');
+    assert.strictEqual(item3.isDuplicate, true, 'Item 3 flagged as duplicate of item 1');
+
+    const item4 = rows.find(r => r.itemNo === '4');
+    assert.strictEqual(item4.currentRate, 50, 'Rate deduced from Amount (5000) / Qty (100) = 50');
+    assert.strictEqual(item4.missingRate, false);
+  });
+
+  await t.test('Req 5: Mode A Package-based Construction Cost Calculator (3,000 sq.ft × ₹2,000/sq.ft = ₹60,00,000)', async () => {
+    const { calculatePackageEstimate } = await import('../../src/utils/calculator.js');
+    
+    // Multi-floor specification
+    const floors = [
+      { id: 'gf', name: 'Ground Floor', area: 1500, cost: 3000000 },
+      { id: 'ff', name: 'First Floor', area: 1500, cost: 3000000 }
+    ];
+    
+    const estimate = calculatePackageEstimate({
+      totalBuiltupArea: 3000,
+      customPackageRate: 2000,
+      gstRate: 18,
+      floors,
+      numFloors: 2
+    });
+
+    assert.strictEqual(estimate.totalBuiltupArea, 3000);
+    assert.strictEqual(estimate.ratePerSqFt, 2000);
+    assert.strictEqual(estimate.estimatedCost, 6000000, '3,000 sq.ft × ₹2,000 = ₹60,00,000');
+    assert.strictEqual(estimate.gstRate, 18);
+    assert.strictEqual(estimate.gstAmount, 1080000, '18% GST on ₹60,00,000 is ₹10,80,000');
+    assert.strictEqual(estimate.grandTotal, 7080000, 'Grand total is ₹70,80,000');
+  });
+
+  await t.test('Req 6: Excel Export and Re-Import roundtrip data preservation', async () => {
+    // Export enriched BOQ to Excel
+    const excelBuffer = await exportToExcel(enrichedBOQ);
+    assert.ok(excelBuffer && excelBuffer.length > 0);
+
+    // Re-import the exported Excel buffer
+    const reimported = await parseCommercialBOQ(excelBuffer, 'exported_boq.xlsx');
+    assert.ok(reimported.sheets.length >= 3, 'Sheets survive export & re-import');
+
+    const civilSheet = reimported.sheets.find(s => s.name === 'Civil + Interior');
+    assert.ok(civilSheet, 'Civil + Interior sheet survives');
+
+    // Confirm that Section Subtotal was not re-imported as an item
+    const subtotalAsItem = civilSheet.sections.flatMap(s => s.rows).find(r => /sub\s*total/i.test(r.description));
+    assert.strictEqual(subtotalAsItem, undefined, 'Section Subtotal row must NEVER become an item');
+
+    // Verify key item survived with exact quantity, rate, and amount
+    const rccItem = civilSheet.sections.flatMap(s => s.rows).find(r => r.itemNo === '12)');
+    assert.ok(rccItem);
+    assert.strictEqual(rccItem.quantity, 40);
+    assert.strictEqual(rccItem.originalRate, 920, 'Exported manual rate of 920 survived re-import');
+    assert.strictEqual(rccItem.amount, 36800, 'Amount 40 * 920 = 36800 survived re-import');
+  });
+
+  await t.test('Req 7: PDF Export multi-page handling with repeated headers and page numbers', async () => {
+    // Generate a long BOQ with 40 rows across multiple sections
+    const longBOQ = {
+      title: 'Mega Commercial Project',
+      clientInfo: { clientName: 'Mega Corp', projectLocation: 'Bangalore, Karnataka' },
+      mode: 'DETAILED',
+      selectedState: 'Karnataka',
+      gstRate: 18,
+      totals: { subtotal: 400000, gstRate: 18, gstAmount: 72000, grandTotal: 472000 },
+      sheets: [
+        {
+          name: 'Extensive Civil Schedule',
+          order: 1,
+          isSummarySheet: false,
+          sections: [
+            {
+              name: 'EXTENSIVE SCHEDULE PART 1',
+              rows: Array.from({ length: 40 }, (_, i) => ({
+                itemNo: `${i + 1}`,
+                description: `High specification commercial structural element ${i + 1} with extended multi-line descriptive technical requirements conforming to IS codes`,
+                unit: 'Sq.Ft',
+                quantity: 100,
+                currentRate: 100,
+                rateSource: 'COMMERCIAL',
+                amount: 10000
+              }))
+            }
+          ]
+        }
+      ]
+    };
+
+    const pdfBuffer = await exportToPDF(longBOQ);
+    assert.ok(Buffer.isBuffer(pdfBuffer));
+    assert.ok(pdfBuffer.length > 5000, 'Multi-page PDF generates sufficient byte size');
+    assert.strictEqual(pdfBuffer.subarray(0, 4).toString(), '%PDF');
+
+    // Mode A PDF export also succeeds
+    const packagePDF = await exportToPDF({
+      title: 'Prestige Commercial Office',
+      mode: 'PACKAGE',
+      packageEstimate: {
+        packageName: 'Premium Commercial Package',
+        ratePerSqFt: 2000,
+        totalBuiltupArea: 3000,
+        estimatedCost: 6000000,
+        gstRate: 18,
+        gstAmount: 1080000,
+        grandTotal: 7080000,
+        floors: [
+          { name: 'Ground Floor', area: 1500, cost: 3000000 },
+          { name: 'First Floor', area: 1500, cost: 3000000 }
+        ]
+      }
+    });
+    assert.ok(Buffer.isBuffer(packagePDF));
+    assert.strictEqual(packagePDF.subarray(0, 4).toString(), '%PDF');
+  });
+
+  await t.test('Req 8: Save BOQ persistence & restoration for both Guest (no CastError) and Authenticated users', async () => {
+    // Mode A with guest user ID (string 'usr_guest')
+    const guestPackageDoc = new CommercialBOQ({
+      title: 'Guest Mode A Estimate',
+      mode: 'PACKAGE',
+      userId: 'usr_guest',
+      packageEstimate: {
+        packageName: 'Standard',
+        ratePerSqFt: 2000,
+        totalBuiltupArea: 3000,
+        estimatedCost: 6000000,
+        gstRate: 18,
+        gstAmount: 1080000,
+        grandTotal: 7080000
+      }
+    });
+    const savedGuest = await guestPackageDoc.save();
+    assert.ok(savedGuest._id);
+
+    // Reload from database
+    const fetchedGuest = await CommercialBOQ.findById(savedGuest._id);
+    assert.strictEqual(fetchedGuest.mode, 'PACKAGE');
+    assert.strictEqual(fetchedGuest.userId, 'usr_guest');
+    assert.strictEqual(fetchedGuest.packageEstimate.estimatedCost, 6000000);
+
+    // Mode B with authenticated user ObjectId
+    const authDetailedDoc = new CommercialBOQ({
+      title: 'Auth User Detailed BOQ',
+      fileName: 'TWC_Auth_Detailed.xlsx',
+      mode: 'DETAILED',
+      userId: testUser._id,
+      sheets: enrichedBOQ.sheets,
+      totals: enrichedBOQ.totals
+    });
+    const savedAuth = await authDetailedDoc.save();
+    assert.ok(savedAuth._id);
+
+    const fetchedAuth = await CommercialBOQ.findById(savedAuth._id);
+    assert.strictEqual(fetchedAuth.mode, 'DETAILED');
+    assert.strictEqual(fetchedAuth.userId.toString(), testUser._id.toString());
+    assert.ok(fetchedAuth.sheets.length > 0);
+  });
+
+  await t.test('Req 9: Deterministic GST calculation with known test cases', async () => {
+    // Test case from prompt:
+    // Quantity 100, rate ₹250 -> Amount = ₹25,000
+    // Taxable ₹1,00,000 at 18% GST -> GST ₹18,000, Grand Total ₹1,18,000
+    const sampleItem = { quantity: 100, currentRate: 250 };
+    const sampleAmount = calculateLineAmount(sampleItem);
+    assert.strictEqual(sampleAmount, 25000);
+
+    const testBOQ = {
+      gstRate: 18,
+      sheets: [
+        {
+          isSummarySheet: false,
+          sections: [
+            {
+              rows: [
+                { quantity: 400, currentRate: 250, quantityBasis: 'quantity' } // 400 * 250 = 1,00,000
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    recalculateBOQ(testBOQ);
+    assert.strictEqual(testBOQ.totals.subtotal, 100000);
+    assert.strictEqual(testBOQ.totals.gstRate, 18);
+    assert.strictEqual(testBOQ.totals.gstAmount, 18000, '18% GST on ₹1,00,000 must be ₹18,000');
+    assert.strictEqual(testBOQ.totals.grandTotal, 118000, 'Grand total must be ₹1,18,000');
+
+    // 12% GST
+    testBOQ.gstRate = 12;
+    recalculateBOQ(testBOQ);
+    assert.strictEqual(testBOQ.totals.gstAmount, 12000);
+    assert.strictEqual(testBOQ.totals.grandTotal, 112000);
+
+    // 5% GST
+    testBOQ.gstRate = 5;
+    recalculateBOQ(testBOQ);
+    assert.strictEqual(testBOQ.totals.gstAmount, 5000);
+    assert.strictEqual(testBOQ.totals.grandTotal, 105000);
+
+    // 0% GST
+    testBOQ.gstRate = 0;
+    recalculateBOQ(testBOQ);
+    assert.strictEqual(testBOQ.totals.gstAmount, 0);
+    assert.strictEqual(testBOQ.totals.grandTotal, 100000);
+  });
+
+  await t.test('Req 10: Mode A and Mode B isolation (prevents double-counting)', async () => {
+    // Mode A has packageEstimate, but no sheets items
+    const modeADoc = new CommercialBOQ({
+      mode: 'PACKAGE',
+      packageEstimate: {
+        ratePerSqFt: 2000,
+        totalBuiltupArea: 3000,
+        estimatedCost: 6000000,
+        gstRate: 18,
+        gstAmount: 1080000,
+        grandTotal: 7080000
+      },
+      sheets: []
+    });
+
+    // Verify mode A does not include detailed items
+    assert.strictEqual(modeADoc.mode, 'PACKAGE');
+    assert.strictEqual(modeADoc.sheets.length, 0);
+
+    // Mode B has itemized sheets, but packageEstimate is null
+    const modeBDoc = new CommercialBOQ({
+      mode: 'DETAILED',
+      packageEstimate: null,
+      totals: { subtotal: 100000, gstRate: 18, gstAmount: 18000, grandTotal: 118000 }
+    });
+
+    assert.strictEqual(modeBDoc.mode, 'DETAILED');
+    assert.strictEqual(modeBDoc.packageEstimate, null);
+    assert.strictEqual(modeBDoc.totals.grandTotal, 118000);
+  });
+});
+

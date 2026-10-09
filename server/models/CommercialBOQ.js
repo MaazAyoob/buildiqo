@@ -104,13 +104,31 @@ const boqSheetSchema = new mongoose.Schema({
 
 const commercialBOQSchema = new mongoose.Schema({
   userId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true, 
+    type: mongoose.Schema.Types.Mixed, 
+    default: null, 
     index: true 
   },
+  projectId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Project', 
+    default: null,
+    index: true
+  },
+  mode: {
+    type: String,
+    enum: ['PACKAGE', 'DETAILED'],
+    default: 'DETAILED'
+  },
+  packageEstimate: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  clientInfo: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   title: { type: String, required: true, trim: true },
-  fileName: { type: String, required: true },
+  fileName: { type: String, default: 'commercial_boq.xlsx' },
   fileSize: { type: Number, default: 0 },
   mimeType: { type: String, default: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
   

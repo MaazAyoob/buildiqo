@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const CommercialBOQ = require('../models/CommercialBOQ');
-const { parseCommercialBOQ } = require('../services/commercialBoqParser');
+const { parseCommercialBOQ, inspectWorkbookSheets } = require('../services/commercialBoqParser');
 const { classifyBOQ } = require('../services/materialClassifier');
 const {
   attachPricingIntelligence,
@@ -49,6 +49,29 @@ function optionalAuth(req, res, next) {
 }
 
 /**
+ * POST /api/commercial-boq/inspect
+ * Inspects uploaded workbook sheets before parsing to allow sheet selection
+ */
+router.post('/inspect', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, error: 'No Excel file uploaded.' });
+    }
+    const sheets = await inspectWorkbookSheets(req.file.buffer);
+    res.json({
+      success: true,
+      data: {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        sheets
+      }
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message || 'Failed to inspect workbook sheets.' });
+  }
+});
+
+/**
  * POST /api/commercial-boq/upload
  * Uploads, parses, classifies, attaches live pricing intelligence, and returns structured BOQ.
  */
@@ -61,8 +84,17 @@ router.post('/upload', optionalAuth, upload.single('file'), async (req, res) => 
     const pricingState = req.body.pricingState || 'Karnataka';
     const originalFileName = req.file.originalname || 'BOQ.xlsx';
 
+    let selectedSheets = null;
+    if (req.body.selectedSheets) {
+      try {
+        selectedSheets = typeof req.body.selectedSheets === 'string' ? JSON.parse(req.body.selectedSheets) : req.body.selectedSheets;
+      } catch {
+        selectedSheets = String(req.body.selectedSheets).split(',').map(s => s.trim());
+      }
+    }
+
     // 1. Parse Excel workbook
-    const parsed = await parseCommercialBOQ(req.file.buffer, originalFileName);
+    const parsed = await parseCommercialBOQ(req.file.buffer, originalFileName, { selectedSheets });
 
     if (!parsed.sheets || parsed.sheets.length === 0) {
       return res.status(422).json({
@@ -157,13 +189,17 @@ router.post('/sample', optionalAuth, async (req, res) => {
 
 /**
  * GET /api/commercial-boq
- * Lists all commercial BOQs for authenticated user
+ * Lists commercial BOQs
  */
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
-    const boqs = await CommercialBOQ.find({ userId: req.user._id || req.user.id })
-      .select('title fileName pricingState totals stats updatedAt createdAt')
+    const filter = req.user 
+      ? { $or: [{ userId: req.user._id }, { userId: (req.user._id || req.user.id).toString() }] }
+      : {};
+    const boqs = await CommercialBOQ.find(filter)
+      .select('title fileName pricingState totals stats mode packageEstimate updatedAt createdAt')
       .sort({ updatedAt: -1 })
+      .limit(20)
       .lean();
 
     res.json({ success: true, data: boqs });
@@ -189,7 +225,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     }
 
     // User ownership check if authenticated
-    if (req.user && boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
+    if (req.user && boq.userId && boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
       return res.status(403).json({ success: false, error: 'Unauthorized access to this BOQ.' });
     }
 
@@ -212,14 +248,16 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
     }
 
-    if (boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
+    if (boq.userId && boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
       return res.status(403).json({ success: false, error: 'Unauthorized to modify this BOQ.' });
     }
 
-    const { sheets, pricingState, gstRate, title } = req.body;
+    const { sheets, pricingState, gstRate, title, mode, packageEstimate } = req.body;
 
     if (title) boq.title = title;
     if (gstRate !== undefined) boq.gstRate = Number(gstRate);
+    if (mode) boq.mode = mode;
+    if (packageEstimate) boq.packageEstimate = packageEstimate;
     if (sheets) boq.sheets = sheets;
 
     // If pricing state changed, refresh intelligence
@@ -227,8 +265,10 @@ router.put('/:id', requireAuth, async (req, res) => {
       await attachPricingIntelligence(boq, pricingState);
     }
 
-    // Deterministically recalculate all amounts and subtotals
-    recalculateBOQ(boq);
+    // Deterministically recalculate all amounts and subtotals if sheets exist
+    if (boq.sheets && boq.sheets.length > 0) {
+      recalculateBOQ(boq);
+    }
 
     await boq.save();
     res.json({ success: true, data: boq });
@@ -250,7 +290,7 @@ router.post('/:id/refresh-rates', requireAuth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
     }
 
-    if (boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
+    if (boq.userId && boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
       return res.status(403).json({ success: false, error: 'Unauthorized.' });
     }
 
@@ -288,13 +328,13 @@ router.post('/:id/apply-rate', requireAuth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
     }
 
-    if (boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
+    if (boq.userId && boq.userId.toString() !== (req.user._id || req.user.id).toString() && !req.user.isAdmin) {
       return res.status(403).json({ success: false, error: 'Unauthorized.' });
     }
 
     let targetRow = null;
-    for (const sheet of boq.sheets) {
-      for (const section of sheet.sections) {
+    for (const sheet of (boq.sheets || [])) {
+      for (const section of (sheet.sections || [])) {
         targetRow = section.rows.find(r => r.id === rowId);
         if (targetRow) break;
       }
@@ -335,8 +375,10 @@ router.post('/:id/recalculate', requireAuth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
     }
 
-    recalculateBOQ(boq);
-    await boq.save();
+    if (boq.sheets && boq.sheets.length > 0) {
+      recalculateBOQ(boq);
+      await boq.save();
+    }
 
     res.json({ success: true, data: boq });
   } catch (err) {
@@ -346,16 +388,16 @@ router.post('/:id/recalculate', requireAuth, async (req, res) => {
 
 /**
  * POST /api/commercial-boq/save
- * Saves or updates a commercial BOQ from frontend JSON payload (drafts or edits)
+ * Saves or updates a commercial BOQ from frontend JSON payload (drafts, package estimates, or edits)
  */
 router.post('/save', optionalAuth, async (req, res) => {
   try {
     const boqData = req.body;
-    if (!boqData || !boqData.sheets) {
+    if (!boqData || (!boqData.sheets && !boqData.packageEstimate)) {
       return res.status(400).json({ success: false, error: 'Invalid BOQ data provided.' });
     }
 
-    const userId = req.user ? (req.user._id || req.user.id) : 'usr_guest';
+    const userId = req.user ? (req.user._id || req.user.id) : null;
 
     // If existing valid MongoDB ObjectId, update it
     if (boqData._id && !boqData._id.startsWith('draft_') && /^[0-9a-fA-F]{24}$/.test(boqData._id)) {
@@ -394,20 +436,21 @@ router.post('/save', optionalAuth, async (req, res) => {
 /**
  * POST /api/commercial-boq/export/excel
  * Generates and downloads styled Excel export directly from client in-memory BOQ data.
- * Resolves bug where unsaved draft workbooks failed to open in Microsoft Excel.
  */
 router.post('/export/excel', async (req, res) => {
   try {
     let boq = req.body.boqData || req.body;
-    if (!boq || !boq.sheets) {
+    if (!boq || (!boq.sheets && !boq.packageEstimate)) {
       return res.status(400).json({ success: false, error: 'No BOQ data provided for Excel export.' });
     }
 
-    // Ensure totals are fresh and calculated
-    boq = recalculateBOQ(boq);
+    // Ensure totals are fresh and calculated for detailed BOQ
+    if (boq.sheets && boq.sheets.length > 0) {
+      boq = recalculateBOQ(boq);
+    }
 
     const excelBuffer = await exportToExcel(boq);
-    const cleanFileName = (boq.fileName || 'Commercial_BOQ').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const cleanFileName = (boq.fileName || boq.title || 'Commercial_BOQ').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${cleanFileName}_Buildiqo_Edited.xlsx"`);
@@ -421,20 +464,21 @@ router.post('/export/excel', async (req, res) => {
 /**
  * POST /api/commercial-boq/export/pdf
  * Generates and downloads styled PDF export directly from client in-memory BOQ data.
- * Resolves bug where unsaved draft workbooks failed to open in Adobe Acrobat.
  */
 router.post('/export/pdf', async (req, res) => {
   try {
     let boq = req.body.boqData || req.body;
-    if (!boq || !boq.sheets) {
+    if (!boq || (!boq.sheets && !boq.packageEstimate)) {
       return res.status(400).json({ success: false, error: 'No BOQ data provided for PDF export.' });
     }
 
-    // Ensure totals are fresh and calculated
-    boq = recalculateBOQ(boq);
+    // Ensure totals are fresh and calculated for detailed BOQ
+    if (boq.sheets && boq.sheets.length > 0) {
+      boq = recalculateBOQ(boq);
+    }
 
     const pdfBuffer = await exportToPDF(boq);
-    const cleanFileName = (boq.fileName || 'Commercial_BOQ').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const cleanFileName = (boq.fileName || boq.title || 'Commercial_BOQ').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${cleanFileName}_Buildiqo_Report.pdf"`);

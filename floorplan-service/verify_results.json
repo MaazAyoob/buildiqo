@@ -29,11 +29,9 @@
         "Utility & Linen on Floor 1 is positioned above Living Room on Ground Floor. Consider plumbing stack alignment."
       ],
       "overlap_violations": [],
-      "setback_violations": [
-        "Room 'Bedroom 3' (regular_bed_2_fl1) extends outside buildable setback envelope: bounds=[18.5, 18.5, 28.5, 37.0] vs buildable=[3.0, 3.0, 27.0, 37.0]"
-      ],
+      "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 49.42,
+      "duration_ms": 44.51,
       "floors_data": []
     },
     {
@@ -67,7 +65,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 54.92,
+      "duration_ms": 48.4,
       "floors_data": []
     },
     {
@@ -98,7 +96,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 0.14,
+      "duration_ms": 0.18,
       "floors_data": []
     },
     {
@@ -132,7 +130,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 119.44,
+      "duration_ms": 112.24,
       "floors_data": []
     },
     {
@@ -163,7 +161,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 0.42,
+      "duration_ms": 0.22,
       "floors_data": []
     }
   ],
@@ -173,19 +171,19 @@
     "123_vs_789_different": false,
     "seeds_metrics": {
       "seed_123": {
-        "carpet_area": 1291.8,
+        "carpet_area": 1264.1,
         "circulation_area": 192.0,
         "unused_area": 175.9,
         "living_dim": "13.1x13.0 ft (170.3 sq.ft)"
       },
       "seed_456": {
-        "carpet_area": 1291.8,
+        "carpet_area": 1264.1,
         "circulation_area": 192.0,
         "unused_area": 175.9,
         "living_dim": "13.1x13.0 ft (170.3 sq.ft)"
       },
       "seed_789": {
-        "carpet_area": 1291.8,
+        "carpet_area": 1264.1,
         "circulation_area": 192.0,
         "unused_area": 175.9,
         "living_dim": "13.1x13.0 ft (170.3 sq.ft)"
@@ -193,5 +191,5 @@
     }
   },
   "svg_len": 10608,
-  "dxf_bytes_len": 65915
+  "dxf_bytes_len": 65913
 }

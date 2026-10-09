@@ -1,6 +1,6 @@
-import { CITIES, SOIL_TYPES } from '../data/cities';
-import { MATERIAL_CATEGORIES, TIER_BENCHMARKS } from '../data/materials';
-import { BUILDING_TYPES, CONSTRUCTION_TYPES, AREA_UNITS } from '../data/defaults';
+import { CITIES, SOIL_TYPES } from '../data/cities.js';
+import { MATERIAL_CATEGORIES, TIER_BENCHMARKS } from '../data/materials.js';
+import { BUILDING_TYPES, CONSTRUCTION_TYPES, AREA_UNITS } from '../data/defaults.js';
 
 const NON_CARPET_ROOM_TYPES = new Set(['parking', 'balcony', 'terrace', 'staircase']);
 
@@ -8,6 +8,42 @@ function getRoomArea(room) {
   const count = Math.max(1, Number(room.count) || 1);
   if (Number(room.area) > 0) return Number(room.area) * count;
   return (Number(room.width) || 0) * (Number(room.length) || 0) * count;
+}
+
+export function calculatePackageEstimate({
+  totalBuiltupArea = 0,
+  packageKey = 'standard',
+  customPackageRate = null,
+  gstRate = 18,
+  floors = [],
+  numFloors = 1
+} = {}) {
+  const pkg = TIER_BENCHMARKS[packageKey] || TIER_BENCHMARKS.standard;
+  const ratePerSqFt = (customPackageRate !== null && customPackageRate !== undefined && Number(customPackageRate) > 0)
+    ? Number(customPackageRate)
+    : (pkg?.ratePerSqFt || 2250);
+
+  const sba = Math.max(0, Number(totalBuiltupArea) || 0);
+  const estimatedCost = Math.round(sba * ratePerSqFt);
+  const gstPct = Number(gstRate) >= 0 ? Number(gstRate) : 18;
+  const gstAmount = Math.round(estimatedCost * (gstPct / 100));
+  const grandTotal = Math.round(estimatedCost + gstAmount);
+
+  return {
+    packageKey,
+    packageName: (customPackageRate && Number(customPackageRate) > 0 && !TIER_BENCHMARKS[packageKey]) 
+      ? 'Custom Package' 
+      : (pkg?.name || 'Standard Package'),
+    ratePerSqFt,
+    totalBuiltupArea: sba,
+    estimatedCost,
+    gstRate: gstPct,
+    gstAmount,
+    grandTotal,
+    formula: `${sba.toLocaleString('en-IN')} sq.ft × ₹${ratePerSqFt.toLocaleString('en-IN')}/sq.ft = ₹${estimatedCost.toLocaleString('en-IN')}`,
+    numFloors: Math.max(1, Number(numFloors) || (floors?.length || 1)),
+    floors: Array.isArray(floors) ? floors : []
+  };
 }
 
 export function calculateEstimation(state, pricingContext = null) {
@@ -457,7 +493,17 @@ export function calculateEstimation(state, pricingContext = null) {
     { label: 'Water Storage', qty: `${state.includeSump ? (state.sumpCapacityLitres || 8000) : 0} L sump + ${state.includeOverheadTank ? (state.overheadTankLitres || 2000) : 0} L OHT`, benchmark: 'User-selected capacities', standard: 'NBC plumbing' }
   ];
 
+  const packageEstimate = calculatePackageEstimate({
+    totalBuiltupArea,
+    packageKey: tier,
+    customPackageRate: state.customPackageRate,
+    gstRate: state.packageGstRate !== undefined ? state.packageGstRate : 18,
+    floors: floorDetails,
+    numFloors: state.numFloors || floors.length || 1
+  });
+
   return {
+    packageEstimate,
     plotArea,
     totalCarpetArea,
     totalBuiltupArea,

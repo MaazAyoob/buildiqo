@@ -1267,16 +1267,22 @@ def solve_multi_floor_upper(
     n_beds_upper = max(1, len(needed_beds))   # at least 1, driven by actual program
 
     rem_n_w = round(bw - cb_w, 1)
-    # Reserve balcony (max 8ft) only if ≥2 secondary beds fit beside it
-    MIN_BED_W_U = 10.0
-    balc_w = round(min(8.0, max(0.0, rem_n_w - n_beds_upper * MIN_BED_W_U)), 1)
+    # Reserve balcony (max 8ft) only if space permits above 10ft per bed
+    ideal_bed_w = 10.0
+    balc_w = round(min(8.0, max(0.0, rem_n_w - n_beds_upper * ideal_bed_w)), 1)
     beds_total_w = round(rem_n_w - balc_w, 1)
-    bed_unit_w = max(MIN_BED_W_U, round(beds_total_w / max(1, n_beds_upper), 1))
+    
+    # Calculate bed_unit_w strictly based on available beds_total_w without exceeding envelope
+    bed_unit_w = round(beds_total_w / max(1, n_beds_upper), 1)
 
     # Secondary Bedrooms — one for each needed_beds entry
     for bi in range(n_beds_upper):
-        bx = ox + cb_w + bi * bed_unit_w
-        bw_cur = bed_unit_w if bi < n_beds_upper - 1 else max(MIN_BED_W_U, round(beds_total_w - bi * bed_unit_w, 1))
+        bx = round(ox + cb_w + bi * bed_unit_w, 1)
+        if bi < n_beds_upper - 1:
+            bw_cur = bed_unit_w
+        else:
+            bw_cur = round((ox + cb_w + beds_total_w) - bx, 1)
+            
         b_id = f"regular_bed_{bi+1}_fl{floor_idx}"
         connects_right = f"balcony_fl{floor_idx}" if (balc_w > 0 and bi == n_beds_upper - 1) else "circulation"
         placed_rooms.append(GeneratedRoomGeometry(
@@ -1308,7 +1314,8 @@ def solve_multi_floor_upper(
 
     # Balcony (only placed if width remains after fitting all beds)
     if balc_w > 0:
-        balc_x = ox + cb_w + n_beds_upper * bed_unit_w
+        balc_x = round(ox + cb_w + beds_total_w, 1)
+        balc_w = round((ox + bw) - balc_x, 1)
         last_b_id = f"regular_bed_{n_beds_upper}_fl{floor_idx}"
         placed_rooms.append(GeneratedRoomGeometry(
             room_id=f"balcony_fl{floor_idx}",
