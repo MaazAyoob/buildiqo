@@ -601,7 +601,7 @@ export function AiFloorplanModal({ isOpen, onClose, state, onApplyToStep2 }) {
                   <button
                     onClick={() => handleRefine()}
                     disabled={refining || !refinementText.trim()}
-                    className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs disabled:opacity-50 transition-all shrink-0"
+                    className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs disabled:opacity-50 transition-all shrink-0 shadow-xs"
                   >
                     {refining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Refine'}
                   </button>

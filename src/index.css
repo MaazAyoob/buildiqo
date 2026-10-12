@@ -66,13 +66,14 @@
     box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
   }
 
-  /* Dark Specialized Architectural CAD Canvas */
+  /* Light Architectural Drafting Canvas */
+  .cad-drafting-viewport,
   .cad-dark-viewport {
-    background-color: #0B0F19;
+    background-color: #F8FAFC;
     background-image: 
-      radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+      radial-gradient(#CBD5E1 1px, transparent 1px);
     background-size: 20px 20px;
-    color: #F8FAFC;
+    color: #0F172A;
   }
 
   /* Precision Input Style */
@@ -352,6 +353,133 @@
       linear-gradient(to right, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+
+  /* Glassmorphism Panels */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  }
+
+  /* Premium SaaS Input */
+  .input-premium {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.875rem;
+    color: #0F172A;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .input-premium:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+  .input-premium::placeholder {
+    color: #94A3B8;
+  }
+
+  /* Premium Select */
+  .select-premium {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 0.75rem;
+    padding: 0.55rem 2rem 0.55rem 0.85rem;
+    font-size: 0.875rem;
+    color: #0F172A;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 1rem;
+  }
+  .select-premium:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  /* Dense Technical Table */
+  .table-dense {
+    width: 100%;
+    text-align: left;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .table-dense th {
+    background-color: #F8FAFD;
+    color: #475569;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid #E2E8F0;
+    white-space: nowrap;
+  }
+  .table-dense td {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #1E293B;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+  }
+  .table-dense tr:last-child td {
+    border-bottom: none;
+  }
+  .table-dense tr:hover td {
+    background-color: #F8FAFC;
+  }
+
+  /* Gradient Text Accents */
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #3B82F6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .text-gradient-amber {
+    background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .text-gradient-violet {
+    background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #8B5CF6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Segmented Control Pill Container */
+  .segmented-control {
+    display: inline-flex;
+    background-color: #F1F5F9;
+    padding: 0.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid #E2E8F0;
+  }
+  .segmented-control-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 140ms ease;
+    color: #475569;
+  }
+  .segmented-control-btn.active {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
   }
 }
 

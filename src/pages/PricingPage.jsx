@@ -219,8 +219,8 @@ export function PricingPage({ setRoute, isMandatoryGate = false }) {
                     plan.popular
                       ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/25 ring-2 ring-blue-600/30'
                       : plan.id === 'free'
-                      ? 'bg-slate-900 hover:bg-slate-800 text-white'
-                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
                   }`}
                 >
                   <span>{plan.cta}</span>

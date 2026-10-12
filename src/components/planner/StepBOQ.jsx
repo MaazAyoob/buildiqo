@@ -90,10 +90,10 @@ export function StepBOQ({ state, updateState, estimation, onNavigateStep }) {
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-[#0B0F19] to-[#1E293B] text-white px-6 py-4 rounded-2xl border border-slate-700/80 shadow-md text-right">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Grand Total Estimated Cost</span>
+          <div className="bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white px-6 py-4 rounded-2xl border border-blue-400 shadow-md text-right">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-blue-100 block">Grand Total Estimated Cost</span>
             <span className="font-mono tabular-nums text-2xl font-black text-white tracking-tight block">{formatCurrency(grandTotalCost)}</span>
-            <span className="font-mono tabular-nums text-xs text-sky-400 block font-bold mt-0.5">
+            <span className="font-mono tabular-nums text-xs text-blue-200 block font-bold mt-0.5">
               {formatCurrency(costPerSqFt)} / sq.ft ({formatNumber(totalBuiltupArea)} sq.ft BUA)
             </span>
           </div>

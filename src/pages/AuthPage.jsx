@@ -20,7 +20,7 @@ import {
 import { useEstimateStore } from '../store/useEstimateStore';
 import { BuildiqoLogo } from '../components/common/BuildiqoLogo';
 
-export function AuthPage({ onAuthSuccess }) {
+export function AuthPage({ onAuthSuccess, initialAdminModal = false }) {
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const { login, register, loginAsGuest } = useEstimateStore();
 
@@ -42,7 +42,10 @@ export function AuthPage({ onAuthSuccess }) {
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   // Admin Access Modal
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(
+    initialAdminModal || 
+    (typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/admin'))
+  );
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminError, setAdminError] = useState('');
@@ -52,10 +55,14 @@ export function AuthPage({ onAuthSuccess }) {
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Discrete Admin Portal access via #admin hash or Ctrl+Alt+A keyboard shortcut
+  // Discrete Admin Portal access via /admin route or #admin hash or Ctrl+Alt+A keyboard shortcut
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.hash === '#admin' || window.location.hash === '#owner') {
+      if (
+        window.location.hash === '#admin' || 
+        window.location.hash === '#owner' ||
+        window.location.pathname.toLowerCase().startsWith('/admin')
+      ) {
         setShowAdminModal(true);
       }
       const handleKeyDown = (e) => {
@@ -179,65 +186,65 @@ export function AuthPage({ onAuthSuccess }) {
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
         {/* Left Side: Brand Visual Identity (5 cols) */}
-        <div className="lg:col-span-5 bg-slate-950 text-white p-7 sm:p-9 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between space-y-6 text-left relative overflow-hidden">
+        <div className="lg:col-span-5 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/60 text-[#172033] p-7 sm:p-9 rounded-3xl border border-[#CBD5E1] shadow-xl flex flex-col justify-between space-y-6 text-left relative overflow-hidden">
           <div className="space-y-6">
             
-            {/* Official Logo (Dark Theme Variant) */}
+            {/* Official Logo (Light Theme Variant) */}
             <div className="pt-1">
               <BuildiqoLogo 
                 variant="full" 
-                theme="dark" 
-                className="h-12 w-auto max-w-full drop-shadow-sm" 
+                theme="light" 
+                className="h-12 w-auto max-w-full drop-shadow-xs" 
               />
             </div>
 
             <div className="space-y-2.5">
-              <span className="badge-amber">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
                 ✦ IS 456 STANDARDS ENGINE
               </span>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+              <h1 className="text-xl sm:text-2xl font-black text-[#172033] tracking-tight leading-snug">
                 Deterministic construction intelligence for professionals.
               </h1>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 Physical quantities of structural steel rebar, cement bags, sand, masonry blocks, 3D architectural massing, and client-ready BOQ schedules.
               </p>
             </div>
 
             {/* Feature Checkpoints */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center space-x-2.5 text-xs text-slate-300 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+              <div className="flex items-center space-x-2.5 text-xs text-slate-700 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Deterministic IS 456 &amp; IS 1786 Quantity Takeoff</span>
               </div>
-              <div className="flex items-center space-x-2.5 text-xs text-slate-300 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+              <div className="flex items-center space-x-2.5 text-xs text-slate-700 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>AI Architectural Floor Plan Studio &amp; CAD Export</span>
               </div>
-              <div className="flex items-center space-x-2.5 text-xs text-slate-300 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+              <div className="flex items-center space-x-2.5 text-xs text-slate-700 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Regional Material Rates (Bengaluru, Mumbai, Delhi, etc.)</span>
               </div>
-              <div className="flex items-center space-x-2.5 text-xs text-slate-300 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="flex items-center space-x-2.5 text-xs text-slate-700 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>6-Stage Milestone Cashflow Release Schedule</span>
               </div>
             </div>
 
           </div>
 
-          {/* Bottom Trust Stat Bar */}
-          <div className="pt-6 border-t border-slate-800/90 grid grid-cols-3 gap-2 text-center">
+          {/* Bottom Engineering Standards Bar */}
+          <div className="pt-6 border-t border-slate-200 grid grid-cols-3 gap-2 text-center">
             <div>
-              <span className="font-mono text-base font-black text-white block">12,400+</span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Estimates</span>
+              <span className="font-mono text-xs sm:text-sm font-black text-[#172033] block">IS 456 : 2000</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Concrete Standard</span>
             </div>
-            <div className="border-x border-slate-800">
-              <span className="font-mono text-base font-black text-blue-400 block">₹450 Cr+</span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Tracked</span>
+            <div className="border-x border-slate-200">
+              <span className="font-mono text-xs sm:text-sm font-black text-blue-600 block">IS 1786 : 2008</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Steel Takeoff</span>
             </div>
             <div>
-              <span className="font-mono text-base font-black text-emerald-400 block">±3.5%</span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Accuracy</span>
+              <span className="font-mono text-xs sm:text-sm font-black text-amber-600 block">NBC 2016</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Building Code</span>
             </div>
           </div>
         </div>
@@ -557,8 +564,8 @@ export function AuthPage({ onAuthSuccess }) {
             
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-xl bg-slate-950 text-white flex items-center justify-center shadow-xs">
-                  <ShieldCheck className="w-5 h-5 text-amber-400" />
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-xs">
+                  <ShieldCheck className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900">Administrator Access</h3>

@@ -2,11 +2,13 @@ import React from 'react';
 
 export function StatusBadge({ 
   variant = 'neutral', 
+  status,
   children, 
   size = 'md',
   dot = true,
   className = '' 
 }) {
+  const effectiveVariant = status || variant;
   const sizeClasses = {
     sm: 'text-[10px] px-2 py-0.5',
     md: 'text-[11px] px-2.5 py-1',
@@ -18,9 +20,21 @@ export function StatusBadge({
       wrap: 'bg-blue-50 text-blue-700 border-blue-200/80',
       dot: 'bg-blue-600'
     },
+    cyan: {
+      wrap: 'bg-cyan-50 text-cyan-800 border-cyan-200/80',
+      dot: 'bg-cyan-600'
+    },
+    teal: {
+      wrap: 'bg-teal-50 text-teal-800 border-teal-200/80',
+      dot: 'bg-teal-600'
+    },
     amber: {
       wrap: 'bg-amber-50 text-amber-800 border-amber-200/80',
       dot: 'bg-amber-500'
+    },
+    orange: {
+      wrap: 'bg-orange-50 text-orange-800 border-orange-200/80',
+      dot: 'bg-orange-500'
     },
     emerald: {
       wrap: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
@@ -44,7 +58,7 @@ export function StatusBadge({
     }
   };
 
-  const config = variants[variant] || variants.neutral;
+  const config = variants[effectiveVariant] || variants.neutral;
 
   return (
     <span className={`inline-flex items-center font-bold tracking-tight rounded-md border shadow-2xs ${sizeClasses[size] || sizeClasses.md} ${config.wrap} ${className}`}>

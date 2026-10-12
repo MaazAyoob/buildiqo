@@ -40,6 +40,20 @@ export function StatCard({
       val: 'text-slate-900',
       sub: 'text-violet-800/80'
     },
+    cyan: {
+      card: 'bg-gradient-to-b from-cyan-50/60 to-white border border-cyan-200/90 border-t-3 border-t-cyan-500 rounded-2xl p-4 shadow-2xs',
+      iconBg: 'bg-cyan-100 text-cyan-800',
+      title: 'text-cyan-900/70',
+      val: 'text-slate-900',
+      sub: 'text-cyan-800/80'
+    },
+    teal: {
+      card: 'bg-gradient-to-b from-teal-50/60 to-white border border-teal-200/90 border-t-3 border-t-teal-500 rounded-2xl p-4 shadow-2xs',
+      iconBg: 'bg-teal-100 text-teal-800',
+      title: 'text-teal-900/70',
+      val: 'text-slate-900',
+      sub: 'text-teal-800/80'
+    },
     dark: {
       card: 'card-metric-dark',
       iconBg: 'bg-slate-800 text-blue-400 border border-slate-700',

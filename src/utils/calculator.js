@@ -16,24 +16,128 @@ export function calculatePackageEstimate({
   customPackageRate = null,
   gstRate = 18,
   floors = [],
-  numFloors = 1
+  numFloors = 1,
+  selectedMaterials = null,
+  pricingStatus = 'APPROVED',
+  totalCarpetArea = 0,
+  totalBaths = 1,
+  totalKitchens = 1
 } = {}) {
   const pkg = TIER_BENCHMARKS[packageKey] || TIER_BENCHMARKS.standard;
-  const ratePerSqFt = (customPackageRate !== null && customPackageRate !== undefined && Number(customPackageRate) > 0)
+  const baseRatePerSqFt = (customPackageRate !== null && customPackageRate !== undefined && Number(customPackageRate) > 0)
     ? Number(customPackageRate)
     : (pkg?.ratePerSqFt || 2250);
 
   const sba = Math.max(0, Number(totalBuiltupArea) || 0);
+  const carpetArea = totalCarpetArea > 0 ? totalCarpetArea : Math.round(sba / 1.18);
+  const baths = Math.max(1, Number(totalBaths) || 1);
+  const kitchens = Math.max(1, Number(totalKitchens) || 1);
+
+  let isPricingUnavailable = (pricingStatus === 'UNAVAILABLE');
+  let totalMaterialDeltaCost = 0;
+  const materialDeltas = [];
+
+  if (selectedMaterials && typeof selectedMaterials === 'object') {
+    MATERIAL_CATEGORIES.forEach(cat => {
+      const baseOption = cat.options.find(o => o.tier === packageKey)
+        || cat.options.find(o => o.tier === 'standard')
+        || cat.options[0];
+      const selectedOption = selectedMaterials[cat.id];
+
+      if (selectedOption) {
+        if (selectedOption.rateSource === 'UNAVAILABLE' || (selectedOption.unitRate === 0 && selectedOption.rateSource !== 'benchmark_mode')) {
+          isPricingUnavailable = true;
+        }
+
+        // Only calculate delta if user chose a custom material differing from base package specification
+        if (selectedOption.id && baseOption.id && selectedOption.id !== baseOption.id) {
+          let qty = 0;
+          switch (cat.id) {
+            case 'steel':
+              qty = (sba * 3.85 * 1.05) / 1000; // Tonnes (IS 456 formula)
+              break;
+            case 'cement':
+              qty = sba * 0.42; // Bags
+              break;
+            case 'sand':
+              qty = sba * 1.9; // Cu.Ft
+              break;
+            case 'masonry':
+              qty = sba * 0.85; // Sq.Ft wall area
+              break;
+            case 'flooring':
+              qty = carpetArea * 1.07; // Sq.Ft carpet + 7% wastage
+              break;
+            case 'kitchen':
+              qty = kitchens * 150; // Sq.Ft
+              break;
+            case 'bathroom':
+              qty = baths; // Bathrooms
+              break;
+            case 'electrical':
+              qty = sba; // Sq.Ft BUA
+              break;
+            case 'doors_windows':
+              qty = sba * 0.15; // Sq.Ft openings
+              break;
+            case 'painting':
+              qty = sba * 3.7; // Sq.Ft surface
+              break;
+            case 'waterproofing':
+              qty = sba / 2000; // Scaled lump sum
+              break;
+            default:
+              qty = 0;
+          }
+
+          const selectedRate = Number(selectedOption.unitRate) || 0;
+          const baseRate = Number(baseOption.unitRate) || 0;
+          const delta = (selectedRate - baseRate) * qty;
+          totalMaterialDeltaCost += delta;
+
+          materialDeltas.push({
+            categoryId: cat.id,
+            categoryName: cat.name,
+            selectedName: selectedOption.name,
+            selectedRate,
+            baseName: baseOption.name,
+            baseRate,
+            qty,
+            delta: Math.round(delta)
+          });
+        }
+      }
+    });
+  }
+
+  const materialDeltaPerSqFt = sba > 0 ? (totalMaterialDeltaCost / sba) : 0;
+  const ratePerSqFt = Math.max(0, Math.round(baseRatePerSqFt + materialDeltaPerSqFt));
+
   const estimatedCost = Math.round(sba * ratePerSqFt);
   const gstPct = Number(gstRate) >= 0 ? Number(gstRate) : 18;
   const gstAmount = Math.round(estimatedCost * (gstPct / 100));
   const grandTotal = Math.round(estimatedCost + gstAmount);
+
+  const floorCount = Math.max(1, Number(numFloors) || (floors?.length || 1));
+  const detailedFloors = (Array.isArray(floors) && floors.length > 0)
+    ? floors.map((f, i) => {
+        const floorBua = Number(f.builtupArea) || Number(f.area) || Math.round(sba / floorCount);
+        return {
+          ...f,
+          builtupArea: floorBua,
+          floorCost: Math.round(floorBua * ratePerSqFt)
+        };
+      })
+    : [];
 
   return {
     packageKey,
     packageName: (customPackageRate && Number(customPackageRate) > 0 && !TIER_BENCHMARKS[packageKey]) 
       ? 'Custom Package' 
       : (pkg?.name || 'Standard Package'),
+    baseRatePerSqFt,
+    materialDeltaPerSqFt: Math.round(materialDeltaPerSqFt),
+    materialDeltas,
     ratePerSqFt,
     totalBuiltupArea: sba,
     estimatedCost,
@@ -41,8 +145,10 @@ export function calculatePackageEstimate({
     gstAmount,
     grandTotal,
     formula: `${sba.toLocaleString('en-IN')} sq.ft × ₹${ratePerSqFt.toLocaleString('en-IN')}/sq.ft = ₹${estimatedCost.toLocaleString('en-IN')}`,
-    numFloors: Math.max(1, Number(numFloors) || (floors?.length || 1)),
-    floors: Array.isArray(floors) ? floors : []
+    numFloors: floorCount,
+    floors: detailedFloors,
+    isPricingUnavailable,
+    pricingStatus: isPricingUnavailable ? 'UNAVAILABLE' : (pricingStatus || 'APPROVED')
   };
 }
 
@@ -107,7 +213,7 @@ export function calculateEstimation(state, pricingContext = null) {
 
   const calculatedTotalBua = floorDetails.reduce((sum, f) => sum + f.builtupArea, 0);
   const totalBuiltupArea = state.targetBuaInput > 0 ? Number(state.targetBuaInput) : Math.max(calculatedTotalBua, 400);
-  const groundFloorBua = floorDetails[0]?.builtupArea || Math.round(totalBuiltupArea / (state.floors.length || 1));
+  const groundFloorBua = floorDetails[0]?.builtupArea || Math.round(totalBuiltupArea / (floors.length || state.numFloors || 1));
   const coverageLimit = city.id === 'bangalore' ? 0.55 : 0.60;
   const groundCoverageRatio = plotArea > 0 ? (groundFloorBua / plotArea) : 0;
   const coverageCheck = {
@@ -497,9 +603,14 @@ export function calculateEstimation(state, pricingContext = null) {
     totalBuiltupArea,
     packageKey: tier,
     customPackageRate: state.customPackageRate,
-    gstRate: state.packageGstRate !== undefined ? state.packageGstRate : 18,
+    gstRate: state.packageGstRate !== undefined ? state.packageGstRate : (state.gstRatePct ?? 18),
     floors: floorDetails,
-    numFloors: state.numFloors || floors.length || 1
+    numFloors: state.numFloors || floors.length || 1,
+    selectedMaterials,
+    pricingStatus,
+    totalCarpetArea,
+    totalBaths,
+    totalKitchens
   });
 
   return {
@@ -510,7 +621,8 @@ export function calculateEstimation(state, pricingContext = null) {
     groundFloorBua,
     groundCoverageRatio,
     coverageCheck,
-    costPerSqFt,
+    costPerSqFt: packageEstimate.ratePerSqFt,
+    estimatedCost: packageEstimate.estimatedCost,
     directMaterialCost,
     totalLaborCost,
     ancillaryCost,
@@ -518,20 +630,21 @@ export function calculateEstimation(state, pricingContext = null) {
     architectureFee,
     contractorMargin,
     contingencyBuffer,
-    grandTotalCost: grandTotalWithTaxes,
-    baseGrandTotalCost,
-    gst,
-    gstRate,
+    grandTotalCost: packageEstimate.grandTotal,
+    baseGrandTotalCost: packageEstimate.estimatedCost,
+    gst: packageEstimate.gstAmount,
+    gstRate: packageEstimate.gstRate,
     labourCess,
     labourCessRate,
-    statutoryTaxes,
+    statutoryTaxes: packageEstimate.gstAmount + labourCess,
+    detailedBoqTotalCost: tradeCostHeadTotal,
     tradeCostHeadTotal,
     reconciledTradePackageTotal,
     tradePackageCheck,
     footingDepthFt,
     footingType,
     electricalPoints,
-    floorDetails,
+    floorDetails: packageEstimate.floors.length > 0 ? packageEstimate.floors : floorDetails,
     selectedMaterials,
     boqItems,
     categoryTotals,
@@ -543,7 +656,7 @@ export function calculateEstimation(state, pricingContext = null) {
     buildingType,
     constructionType,
     unitDef,
-    pricingStatus,
+    pricingStatus: packageEstimate.isPricingUnavailable ? 'UNAVAILABLE' : pricingStatus,
     pricingScope: pricingContext?.pricingScope || (isBenchmark ? 'BENCHMARK' : 'STATE'),
     pricingSource: pricingContext?.pricingSource || (isBenchmark ? 'BENCHMARK_DEMO' : 'APPROVED_STATE_RATE'),
     missingRates,

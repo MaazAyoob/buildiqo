@@ -9,16 +9,23 @@ import {
   Building, 
   Search, 
   Layers, 
-  Sparkles,
-  TrendingUp,
-  MapPin,
-  Filter,
-  CheckCircle2,
-  HardHat,
-  Compass
+  Sparkles, 
+  TrendingUp, 
+  MapPin, 
+  Filter, 
+  CheckCircle2, 
+  HardHat, 
+  Compass, 
+  FileSpreadsheet,
+  FileCheck2,
+  Sliders,
+  ArrowUpRight,
+  ShieldCheck,
+  Zap,
+  Activity,
+  Boxes
 } from 'lucide-react';
 import { useEstimateStore, formatCurrency, formatNumber } from '../store/useEstimateStore';
-import { PageHeader, StatCard, StatusBadge, EmptyState } from '../components/ui';
 
 export function DashboardPage({ setRoute }) {
   const { savedProjects, loadProject, deleteProject, resetToNewProject, saveCurrentProject } = useEstimateStore();
@@ -26,7 +33,7 @@ export function DashboardPage({ setRoute }) {
   const [selectedTier, setSelectedTier] = useState('ALL');
   const [sortBy, setSortBy] = useState('newest');
 
-  // Top portfolio analytics
+  // Top portfolio analytics derived strictly from real saved projects
   const portfolioStats = useMemo(() => {
     const count = savedProjects.length;
     const totalCost = savedProjects.reduce((sum, p) => sum + (Number(p.totalCost) || 0), 0);
@@ -57,7 +64,7 @@ export function DashboardPage({ setRoute }) {
 
   const handleStartNew = () => {
     resetToNewProject();
-    setRoute('planner');
+    setRoute('planner', 1);
   };
 
   const handleLoad = (id) => {
@@ -73,219 +80,270 @@ export function DashboardPage({ setRoute }) {
     }
   };
 
-  const getTierBadgeProps = (tier) => {
+  const getTierColor = (tier) => {
     const t = (tier || 'standard').toLowerCase();
-    if (t === 'luxury') return { variant: 'violet', label: 'Luxury Tier' };
-    if (t === 'premium') return { variant: 'brand', label: 'Premium Tier' };
-    return { variant: 'emerald', label: 'Standard Tier' };
+    if (t === 'luxury') return 'bg-purple-50 text-purple-700 border-purple-200';
+    if (t === 'premium') return 'bg-blue-50 text-blue-700 border-blue-200';
+    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-7xl mx-auto pb-20 text-left">
+    <div className="space-y-8 animate-fadeIn text-left pb-16 text-[#172033]">
       
-      {/* 1. Page Header */}
-      <PageHeader
-        icon={FolderKanban}
-        badge="ENGINEERING WORKSPACE"
-        badgeVariant="brand"
-        title="Saved Project Estimations"
-        subtitle="Manage, compare, and reopen your saved residential construction estimates and IS 456 BOQ takeoffs."
-        actions={
-          <div className="flex items-center gap-2.5">
+      {/* 1. Portfolio Header Strip */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2E8F0] shadow-sm relative overflow-hidden text-[#172033]">
+        
+        {/* Background Subtle Radial Glow */}
+        <div 
+          className="absolute -top-24 -right-10 w-96 h-96 pointer-events-none opacity-40"
+          style={{
+            background: 'radial-gradient(circle, rgba(37,99,235,0.08), rgba(8,145,178,0.04) 50%, transparent 70%)'
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex items-center space-x-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">
+                PORTFOLIO COMMAND CENTER
+              </span>
+              <span className="text-[#94A3B8]">•</span>
+              <span className="text-xs text-[#64748B] font-mono">IS 456 / NBC 2016 Compliant</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#172033] tracking-tight">
+              Construction Portfolio Overview
+            </h1>
+            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-normal">
+              Manage saved engineering models, compare package costs, launch parametric CAD floor plans, and generate bank-ready quantity takeoff reports.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               onClick={() => setRoute('floor-plan')}
-              className="btn-ai-action text-xs py-2 px-3.5"
+              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-[#CBD5E1] text-[#172033] hover:text-purple-600 text-xs font-bold flex items-center space-x-2 transition-colors shadow-2xs"
             >
-              <Compass className="w-4 h-4" />
-              <span>AI Floor Plan</span>
+              <Compass className="w-4 h-4 text-purple-600" />
+              <span>CAD Studio</span>
             </button>
+
+            <button
+              onClick={() => setRoute('commercial-boq')}
+              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-[#CBD5E1] text-[#172033] hover:text-emerald-600 text-xs font-bold flex items-center space-x-2 transition-colors shadow-2xs"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <span>Commercial BOQ</span>
+            </button>
+
             <button
               onClick={handleStartNew}
-              className="btn-brand-primary text-xs py-2 px-4 shadow-brand hover:shadow-brand-hover"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md shadow-blue-500/20 flex items-center space-x-2 transition-all active:scale-[0.98]"
             >
-              <PlusCircle className="w-4 h-4 text-amber-200" />
-              <span>New Estimate</span>
+              <PlusCircle className="w-4 h-4 text-white" />
+              <span>Create New Estimate</span>
             </button>
           </div>
-        }
-      />
-
-      {/* 2. Portfolio Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          variant="blue"
-          icon={Building}
-          title="Saved Estimations"
-          value={portfolioStats.count}
-          subtitle="Active project models"
-        />
-        <StatCard
-          variant="emerald"
-          icon={TrendingUp}
-          title="Total Portfolio Value"
-          value={formatCurrency(portfolioStats.totalCost)}
-          subtitle="Cumulative civil takeoff"
-        />
-        <StatCard
-          variant="amber"
-          icon={Layers}
-          title="Avg Built-up Area"
-          value={`${formatNumber(portfolioStats.avgBua)} sq.ft`}
-          subtitle="Average floor layout size"
-        />
-        <StatCard
-          variant="violet"
-          icon={MapPin}
-          title="Regional Markets"
-          value={portfolioStats.uniqueCities || (savedProjects.length > 0 ? 1 : 0)}
-          subtitle="IS 456 regional indices"
-        />
-      </div>
-
-      {/* 3. Search, Filter & Sorting Bar */}
-      <div className="card-workspace p-4 sm:p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by project name or city..."
-            className="input-architect w-full pl-9 pr-4 py-2 text-xs bg-slate-50/50 focus:bg-white"
-          />
         </div>
 
-        {/* Filters and Sort */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Tier Filter Pills */}
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
-            {['ALL', 'standard', 'premium', 'luxury'].map((tier) => (
-              <button
-                key={tier}
-                onClick={() => setSelectedTier(tier)}
-                className={`px-3 py-1 rounded-lg font-bold capitalize transition-all ${
-                  selectedTier === tier 
-                    ? 'bg-white text-blue-700 shadow-2xs' 
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {tier}
-              </button>
-            ))}
+        {/* 2. Portfolio Analytics Metric Strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-6 border-t border-[#E2E8F0]">
+          
+          <div className="bg-white p-4.5 rounded-2xl border border-[#BAE6FD] border-t-4 border-t-cyan-500 shadow-xs space-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748B] flex items-center justify-between">
+              <span>Saved Projects</span>
+              <Building className="w-3.5 h-3.5 text-cyan-600" />
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-[#172033] tabular-nums">
+              {portfolioStats.count}
+            </div>
+            <span className="text-[11px] text-[#64748B] block">Active engineering models</span>
           </div>
 
-          {/* Sort Selector */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input-architect py-1.5 px-3 text-xs bg-white text-slate-700 font-semibold"
-          >
-            <option value="newest">Recently Saved</option>
-            <option value="cost_desc">Highest Estimate</option>
-            <option value="bua_desc">Largest Area (BUA)</option>
-          </select>
+          <div className="bg-white p-4.5 rounded-2xl border border-[#BFDBFE] border-t-4 border-t-blue-600 shadow-xs space-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748B] flex items-center justify-between">
+              <span>Total Portfolio Value</span>
+              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-blue-600 tabular-nums">
+              {formatCurrency(portfolioStats.totalCost)}
+            </div>
+            <span className="text-[11px] text-[#64748B] block">Cumulative estimated civil cost</span>
+          </div>
+
+          <div className="bg-white p-4.5 rounded-2xl border border-[#A7F3D0] border-t-4 border-t-emerald-500 shadow-xs space-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748B] flex items-center justify-between">
+              <span>Average Built-Up Area</span>
+              <Layers className="w-3.5 h-3.5 text-emerald-600" />
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-[#172033] tabular-nums">
+              {formatNumber(portfolioStats.avgBua)} <span className="text-xs font-normal text-[#64748B]">sq.ft</span>
+            </div>
+            <span className="text-[11px] text-[#64748B] block">Super built-up area (SBA)</span>
+          </div>
+
+          <div className="bg-white p-4.5 rounded-2xl border border-[#DDD6FE] border-t-4 border-t-purple-500 shadow-xs space-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748B] flex items-center justify-between">
+              <span>Jurisdictions</span>
+              <MapPin className="w-3.5 h-3.5 text-purple-600" />
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-purple-700 tabular-nums">
+              {portfolioStats.uniqueCities || (savedProjects.length > 0 ? 1 : 0)}
+            </div>
+            <span className="text-[11px] text-[#64748B] block">State benchmarks resolved</span>
+          </div>
+
         </div>
 
       </div>
 
-      {/* 4. Projects Grid */}
-      {filteredProjects.length === 0 ? (
-        <EmptyState
-          icon={FolderKanban}
-          title={savedProjects.length === 0 ? "No saved estimations yet" : "No matching estimates found"}
-          description={
-            savedProjects.length === 0
-              ? "Start a new project estimate to configure plot dimensions, space program, materials, and generate IS 456 BOQ schedules."
-              : "Try adjusting your search query or tier filters above."
-          }
-          actionLabel="Create Your First Estimate"
-          onAction={handleStartNew}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((p) => {
-            const badgeProps = getTierBadgeProps(p.tier);
-            return (
-              <div
-                key={p.id}
-                className="card-workspace p-6 flex flex-col justify-between space-y-5 hover:border-blue-400 group transition-all"
-              >
-                <div className="space-y-3.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <StatusBadge variant={badgeProps.variant} size="sm">
-                      {badgeProps.label}
-                    </StatusBadge>
-                    <span className="text-[11px] text-slate-400 font-medium font-mono">
-                      {new Date(p.savedAt || Date.now()).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </span>
-                  </div>
+      {/* 3. Filter Bar & Project Browser */}
+      <div className="bg-white rounded-3xl p-6 border border-[#E2E8F0] shadow-sm space-y-6 text-[#172033]">
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+          <div>
+            <h2 className="text-base font-black text-[#172033] tracking-tight">
+              Saved Estimation Models ({filteredProjects.length})
+            </h2>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              Select any project to resume editing in the 6-step planning workspace.
+            </p>
+          </div>
 
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                      {p.name}
-                    </h3>
-                    {p.city && (
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        <span>{p.city}</span>
-                      </p>
-                    )}
-                  </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-[#94A3B8] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search project name or city..."
+                className="pl-8 pr-3 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] text-xs text-[#172033] placeholder-[#94A3B8] focus:outline-none focus:border-blue-600 w-52 sm:w-64"
+              />
+            </div>
 
-                  {/* Financial Snapshot Box */}
-                  <div className="p-4 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 rounded-2xl border border-blue-100/80 space-y-2.5">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs text-slate-500 font-medium">Estimated Cost:</span>
-                      <span className="text-lg font-black font-mono text-slate-900 tabular-nums">
-                        {formatCurrency(p.totalCost)}
+            {/* Tier Filter */}
+            <select
+              value={selectedTier}
+              onChange={(e) => setSelectedTier(e.target.value)}
+              className="px-3 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] text-xs font-bold text-[#334155] focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Tiers</option>
+              <option value="standard">Standard Tier</option>
+              <option value="premium">Premium Tier</option>
+              <option value="luxury">Luxury Tier</option>
+            </select>
+
+            {/* Sort Order */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] text-xs font-bold text-[#334155] focus:outline-none cursor-pointer"
+            >
+              <option value="newest">Newest First</option>
+              <option value="cost_desc">Highest Cost</option>
+              <option value="bua_desc">Largest Area</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Project Cards Grid / Table */}
+        {filteredProjects.length === 0 ? (
+          <div className="py-16 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto">
+              <FolderKanban className="w-7 h-7 text-blue-600" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-[#172033]">No Estimations Found</h3>
+              <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                {searchQuery ? 'No estimates match your search criteria.' : 'You have not saved any civil estimations yet. Start a new estimate to model construction costs.'}
+              </p>
+            </div>
+            <button
+              onClick={handleStartNew}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md inline-flex items-center space-x-2"
+            >
+              <PlusCircle className="w-4 h-4 text-white" />
+              <span>Launch First Estimate</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredProjects.map((p) => {
+              const tierClass = getTierColor(p.tier);
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white rounded-2xl p-5 border border-[#E2E8F0] hover:border-blue-400 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group shadow-2xs text-[#172033]"
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${tierClass}`}>
+                        {(p.tier || 'standard').toUpperCase()} TIER
+                      </span>
+                      <span className="text-[11px] text-[#94A3B8] font-mono">
+                        {p.savedAt ? new Date(p.savedAt).toLocaleDateString() : 'Active'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-200/80">
-                      <span className="font-semibold">{formatNumber(p.builtupArea)} sq.ft BUA</span>
-                      <span className="font-mono text-blue-700 font-bold">{formatCurrency(p.costPerSqFt)} / sq.ft</span>
+
+                    <h3 className="text-sm font-black text-[#172033] tracking-tight truncate group-hover:text-blue-600 transition-colors">
+                      {p.name}
+                    </h3>
+
+                    <div className="flex items-center space-x-2 text-xs text-[#64748B]">
+                      <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span>{p.city || 'Bengaluru'}, {p.state?.state || 'Karnataka'}</span>
+                    </div>
+
+                    {/* Metric Blocks */}
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E2E8F0] font-mono text-xs">
+                      <div className="bg-[#F8FAFC] p-2.5 rounded-xl border border-[#E2E8F0]">
+                        <span className="text-[10px] uppercase font-bold text-[#64748B] block font-sans">BUA (SBA)</span>
+                        <span className="font-bold text-[#172033] tabular-nums">{formatNumber(p.builtupArea)} sq.ft</span>
+                      </div>
+                      <div className="bg-[#F8FAFC] p-2.5 rounded-xl border border-[#E2E8F0]">
+                        <span className="text-[10px] uppercase font-bold text-[#64748B] block font-sans">Est. Cost</span>
+                        <span className="font-black text-blue-600 tabular-nums">{formatCurrency(p.totalCost)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Card Action Controls */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <button
-                    onClick={() => handleLoad(p.id)}
-                    className="btn-brand-primary text-xs py-2 px-3.5 shadow-xs hover:shadow-brand"
-                  >
-                    <span>Open Planner</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleDuplicate(p)}
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#64748B] hover:text-[#172033] transition-colors"
+                        title="Duplicate Estimate"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
 
-                  <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => deleteProject(p.id)}
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#64748B] hover:text-rose-600 transition-colors"
+                        title="Delete Estimate"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                     <button
-                      onClick={() => handleDuplicate(p)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                      title="Duplicate project"
+                      onClick={() => handleLoad(p.id)}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 transition-colors shadow-xs"
                     >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteProject(p.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      title="Delete project"
-                    >
-                      <Trash2 className="w-4 h-4" />
+                      <span>Open Workspace</span>
+                      <ArrowRight className="w-3 h-3 text-white" />
                     </button>
                   </div>
-                </div>
 
-              </div>
-            );
-          })}
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+      </div>
 
     </div>
   );

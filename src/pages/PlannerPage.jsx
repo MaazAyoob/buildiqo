@@ -13,7 +13,12 @@ import {
   RotateCcw,
   CheckCircle2,
   Lock,
-  Crown
+  Crown,
+  ShieldCheck,
+  Building2,
+  Compass,
+  MapPin,
+  TrendingUp
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEstimateStore, formatCurrency, formatNumber, ENABLE_SUBSCRIPTIONS } from '../store/useEstimateStore';
@@ -42,24 +47,24 @@ class StepErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="bg-white rounded-2xl p-8 border border-red-200 shadow-sm text-center space-y-4 max-w-xl mx-auto my-8">
-          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto font-bold text-lg">
+        <div className="bg-[#0F172A] rounded-2xl p-8 border border-red-500/50 shadow-xl text-center space-y-4 max-w-xl mx-auto my-8 text-white">
+          <div className="w-12 h-12 rounded-full bg-red-950 text-red-400 flex items-center justify-center mx-auto font-bold text-lg border border-red-800">
             !
           </div>
-          <h3 className="text-base font-bold text-slate-900">Summary Report Encountered an Error</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="text-base font-bold text-white">Summary Report Encountered an Issue</h3>
+          <p className="text-xs text-slate-400">
             {this.state.error?.message || 'A runtime issue occurred while loading this section.'}
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-500 transition-colors"
             >
               Retry
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors"
+              className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors"
             >
               Reload
             </button>
@@ -84,7 +89,6 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
     }
   }, [initialStep]);
 
-  // Subscription gate check: only active if ENABLE_SUBSCRIPTIONS is explicitly enabled
   const isFreePlan = ENABLE_SUBSCRIPTIONS && subscription?.planId === 'free' && !currentUser?.isGuest && !currentUser?.isAdmin;
 
   const allSteps = [
@@ -96,7 +100,6 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
     { id: 6, stepNum: '06', name: 'Summary Report', icon: FileCheck2, desc: 'Print & export schedule' }
   ];
 
-  // For Free plan: only Plot & Setup and Summary Report are visible to the customer
   const steps = isFreePlan 
     ? [
         { id: 1, stepNum: '01', name: 'Plot & Setup', icon: Ruler, desc: 'Land dimensions & location' },
@@ -118,11 +121,7 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
       setCurrentStep(6);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch (e) {}
       return;
     }
@@ -133,11 +132,7 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
 
       if (nextStep === 6) {
         try {
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
+          confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
         } catch (e) {}
       }
     }
@@ -155,39 +150,33 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
     }
   };
 
-  const openPaymentForPlan = (plan) => {
-    setSelectedPlanForPayment(plan);
-    setPaymentModalOpen(true);
-  };
-
   return (
-    <div className="space-y-6 pb-32 animate-fadeIn">
+    <div className="space-y-6 pb-32 animate-fadeIn text-left">
       
-      {/* Premium Engineering Workspace Header Strip */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-slate-50/90 to-indigo-50/80 rounded-2xl p-4 sm:p-5 border border-blue-200/90 shadow-xs no-print">
+      {/* 1. Project Header Strip */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-sm no-print text-[#172033]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
-          {/* Project Title & Authority Scope */}
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0">
-              <Box className="w-5 h-5 text-sky-200" />
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0">
+              <Box className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+                <h1 className="text-sm sm:text-base font-black text-[#172033] tracking-tight">
                   {state.projectName || 'Residential Villa Engineering Estimate'}
                 </h1>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100/90 text-emerald-800 border border-emerald-200">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
                   IS 456 Verified
                 </span>
               </div>
-              <div className="flex items-center space-x-2 text-[11px] text-slate-600 mt-0.5">
-                <span className="font-semibold text-blue-700">{state.city || 'Bengaluru'}</span>
-                <span className="text-slate-300">•</span>
+              <div className="flex items-center space-x-2 text-[11px] text-[#64748B] mt-0.5">
+                <span className="font-semibold text-blue-600">{state.city || 'Bengaluru'}</span>
+                <span>•</span>
                 <span className="capitalize">{state.state || 'Karnataka'}</span>
-                <span className="text-slate-300">•</span>
-                <span className="px-1.5 py-0.2 rounded bg-blue-100/70 text-blue-800 font-semibold text-[10px] uppercase">
+                <span>•</span>
+                <span className="px-1.5 py-0.2 rounded bg-slate-100 text-[#475569] font-bold text-[10px] uppercase font-mono">
                   {state.tier || 'standard'} Tier
                 </span>
               </div>
@@ -195,89 +184,84 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
           </div>
 
           {/* Quick Engineering Metric Counters */}
-          <div className="flex items-center flex-wrap sm:flex-nowrap gap-3 sm:gap-4">
-            <div className="bg-white/90 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-slate-200/90 text-left sm:text-right shadow-xs min-w-[110px]">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Usable Carpet</span>
-              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-slate-900">
-                {formatNumber(estimation.totalCarpetArea)} <span className="text-[10px] font-sans font-normal text-slate-500">sq.ft</span>
+          <div className="flex items-center flex-wrap sm:flex-nowrap gap-2.5 sm:gap-3">
+            <div className="bg-[#F8FAFC] px-3.5 py-2 rounded-xl border border-[#E2E8F0] text-left sm:text-right min-w-[110px]">
+              <span className="text-[10px] text-[#64748B] uppercase tracking-wider block font-extrabold">Usable Carpet</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-[#172033]">
+                {formatNumber(estimation.totalCarpetArea)} <span className="text-[10px] font-sans font-normal text-[#64748B]">sq.ft</span>
               </span>
             </div>
 
-            <div className="bg-white/90 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-slate-200/90 text-left sm:text-right shadow-xs min-w-[110px]">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Total Built-Up (BUA)</span>
-              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-slate-900">
-                {formatNumber(estimation.totalBuiltupArea)} <span className="text-[10px] font-sans font-normal text-slate-500">sq.ft</span>
+            <div className="bg-[#F8FAFC] px-3.5 py-2 rounded-xl border border-[#E2E8F0] text-left sm:text-right min-w-[110px]">
+              <span className="text-[10px] text-[#64748B] uppercase tracking-wider block font-extrabold">Built-Up (SBA)</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-blue-700">
+                {formatNumber(estimation.totalBuiltupArea)} <span className="text-[10px] font-sans font-normal text-[#64748B]">sq.ft</span>
               </span>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white px-4 py-2 rounded-xl text-left sm:text-right shadow-md shadow-blue-500/20 min-w-[140px]">
-              <span className="text-[10px] text-sky-200 uppercase tracking-wider block font-bold">Live Estimated Cost</span>
-              <span className="text-xs sm:text-sm font-mono tabular-nums font-bold text-white tracking-tight">
-                {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.grandTotalCost)}
+            <div className="bg-[#EEF4FF] border border-[#BFDBFE] text-[#172033] px-4 py-2 rounded-xl text-left sm:text-right shadow-2xs min-w-[150px]">
+              <span className="text-[10px] text-blue-700 uppercase tracking-wider block font-extrabold">Package Estimate</span>
+              <span className="text-xs sm:text-sm font-mono tabular-nums font-black text-[#172033] tracking-tight">
+                {estimation.packageEstimate?.isPricingUnavailable 
+                  ? 'Review Required' 
+                  : (isFreePlan && currentStep === 6) 
+                    ? '₹00' 
+                    : formatCurrency(estimation.estimatedCost || estimation.packageEstimate?.estimatedCost || 0)}
               </span>
+              <span className="text-[9px] text-[#64748B] block">Excl. GST (SBA × Rate)</span>
             </div>
           </div>
 
         </div>
       </div>
 
-      {/* Professional Project-Progress Stepper with Visual Continuity */}
-      <div className="bg-white/90 backdrop-blur-xs rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs no-print">
-        <div className="relative">
-          {/* Subtle Desktop Connector Line */}
-          <div className="hidden lg:block absolute top-1/2 left-8 right-8 -translate-y-1/2 h-1 bg-slate-100 rounded-full -z-0">
-            <div 
-              className="h-full bg-blue-600 rounded-full transition-all duration-300"
-              style={{ width: `${Math.max(5, ((currentStep - 1) / (allSteps.length - 1)) * 100)}%` }}
-            />
-          </div>
-          
-          <div className={`grid gap-2 sm:gap-3 relative z-10 ${isFreePlan ? 'grid-cols-2 max-w-lg mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
-            {steps.map((step, sIdx) => {
-              const isCompleted = isFreePlan ? (currentStep === 6 && step.id === 1) : (currentStep > step.id);
-              const isCurrent = currentStep === step.id;
+      {/* 2. Six-Step Stepper Navigation */}
+      <div className="bg-white rounded-2xl p-3 sm:p-4 border border-[#E2E8F0] shadow-xs no-print">
+        <div className={`grid gap-2 relative ${isFreePlan ? 'grid-cols-2 max-w-lg mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
+          {steps.map((step) => {
+            const isCompleted = isFreePlan ? (currentStep === 6 && step.id === 1) : (currentStep > step.id);
+            const isCurrent = currentStep === step.id;
 
-              return (
-                <button
-                  key={step.id}
-                  onClick={() => handleStepClick(step.id)}
-                  className={`p-2.5 sm:p-3 rounded-xl text-left transition-all flex items-center space-x-2.5 border group relative ${
-                    isCurrent
-                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-500/30'
-                      : isCompleted
-                      ? 'bg-blue-50/80 border-blue-200 text-blue-950 hover:bg-blue-100/80 hover:border-blue-300'
-                      : 'bg-slate-50/80 border-slate-200/80 text-slate-500 hover:bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-all ${
-                    isCurrent
-                      ? 'bg-white text-blue-700 shadow-xs'
-                      : isCompleted
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-slate-200 text-slate-500'
-                  }`}>
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 text-white" />
-                    ) : (
-                      step.stepNum
-                    )}
-                  </div>
-                  <div className="overflow-hidden flex-1 min-w-0">
-                    <span className={`text-xs font-bold block truncate ${isCurrent ? 'text-white' : isCompleted ? 'text-blue-900' : 'text-slate-700'}`}>
-                      {step.name}
-                    </span>
-                    <span className={`text-[10px] block truncate ${isCurrent ? 'text-sky-100' : isCompleted ? 'text-blue-600/80' : 'text-slate-400'}`}>
-                      {step.desc}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={step.id}
+                onClick={() => handleStepClick(step.id)}
+                className={`p-2.5 sm:p-3 rounded-xl text-left transition-all flex items-center space-x-2.5 border group relative ${
+                  isCurrent
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/25'
+                    : isCompleted
+                    ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#064E3B] hover:border-emerald-400'
+                    : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:text-[#172033] hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono text-xs font-bold shrink-0 transition-all ${
+                  isCurrent
+                    ? 'bg-white text-blue-700 shadow-2xs'
+                    : isCompleted
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-white border border-[#CBD5E1] text-[#64748B]'
+                }`}>
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  ) : (
+                    step.stepNum
+                  )}
+                </div>
+                <div className="overflow-hidden flex-1 min-w-0">
+                  <span className={`text-xs font-bold block truncate ${isCurrent ? 'text-white' : isCompleted ? 'text-emerald-950 font-extrabold' : 'text-[#334155]'}`}>
+                    {step.name}
+                  </span>
+                  <span className={`text-[10px] block truncate ${isCurrent ? 'text-blue-100' : isCompleted ? 'text-emerald-700 font-medium' : 'text-[#94A3B8]'}`}>
+                    {step.desc}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Active Step Workspace Component */}
+      {/* 3. Active Step Component Workspace */}
       <div className="min-h-[500px]">
         {currentStep === 1 && (
           <StepPlotDetails 
@@ -331,40 +315,60 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
         )}
       </div>
 
-      {/* Sticky Bottom Engineering Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-blue-100/90 py-3.5 px-4 sm:px-8 shadow-[0_-4px_24px_-4px_rgba(37,99,235,0.08)] no-print">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* 4. Light Floating Sticky Bottom Engineering Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E2E8F0] py-3 px-4 sm:px-8 shadow-xl text-[#172033] no-print">
+        <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           
           {/* Active Live Price Ticker */}
           <div className="flex items-center space-x-4">
             <div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold block">
-                Estimated Construction Cost
-              </span>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-[10px] text-[#64748B] uppercase tracking-wider font-extrabold block">
+                  Estimated Construction Cost
+                </span>
+                <span className="text-[9px] font-bold text-[#0891B2] bg-[#ECFEFF] px-1.5 py-0.2 rounded border border-[#A5F3FC]">
+                  Excl. GST
+                </span>
+              </div>
               <div className="flex items-baseline space-x-2">
-                <span className="text-xl sm:text-2xl font-black font-mono tabular-nums text-slate-900 tracking-tight">
-                  {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.grandTotalCost)}
+                <span className="text-xl sm:text-2xl font-black font-mono tabular-nums text-[#172033] tracking-tight">
+                  {estimation.packageEstimate?.isPricingUnavailable 
+                    ? 'Review Required' 
+                    : (isFreePlan && currentStep === 6) 
+                      ? '₹00' 
+                      : formatCurrency(estimation.estimatedCost || estimation.packageEstimate?.estimatedCost || 0)}
                 </span>
-                <span className="text-xs font-mono tabular-nums text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-                  {(isFreePlan && currentStep === 6) ? '₹00' : formatCurrency(estimation.costPerSqFt)} / sq.ft
+                <span className="text-xs font-mono tabular-nums text-[#2563EB] font-bold bg-[#EEF4FF] px-2 py-0.5 rounded-md border border-[#BFDBFE]">
+                  {estimation.packageEstimate?.isPricingUnavailable 
+                    ? 'Rate Unavailable' 
+                    : (isFreePlan && currentStep === 6) 
+                      ? '₹00' 
+                      : `${formatCurrency(estimation.costPerSqFt || estimation.packageEstimate?.ratePerSqFt || 0)} / sq.ft`}
                 </span>
+              </div>
+              <div className="text-[10px] text-[#64748B] font-medium">
+                Incl. {estimation.gstRate || 18}% GST: <span className="font-mono font-bold text-[#059669]">{formatCurrency(estimation.grandTotalCost || estimation.packageEstimate?.grandTotal || 0)}</span>
               </div>
             </div>
 
-            <div className="hidden md:block h-8 w-px bg-slate-200" />
+            <div className="hidden md:block h-10 w-px bg-[#E2E8F0]" />
 
-            <div className="hidden md:block text-xs text-slate-600">
-              <span className="font-bold text-slate-800 font-mono tabular-nums block">{formatNumber(estimation.totalBuiltupArea)} sq.ft BUA</span>
-              <span className="text-[11px] text-slate-500">{estimation.city?.name} • {state.tier} tier</span>
+            <div className="hidden md:block text-xs text-[#475569]">
+              <span className="font-bold text-[#172033] font-mono tabular-nums block">
+                {formatNumber(estimation.totalBuiltupArea)} sq.ft SBA
+              </span>
+              <span className="text-[11px] text-[#64748B]">
+                {estimation.city?.name || state.city || 'Bengaluru'} ({estimation.city?.state || state.state || 'Karnataka'}) • {(state.tier || 'standard').toUpperCase()} Tier
+              </span>
             </div>
           </div>
 
-          {/* Stepper Actions Buttons */}
+          {/* Stepper Action Buttons */}
           <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
             {currentStep > 1 && (
               <button
                 onClick={handlePrev}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-[0.98] shadow-2xs"
+                className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] bg-white text-[#475569] hover:bg-slate-50 hover:text-[#172033] font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-[0.98] shadow-2xs"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Previous</span>
@@ -373,37 +377,27 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
 
             <button
               onClick={() => saveCurrentProject(state.projectName)}
-              className="px-4 py-2.5 rounded-xl border border-blue-200/80 bg-blue-50/60 text-blue-800 hover:bg-blue-100/70 font-bold text-xs flex items-center space-x-1.5 transition-all hidden sm:flex active:scale-[0.98]"
+              className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] bg-white text-[#475569] hover:bg-slate-50 hover:text-[#172033] font-bold text-xs flex items-center space-x-1.5 transition-all hidden sm:flex active:scale-[0.98] shadow-2xs"
               title="Save project"
             >
-              <Bookmark className="w-3.5 h-3.5 text-blue-600" />
+              <Bookmark className="w-3.5 h-3.5 text-[#0891B2]" />
               <span>Save</span>
             </button>
 
             {currentStep < 6 ? (
               <button
                 onClick={handleNext}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center space-x-2 transition-all active:scale-[0.98]"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#3457E5] hover:from-[#1D4ED8] hover:to-[#2563EB] text-white font-black text-xs shadow-md shadow-blue-500/20 flex items-center space-x-2 transition-all active:scale-[0.98]"
               >
-                {isFreePlan && currentStep === 1 ? (
-                  <>
-                    <FileCheck2 className="w-4 h-4 text-sky-200" />
-                    <span>View Summary Report</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
-                  </>
-                ) : (
-                  <>
-                    <span>Continue to {allSteps[currentStep]?.name}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
-                  </>
-                )}
+                <span>Continue to {allSteps[currentStep]?.name}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-blue-100" />
               </button>
             ) : (
               <button
                 onClick={() => window.print()}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center space-x-2 transition-all active:scale-[0.98]"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#3457E5] hover:from-[#1D4ED8] hover:to-[#2563EB] text-white font-black text-xs shadow-md shadow-blue-500/20 flex items-center space-x-2 transition-all active:scale-[0.98]"
               >
-                <Printer className="w-4 h-4 text-sky-200" />
+                <Printer className="w-4 h-4 text-blue-100" />
                 <span>Print Formal Report</span>
               </button>
             )}
@@ -411,105 +405,6 @@ export function PlannerPage({ setRoute, onOpenSavedModal, initialStep }) {
 
         </div>
       </div>
-
-      {/* Choose your plan to start estimating Modal (Retained modularly for future subscription activation) */}
-      {ENABLE_SUBSCRIPTIONS && showUpgradeModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-6 text-left animate-fadeIn max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-wider border border-blue-200">
-                  Plan Required
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-                  Choose your plan to start estimating.
-                </h2>
-              </div>
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              You are currently on the <strong>FREE Plan</strong> which allows configuration of Step 1 (Plot & Setup) only. To unlock room layouts, 3D Orbit model, material benchmarks, and full BOQ quantities, choose your plan:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Professional Plan Card */}
-              <div className="p-5 rounded-2xl border-2 border-blue-600 bg-blue-50/30 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-slate-900 uppercase">Professional</span>
-                    <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[9px] font-black uppercase">Popular</span>
-                  </div>
-                  <div className="flex items-baseline space-x-1">
-                    <span className="text-3xl font-black text-slate-900">₹4,999</span>
-                    <span className="text-xs text-slate-500 font-bold">/ month</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    Full access to all 6 estimation steps, live material rates, custom pricing, and PDF export.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => openPaymentForPlan({ id: 'pro', name: 'Professional Plan', price: '₹4,999', period: '/ month' })}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-sm flex items-center justify-center space-x-2"
-                >
-                  <span>Pay ₹4,999 with QR</span>
-                  <ArrowRight className="w-4 h-4 text-blue-200" />
-                </button>
-              </div>
-
-              {/* Pro AI Plan Card */}
-              <div className="p-5 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-slate-900 uppercase">Pro AI</span>
-                    <Crown className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div className="flex items-baseline space-x-1">
-                    <span className="text-3xl font-black text-slate-900">₹8,999</span>
-                    <span className="text-xs text-slate-500 font-bold">/ month</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    Includes all Professional features plus AI Assistant, Drawing Takeoff, and 60 BOQ reports / mo.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => openPaymentForPlan({ id: 'pro_ai', name: 'Pro AI Plan', price: '₹8,999', period: '/ month' })}
-                  className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-sm flex items-center justify-center space-x-2"
-                >
-                  <span>Pay ₹8,999 with QR</span>
-                  <ArrowRight className="w-4 h-4 text-slate-300" />
-                </button>
-              </div>
-
-            </div>
-
-            <div className="p-3.5 bg-slate-100 rounded-xl text-center text-xs text-slate-500 font-medium">
-              Payment via UPI QR code or ID (<code className="font-bold text-slate-800">8095586121@ybl</code>). Verified by admin before activation.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Payment QR Code Modal */}
-      {ENABLE_SUBSCRIPTIONS && (
-        <PaymentModal
-          isOpen={paymentModalOpen}
-          onClose={() => setPaymentModalOpen(false)}
-          selectedPlan={selectedPlanForPayment}
-          onPaymentSubmitted={() => {
-            setPaymentModalOpen(false);
-            setShowUpgradeModal(false);
-          }}
-        />
-      )}
 
     </div>
   );

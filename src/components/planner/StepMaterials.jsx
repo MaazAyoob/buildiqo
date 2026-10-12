@@ -89,7 +89,7 @@ export function StepMaterials({ state, updateState, estimation }) {
           </div>
           <button
             onClick={() => toggleBenchmarkMode(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black shrink-0 transition-colors shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[11px] font-black shrink-0 transition-colors shadow-xs"
           >
             Enable Benchmark Mode
           </button>

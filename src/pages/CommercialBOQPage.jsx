@@ -886,23 +886,25 @@ export function CommercialBOQPage({ setRoute }) {
     <div className="space-y-6 pb-20">
       
       {/* ================= TOP HEADER BANNER ================= */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl border border-blue-200/90 shadow-card-subtle p-5 sm:p-6 transition-all">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5 sm:p-6 transition-all text-[#172033]">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 text-white border border-blue-400/30 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white border border-emerald-400/30 flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
               <FileSpreadsheet className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-black text-[#172033] tracking-tight">
                   Commercial BOQ Workspace
                 </h1>
-                <StatusBadge status="brand" dot={false}>Live QS Engine</StatusBadge>
-                <StatusBadge status={calculationMode === 'PACKAGE' ? 'indigo' : 'amber'} size="sm">
+                <span className="px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] text-[10px] font-black uppercase">
+                  Live QS Engine
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[#EEF4FF] text-[#2563EB] border border-[#BFDBFE] text-[10px] font-mono font-bold">
                   {calculationMode === 'PACKAGE' ? 'Mode A: Package Rate' : 'Mode B: Itemized Takeoff'}
-                </StatusBadge>
+                </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+              <p className="text-xs sm:text-sm text-[#475569] mt-1 font-medium">
                 {calculationMode === 'PACKAGE' 
                   ? 'Built-up area (SBA) × Selected Package Rate per sq. ft. deterministic calculation engine.'
                   : 'Multi-discipline Excel workbook import, deterministic trade takeoff & contract editing.'}
@@ -912,16 +914,16 @@ export function CommercialBOQPage({ setRoute }) {
 
           {/* Pricing State Authority, Saved BOQs, & Quick Actions */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center space-x-2 bg-white/95 border border-slate-200 px-3 py-1.5 rounded-xl text-xs shadow-2xs">
-              <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
-              <span className="text-slate-500 font-semibold">Pricing State:</span>
+            <div className="flex items-center space-x-2 bg-[#F8FAFC] border border-[#CBD5E1] px-3 py-1.5 rounded-xl text-xs">
+              <Building2 className="w-4 h-4 text-[#0891B2] shrink-0" />
+              <span className="text-[#64748B] font-semibold">Pricing State:</span>
               <select
                 value={calculationMode === 'PACKAGE' ? packageConfig.pricingState : (boqData?.pricingState || 'Karnataka')}
                 onChange={(e) => handleStateChange(e.target.value)}
-                className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer"
+                className="bg-transparent font-bold text-[#172033] focus:outline-none cursor-pointer"
               >
                 {INDIAN_STATES.map(s => (
-                  <option key={s.id} value={s.name}>{s.name}</option>
+                  <option key={s.id} value={s.name} className="bg-white text-[#172033]">{s.name}</option>
                 ))}
               </select>
             </div>
@@ -931,9 +933,9 @@ export function CommercialBOQPage({ setRoute }) {
                 loadSavedBOQsList();
                 setSavedBoqsModalOpen(true);
               }}
-              className="flex items-center space-x-1.5 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition-colors"
+              className="flex items-center space-x-1.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] px-3 py-1.5 rounded-xl text-xs font-bold text-[#475569] hover:text-[#172033] transition-colors shadow-2xs"
             >
-              <FolderOpen className="w-4 h-4 text-blue-600" />
+              <FolderOpen className="w-4 h-4 text-[#D97706]" />
               <span>Saved BOQs ({savedBoqsList.length})</span>
             </button>
           </div>
@@ -1006,10 +1008,10 @@ export function CommercialBOQPage({ setRoute }) {
         <div className="space-y-6">
 
           {/* Action Toolbar for Mode A */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-[#172033]">
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-slate-600">Active Workflow:</span>
-              <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-extrabold text-xs border border-blue-200">
+              <span className="text-xs font-bold text-[#64748B]">Active Workflow:</span>
+              <span className="px-2.5 py-1 rounded-lg bg-[#EEF4FF] text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE]">
                 Mode A — Package Construction Cost Engine
               </span>
             </div>
@@ -1019,7 +1021,7 @@ export function CommercialBOQPage({ setRoute }) {
               <button
                 onClick={handleExportExcel}
                 disabled={isExporting}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
+                className="px-3.5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
                 title="Download formatted package estimate Excel workbook"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -1029,7 +1031,7 @@ export function CommercialBOQPage({ setRoute }) {
               <button
                 onClick={handleExportPDF}
                 disabled={isExporting}
-                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
+                className="px-3.5 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
                 title="Download readable package estimate PDF report"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -1039,7 +1041,7 @@ export function CommercialBOQPage({ setRoute }) {
               <button
                 onClick={handleSaveBOQ}
                 disabled={isSaving}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center space-x-1.5"
+                className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
                 title="Persist complete package estimate to cloud database"
               >
                 <Save className="w-3.5 h-3.5" />
@@ -1049,36 +1051,36 @@ export function CommercialBOQPage({ setRoute }) {
           </div>
 
           {/* Transparent Calculation Formula Card */}
-          <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-900/60 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E40AF] text-white rounded-3xl p-6 sm:p-8 shadow-lg border border-blue-400/40 relative overflow-hidden">
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="space-y-2 max-w-xl">
-                <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-950/80 px-2.5 py-0.5 rounded-full border border-sky-800/60 inline-block">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-100 bg-white/20 px-2.5 py-0.5 rounded-full border border-white/30 inline-block backdrop-blur-xs">
                   Package Pricing Model Verified
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                   {formatINR(computedPackageEstimate.estimatedCost)}
                 </h2>
-                <div className="text-xs sm:text-sm text-slate-300 font-mono font-medium">
-                  Estimated Construction Cost = <span className="text-sky-300 font-bold">{computedPackageEstimate.totalBuiltupArea.toLocaleString('en-IN')} sq. ft.</span> (SBA) × <span className="text-amber-300 font-bold">{formatINR(computedPackageEstimate.ratePerSqFt)}</span> / sq. ft.
+                <div className="text-xs sm:text-sm text-blue-100 font-mono font-medium">
+                  Estimated Construction Cost = <span className="text-white font-bold">{computedPackageEstimate.totalBuiltupArea.toLocaleString('en-IN')} sq. ft.</span> (SBA) × <span className="text-amber-200 font-bold">{formatINR(computedPackageEstimate.ratePerSqFt)}</span> / sq. ft.
                 </div>
-                <p className="text-[11px] text-slate-400 pt-1">
+                <p className="text-[11px] text-blue-200 pt-1">
                   Read from configured {computedPackageEstimate.packageName}. No double-counting of raw benchmark materials or subcontractor packages.
                 </p>
               </div>
 
               {/* Grand Total with GST */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 min-w-[240px] space-y-2">
-                <div className="flex justify-between text-xs text-slate-300">
+              <div className="bg-white/15 backdrop-blur-md rounded-2xl p-5 border border-white/20 min-w-[240px] space-y-2">
+                <div className="flex justify-between text-xs text-blue-100">
                   <span>Base Cost (SBA × Rate):</span>
                   <span className="font-mono font-bold text-white">{formatINR(computedPackageEstimate.estimatedCost)}</span>
                 </div>
-                <div className="flex justify-between text-xs text-slate-300 items-center">
+                <div className="flex justify-between text-xs text-blue-100 items-center">
                   <span>GST ({packageConfig.gstRate}%):</span>
                   <span className="font-mono font-bold text-white">{formatINR(computedPackageEstimate.gstAmount)}</span>
                 </div>
-                <div className="pt-2 border-t border-white/20 flex justify-between text-sm font-black text-sky-300">
+                <div className="pt-2 border-t border-white/20 flex justify-between text-sm font-black text-amber-200">
                   <span>Grand Total:</span>
-                  <span className="font-mono text-base">{formatINR(computedPackageEstimate.grandTotal)}</span>
+                  <span className="font-mono text-base text-white">{formatINR(computedPackageEstimate.grandTotal)}</span>
                 </div>
               </div>
             </div>
@@ -1575,12 +1577,12 @@ export function CommercialBOQPage({ setRoute }) {
             <div className="space-y-6">
 
               {/* Action Toolbar */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-[#172033]">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={handleRefreshBenchmarks}
                     disabled={isSaving}
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-[#475569] hover:text-[#172033] border border-[#CBD5E1] text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs"
                     title="Refresh latest state material prices without modifying contract rates"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
@@ -1589,19 +1591,21 @@ export function CommercialBOQPage({ setRoute }) {
 
                   <button
                     onClick={() => handleAddRow(activeSheetIndex, 0)}
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-[#475569] hover:text-[#172033] border border-[#CBD5E1] text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5 text-[#2563EB]" />
                     <span>Add Row</span>
                   </button>
 
                   <button
                     onClick={() => setMaterialPanelOpen(!materialPanelOpen)}
                     className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 ${
-                      materialPanelOpen ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-700'
+                      materialPanelOpen 
+                        ? 'bg-[#EEF4FF] text-[#2563EB] border border-[#BFDBFE]' 
+                        : 'bg-white text-[#475569] border border-[#CBD5E1] hover:bg-slate-50'
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
                     <span>Material Intelligence ({materialMatchesSummary.length})</span>
                   </button>
 
@@ -1610,7 +1614,7 @@ export function CommercialBOQPage({ setRoute }) {
                       setPriceSearchModalOpen(true);
                       handleSearchPrices(priceSearchQuery, boqData?.pricingState || 'Karnataka', priceSearchCategory);
                     }}
-                    className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
+                    className="px-3.5 py-2 bg-gradient-to-r from-[#2563EB] to-[#4F46E5] hover:from-[#1D4ED8] hover:to-[#4338CA] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
                     title="Search live material prices across Indian states and insert into BOQ"
                   >
                     <Search className="w-3.5 h-3.5" />
@@ -2064,17 +2068,17 @@ export function CommercialBOQPage({ setRoute }) {
       {savedBoqsModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
+            <div className="p-5 bg-white border-b border-[#E2E8F0] text-[#172033] flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <FolderOpen className="w-5 h-5 text-blue-400" />
+                <FolderOpen className="w-5 h-5 text-blue-600" />
                 <div>
-                  <h3 className="text-base font-extrabold text-white">Saved Commercial BOQs</h3>
-                  <p className="text-xs text-slate-400">Restore complete estimate schedules from database</p>
+                  <h3 className="text-base font-extrabold text-[#172033]">Saved Commercial BOQs</h3>
+                  <p className="text-xs text-slate-500">Restore complete estimate schedules from database</p>
                 </div>
               </div>
               <button
                 onClick={() => setSavedBoqsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-sm font-bold transition-colors"
               >
                 ✕
               </button>
@@ -2153,19 +2157,19 @@ export function CommercialBOQPage({ setRoute }) {
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             
             {/* Modal Header */}
-            <div className="p-5 sm:p-6 bg-slate-900 text-white flex items-center justify-between">
+            <div className="p-5 sm:p-6 bg-white border-b border-[#E2E8F0] text-[#172033] flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
                   <Search className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <h3 className="text-base font-extrabold text-white">Commercial Price Search Engine</h3>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 text-[10px] font-mono font-bold uppercase border border-cyan-400/30">
+                    <h3 className="text-base font-extrabold text-[#172033]">Commercial Price Search Engine</h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-mono font-bold uppercase border border-blue-200">
                       Live State Rates
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Search authoritative Indian regional material rates & insert directly into active BOQ work schedules.
                   </p>
                 </div>
@@ -2173,7 +2177,7 @@ export function CommercialBOQPage({ setRoute }) {
 
               <button
                 onClick={() => setPriceSearchModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors text-sm font-bold"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors text-sm font-bold"
               >
                 ✕
               </button>

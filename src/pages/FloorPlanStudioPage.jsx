@@ -668,22 +668,26 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
   const activeFloor = result?.floors?.find(f => f.floor === activeFloorIdx) || result?.floors?.[0];
 
   return (
-    <div className="space-y-4 pb-16 animate-fadeIn text-slate-800">
+    <div className="space-y-4 pb-16 animate-fadeIn text-[#172033]">
 
       {/* Top Header Card */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-sky-50/40 to-indigo-50/70 rounded-2xl p-5 sm:p-6 border border-blue-200/90 shadow-card-subtle flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-[#172033]">
         <div>
           <div className="flex items-center space-x-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/25 border border-blue-400/30 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-violet-500/20 border border-violet-400/30 shrink-0">
               <Sparkles className="w-6 h-6 text-amber-300" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">AI Floor Plan Studio</h1>
-                <StatusBadge status="brand" dot={false}>Buildiqo Pro</StatusBadge>
-                <StatusBadge status="amber" size="sm">CAD Vector Solver</StatusBadge>
+                <h1 className="text-xl sm:text-2xl font-black text-[#172033] tracking-tight">AI Floor Plan Studio</h1>
+                <span className="px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 text-[10px] font-bold">
+                  Buildiqo Pro
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[#EEF4FF] text-[#2563EB] border border-[#BFDBFE] text-[10px] font-mono font-bold">
+                  CAD Vector Solver
+                </span>
               </div>
-              <p className="text-xs text-slate-600 mt-1 font-medium">
+              <p className="text-xs text-[#64748B] mt-1 font-medium">
                 AI-assisted residential floor planning, Vastu compliance &amp; deterministic spatial zoning
               </p>
             </div>
@@ -698,37 +702,37 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
               setSelectedRoom(null);
               setError(null);
             }}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/95 hover:bg-white text-slate-700 border border-slate-200/90 hover:border-blue-300 flex items-center space-x-1.5 transition-all shadow-2xs"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-[#475569] hover:text-[#172033] border border-[#CBD5E1] flex items-center space-x-1.5 transition-all shadow-2xs"
             id="btn-new-floorplan"
           >
-            <Plus className="w-3.5 h-3.5 text-blue-600" />
+            <Plus className="w-3.5 h-3.5 text-[#2563EB]" />
             <span>New Floor Plan</span>
           </button>
 
           <button
             onClick={() => setIsSavedDrawerOpen(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/95 hover:bg-white text-slate-700 border border-slate-200/90 hover:border-blue-300 flex items-center space-x-1.5 transition-all shadow-2xs"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-[#475569] hover:text-[#172033] border border-[#CBD5E1] flex items-center space-x-1.5 transition-all shadow-2xs"
             id="btn-saved-plans"
           >
-            <FolderKanban className="w-3.5 h-3.5 text-blue-600" />
+            <FolderKanban className="w-3.5 h-3.5 text-[#2563EB]" />
             <span>Saved Plans ({savedList.length})</span>
           </button>
 
           <button
             onClick={() => setIsRecentDrawerOpen(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/95 hover:bg-white text-slate-700 border border-slate-200/90 hover:border-blue-300 flex items-center space-x-1.5 transition-all shadow-2xs"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-[#475569] hover:text-[#172033] border border-[#CBD5E1] flex items-center space-x-1.5 transition-all shadow-2xs"
             id="btn-recent-plans"
           >
-            <Clock className="w-3.5 h-3.5 text-slate-600" />
+            <Clock className="w-3.5 h-3.5 text-[#64748B]" />
             <span>Recent ({recentList.length})</span>
           </button>
 
           <button
             onClick={() => { setIsCadModalOpen(true); setCadError(null); }}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#0B0F19] hover:bg-slate-800 text-white flex items-center space-x-1.5 transition-all shadow-brand border border-slate-800 active:scale-[0.98]"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#2563EB] to-[#4F46E5] hover:from-[#1D4ED8] hover:to-[#4338CA] text-white flex items-center space-x-1.5 transition-all shadow-xs active:scale-[0.98]"
             id="btn-import-cad"
           >
-            <FileCode className="w-3.5 h-3.5 text-sky-400" />
+            <FileCode className="w-3.5 h-3.5 text-blue-100" />
             <span>Import CAD Plan</span>
           </button>
         </div>
@@ -787,12 +791,12 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
             onClick={() => setActiveStudioMode('import_cad')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center space-x-2 transition-all ${
               activeStudioMode === 'import_cad'
-                ? 'bg-slate-900 text-white shadow-brand'
+                ? 'bg-[#2563EB] text-white shadow-brand shadow-blue-500/20'
                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
             }`}
             id="tab-mode-import-cad"
           >
-            <FileCode className="w-3.5 h-3.5 text-sky-400" />
+            <FileCode className="w-3.5 h-3.5 text-blue-200" />
             <span>2. Import Existing CAD Plan</span>
           </button>
         </div>
@@ -915,16 +919,16 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
 
                 {/* Extraction Stage Progress (Part 25) */}
                 {cadExtracting && (
-                  <div className="p-3.5 rounded-xl bg-slate-900 text-white font-mono text-[11px] space-y-2 animate-fadeIn border border-slate-800">
-                    <div className="flex items-center space-x-2 text-cyan-400">
+                  <div className="p-3.5 rounded-xl bg-blue-50/70 text-[#172033] font-mono text-[11px] space-y-2 animate-fadeIn border border-blue-200">
+                    <div className="flex items-center space-x-2 text-blue-700">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       <span className="font-bold">PARSING CAD DRAWING ENTITIES</span>
                     </div>
-                    <div className="space-y-1 text-[10px] text-slate-300 pl-2 border-l border-slate-700">
+                    <div className="space-y-1 text-[10px] text-slate-600 pl-2 border-l border-blue-300">
                       <div>✓ File format verification &amp; stream loading</div>
                       <div>✓ Parsing LWPOLYLINE / POLYLINE entities</div>
                       <div>✓ Reading TEXT / MTEXT space annotations</div>
-                      <div className="text-cyan-300 font-bold animate-pulse">
+                      <div className="text-blue-800 font-bold animate-pulse">
                         {cadExtractStage || '→ Running topological room boundary detection...'}
                       </div>
                     </div>
@@ -935,10 +939,10 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                 <button
                   onClick={() => handleRunCadExtraction()}
                   disabled={!cadFile || cadExtracting}
-                  className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center space-x-2 transition-all shadow-brand disabled:opacity-50"
+                  className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-[#2563EB] hover:bg-[#1D4ED8] text-white flex items-center justify-center space-x-2 transition-all shadow-md shadow-blue-500/20 disabled:opacity-50"
                   id="btn-parse-cad"
                 >
-                  <FileCode className={`w-4 h-4 text-cyan-400 ${cadExtracting ? 'animate-spin' : ''}`} />
+                  <FileCode className={`w-4 h-4 text-blue-100 ${cadExtracting ? 'animate-spin' : ''}`} />
                   <span>{cadExtracting ? 'Analyzing Geometry...' : 'Parse & Extract CAD Plan'}</span>
                 </button>
               </div>
@@ -1425,39 +1429,39 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
               </button>
             </div>
 
-            {/* Dark Architectural Graphite Canvas (Section 13 Specification) */}
-            <div className="flex-1 cad-dark-viewport rounded-xl border border-slate-800 p-3 flex flex-col items-center justify-center relative overflow-hidden min-h-[440px]">
+            {/* Light Architectural Drafting Canvas */}
+            <div className="flex-1 cad-drafting-viewport rounded-xl border border-[#CBD5E1] p-3 flex flex-col items-center justify-center relative overflow-hidden min-h-[440px]">
               {loading ? (
                 /* Progressive Generation Flow (Section 17 Specification) */
                 <div className="text-center py-6 space-y-4 max-w-sm mx-auto animate-fadeIn">
                   <div className="w-9 h-9 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin mx-auto" />
-                  <div className="space-y-1 text-left font-mono text-[11px] bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl shadow-lg">
-                    <div className="flex items-center space-x-2 text-blue-400">
-                      <Check className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="space-y-1 text-left font-mono text-[11px] bg-white border border-[#E2E8F0] p-3.5 rounded-xl shadow-md text-[#172033]">
+                    <div className="flex items-center space-x-2 text-[#2563EB]">
+                      <Check className="w-3.5 h-3.5 text-[#2563EB]" />
                       <span>ANALYZING REQUIREMENTS</span>
                     </div>
-                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
-                    <div className="flex items-center space-x-2 text-blue-400">
-                      <Check className="w-3.5 h-3.5 text-blue-400" />
+                    <div className="text-[#94A3B8] pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-[#2563EB]">
+                      <Check className="w-3.5 h-3.5 text-[#2563EB]" />
                       <span>BUILDING ROOM PROGRAM</span>
                     </div>
-                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
-                    <div className="flex items-center space-x-2 text-blue-300 font-bold animate-pulse">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping inline-block mr-1" />
+                    <div className="text-[#94A3B8] pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-[#2563EB] font-bold animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] animate-ping inline-block mr-1" />
                       <span>OPTIMIZING SPATIAL LAYOUT</span>
                     </div>
-                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
-                    <div className="flex items-center space-x-2 text-slate-500">
+                    <div className="text-[#94A3B8] pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-[#64748B]">
                       <span className="w-3.5 h-3.5 text-center text-xs">○</span>
                       <span>VALIDATING ACCESS</span>
                     </div>
-                    <div className="text-slate-600 pl-4 text-[10px]">↓</div>
-                    <div className="flex items-center space-x-2 text-slate-500">
+                    <div className="text-[#94A3B8] pl-4 text-[10px]">↓</div>
+                    <div className="flex items-center space-x-2 text-[#64748B]">
                       <span className="w-3.5 h-3.5 text-center text-xs">○</span>
                       <span>RENDERING FLOOR PLAN</span>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-mono">
+                  <p className="text-[11px] text-[#64748B] font-mono">
                     {loadingStage || 'Synthesizing architectural constraints...'}
                   </p>
                 </div>
@@ -1480,7 +1484,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                     style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
                     dangerouslySetInnerHTML={{ __html: result.svg }}
                   />
-                  <div className="mt-3 text-[10px] font-mono text-slate-400 flex items-center space-x-1.5 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                  <div className="mt-3 text-[10px] font-mono text-slate-600 flex items-center space-x-1.5 bg-white/90 px-3 py-1 rounded-full border border-slate-200 shadow-xs">
                     <Info className="w-3 h-3 text-blue-400" />
                     <span>Select a room from the inspector panel to review dimensions</span>
                   </div>
@@ -2123,7 +2127,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                   <button
                     onClick={() => handleRunCadExtraction()}
                     disabled={!cadFile || cadExtracting}
-                    className="px-4 py-2 rounded-xl text-xs font-black bg-slate-900 hover:bg-slate-800 text-white flex items-center space-x-1.5 disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-1.5 disabled:opacity-50 shadow-xs"
                   >
                     <FileCode className={`w-3.5 h-3.5 text-cyan-400 ${cadExtracting ? 'animate-spin' : ''}`} />
                     <span>{cadExtracting ? 'Extracting Vector Rooms...' : 'Parse CAD Plan'}</span>

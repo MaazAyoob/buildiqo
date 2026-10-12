@@ -327,19 +327,19 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
       </div>
 
       {/* AI Floor Plan Studio Gateway Card */}
-      <div className="bg-gradient-to-r from-blue-50/95 via-indigo-50/60 to-white rounded-2xl p-5 sm:p-6 border border-blue-200/90 shadow-card-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-blue-300 transition-colors">
+      <div className="bg-gradient-to-r from-violet-50 via-indigo-50/50 to-blue-50 rounded-2xl p-5 sm:p-6 border border-violet-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[#172033]">
         <div className="flex items-start space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/25 shrink-0 mt-0.5 border border-blue-400/30">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-violet-500/25 shrink-0 mt-0.5 border border-violet-400/30">
             <Sparkles className="w-5 h-5 text-amber-300" />
           </div>
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <StatusBadge status="violet" size="sm">
+              <span className="px-2 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 text-[10px] font-bold">
                 ✦ AI ENGINE ACTIVE
-              </StatusBadge>
-              <h3 className="text-sm font-extrabold tracking-tight text-slate-900">AI FLOOR PLAN STUDIO</h3>
+              </span>
+              <h3 className="text-sm font-black tracking-tight text-[#172033]">AI FLOOR PLAN STUDIO</h3>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal max-w-xl">
+            <p className="text-xs text-[#475569] leading-relaxed font-normal max-w-xl">
               Generate room polygons, circulation corridors, doors, windows, and multi-floor plans automatically. Instant CAD export and 1-click sync to your live estimate.
             </p>
           </div>
@@ -351,11 +351,11 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
               if (typeof setRoute === 'function') setRoute('floor-plan');
               else window.location.hash = 'floor-plan';
             }}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white flex items-center space-x-2 shadow-brand hover:shadow-lg transition-all active:scale-[0.98]"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white flex items-center space-x-2 shadow-md shadow-violet-500/20 transition-all active:scale-[0.98]"
             id="btn-open-floorplan-studio"
           >
             <span>Open Floor Plan Studio</span>
-            <ArrowRight className="w-3.5 h-3.5 text-sky-200" />
+            <ArrowRight className="w-3.5 h-3.5 text-violet-200" />
           </button>
         </div>
       </div>
@@ -444,10 +444,10 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
 
             <button
               onClick={() => { setIsDxfUploadModalOpen(true); setDxfError(null); }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#0B0F19] text-white hover:bg-slate-800 flex items-center space-x-1.5 shadow-xs transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-[#172033] hover:bg-slate-50 border border-[#CBD5E1] flex items-center space-x-1.5 shadow-2xs transition-all"
               id="upload-dxf-btn"
             >
-              <FileCode className="w-4 h-4 text-sky-400" />
+              <FileCode className="w-4 h-4 text-[#2563EB]" />
               <span>Upload Plan (CAD / PDF)</span>
             </button>
 
@@ -641,7 +641,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
                 />
                 <button
                   type="submit"
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-slate-900 shrink-0"
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 shrink-0 shadow-xs"
                 >
                   + Add Custom
                 </button>
@@ -678,7 +678,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
           <div className="relative bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-fadeIn">
             <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-xl bg-slate-900 text-cyan-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center">
                   <FileCode className="w-4 h-4" />
                 </div>
                 <div>

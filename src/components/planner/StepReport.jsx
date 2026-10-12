@@ -319,34 +319,30 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
               {formatCurrency(grandTotalCost)}
             </span>
             <p className="text-xs text-sky-400 mt-2 font-mono font-bold">
-              {formatCurrency(costPerSqFt)} / sq.ft ({formatNumber(totalBuiltupArea)} sq.ft Built-Up Area)
+              {formatCurrency(costPerSqFt)} / sq.ft ({formatNumber(totalBuiltupArea)} sq.ft SBA)
             </p>
           </div>
 
           <div className="space-y-2 shrink-0 sm:border-l sm:border-slate-800 sm:pl-8">
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-slate-400">Direct Materials:</span>
-              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(directMaterialCost)}</span>
-            </div>
-            <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-slate-400">Trade Labor:</span>
-              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(totalLaborCost)}</span>
-            </div>
-            <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-slate-400">Site Amenities:</span>
-              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(ancillaryCost)}</span>
-            </div>
-            <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-slate-400">Supervision & Buffer:</span>
-              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(architectureFee + contractorMargin + contingencyBuffer)}</span>
+              <span className="text-slate-400">Package Construction Cost (Excl. GST):</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(estimation.baseGrandTotalCost || estimation.packageEstimate?.estimatedCost || 0)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
               <span className="text-slate-400">GST ({gstRate}%):</span>
               <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(gst)}</span>
             </div>
             <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
-              <span className="text-slate-400">BOCW Cess ({labourCessRate}%):</span>
-              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(labourCess)}</span>
+              <span className="text-slate-400">Total with Taxes (Incl. GST):</span>
+              <span className="font-mono tabular-nums font-bold text-white">{formatCurrency(grandTotalCost)}</span>
+            </div>
+            <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs pt-1 border-t border-slate-700/60">
+              <span className="text-slate-400">Direct Material Baseline Ref:</span>
+              <span className="font-mono tabular-nums text-slate-300">{formatCurrency(directMaterialCost)}</span>
+            </div>
+            <div className="flex justify-between sm:justify-start sm:space-x-4 text-xs">
+              <span className="text-slate-400">Trade Labor Baseline Ref:</span>
+              <span className="font-mono tabular-nums text-slate-300">{formatCurrency(totalLaborCost)}</span>
             </div>
           </div>
         </div>

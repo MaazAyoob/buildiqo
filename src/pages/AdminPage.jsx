@@ -30,14 +30,15 @@ import {
   Cpu,
   Globe,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Inbox
 } from 'lucide-react';
 import { apiRequest } from '../utils/apiClient';
 import { useEstimateStore, formatCurrency } from '../store/useEstimateStore';
 import { INDIAN_STATES } from '../data/states';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
-export function AdminPage() {
+export function AdminPage({ setRoute }) {
   const { currentUser } = useEstimateStore();
   const [activeTab, setActiveTab] = useState('rates'); // 'rates' | 'research'
   const [adminState, setAdminState] = useState('Karnataka');
@@ -445,16 +446,16 @@ export function AdminPage() {
     <div className="space-y-6 pb-20">
       
       {/* Page Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 text-[#172033] shadow-sm relative overflow-hidden border border-[#E2E8F0]">
         <div className="relative z-10 max-w-3xl">
           <div className="flex items-center space-x-2.5 mb-3">
             <StatusBadge status="brand" dot={false}>Authoritative Material Pricing System</StatusBadge>
             <StatusBadge status="emerald" size="sm">Admin Role</StatusBadge>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#172033]">
             Material Price Master &amp; AI Regional Research
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
             Manage production procurement rates with append-only audit histories, or research regional Indian prices using Google Gemini Search Grounding. AI results produce unapproved candidates; only explicit admin approval updates production rates.
           </p>
 
@@ -465,12 +466,12 @@ export function AdminPage() {
               className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center space-x-2 transition-all ${
                 activeTab === 'rates'
                   ? 'bg-blue-600 text-white shadow-brand'
-                  : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
               <span>Current Approved Rates</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-blue-800/80 text-white">
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'rates' ? 'bg-blue-700 text-white' : 'bg-slate-200 text-slate-700'}`}>
                 {materials.length}
               </span>
             </button>
@@ -480,16 +481,26 @@ export function AdminPage() {
               className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center space-x-2 transition-all ${
                 activeTab === 'research'
                   ? 'bg-blue-600 text-white shadow-brand'
-                  : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              <Bot className="w-3.5 h-3.5 text-cyan-300" />
+              <Bot className={`w-3.5 h-3.5 ${activeTab === 'research' ? 'text-white' : 'text-blue-600'}`} />
               <span>AI Price Research</span>
               {candidates.filter(c => c.status === 'pending').length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500 text-white font-black animate-pulse">
                   {candidates.filter(c => c.status === 'pending').length} Pending
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={() => {
+                if (setRoute) setRoute('leads');
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-extrabold flex items-center space-x-2 transition-all bg-slate-100 text-slate-700 hover:bg-slate-200"
+            >
+              <Inbox className="w-3.5 h-3.5 text-orange-600" />
+              <span>Inquiries CRM &amp; Leads</span>
             </button>
           </div>
         </div>
@@ -555,7 +566,7 @@ export function AdminPage() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                     selectedCategory === cat
-                      ? 'bg-slate-900 text-white shadow-xs'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -667,7 +678,7 @@ export function AdminPage() {
                             </button>
                             <button
                               onClick={() => handleOpenRateUpdate(mat)}
-                              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-slate-900 text-white font-bold text-[11px] flex items-center space-x-1 shadow-2xs transition-colors"
+                              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] flex items-center space-x-1 shadow-2xs transition-colors"
                             >
                               <ArrowUpRight className="w-3.5 h-3.5" />
                               <span>Revise Rate</span>
@@ -857,7 +868,7 @@ export function AdminPage() {
               <button
                 onClick={handleStartResearch}
                 disabled={researching}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-slate-900 text-white text-xs font-black flex items-center space-x-2 shadow-sm transition-all disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center space-x-2 shadow-sm transition-all disabled:opacity-50"
               >
                 {researching ? (
                   <>
@@ -925,7 +936,7 @@ export function AdminPage() {
                   onClick={() => setCandidateFilterStatus(st)}
                   className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors ${
                     candidateFilterStatus === st
-                      ? 'bg-slate-900 text-white'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -1130,20 +1141,20 @@ export function AdminPage() {
 
           {/* Sticky Bulk Action Toolbar */}
           {selectedCandidateIds.size > 0 && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center space-x-4 border border-slate-700 z-50 animate-slideUp">
-              <span className="text-xs font-bold">
-                <span className="text-blue-400 font-extrabold">{selectedCandidateIds.size}</span> Candidates Selected
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white text-[#172033] px-6 py-3 rounded-2xl shadow-xl flex items-center space-x-4 border border-[#E2E8F0] z-50 animate-slideUp">
+              <span className="text-xs font-bold text-slate-700">
+                <span className="text-blue-600 font-extrabold">{selectedCandidateIds.size}</span> Candidates Selected
               </span>
               <button
                 onClick={handleBulkApprove}
                 disabled={actionInProgress}
-                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs transition-colors shadow-xs"
+                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-colors shadow-xs"
               >
                 Approve Selected ({selectedCandidateIds.size})
               </button>
               <button
                 onClick={() => setSelectedCandidateIds(new Set())}
-                className="text-xs text-gray-400 hover:text-white underline font-semibold"
+                className="text-xs text-slate-500 hover:text-slate-800 underline font-semibold"
               >
                 Clear
               </button>
@@ -1240,7 +1251,7 @@ export function AdminPage() {
                 <button
                   type="submit"
                   disabled={submittingRate}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black text-xs shadow-sm transition-colors"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-sm transition-colors"
                 >
                   {submittingRate ? 'Committing Revision...' : 'Commit Rate Revision'}
                 </button>
@@ -1483,7 +1494,7 @@ export function AdminPage() {
                 <button
                   type="submit"
                   disabled={actionInProgress}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black text-xs shadow-sm transition-colors"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-sm transition-colors"
                 >
                   {actionInProgress ? 'Saving...' : 'Approve Adjusted Rate'}
                 </button>
