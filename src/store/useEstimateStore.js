@@ -531,6 +531,40 @@ export function useEstimateStore() {
     } catch (e) {}
   };
 
+  const fetchRegisteredUsers = async () => {
+    try {
+      const res = await apiRequest('/api/auth/users');
+      if (res && res.success && Array.isArray(res.users)) {
+        globalUsers = res.users;
+        try {
+          localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(res.users));
+        } catch (e) {}
+        notify();
+        return res.users;
+      }
+    } catch (e) {
+      console.warn('Could not fetch backend registered users:', e.message);
+    }
+    return globalUsers;
+  };
+
+  const fetchLeads = async () => {
+    try {
+      const res = await apiRequest('/api/leads');
+      if (res && res.success && Array.isArray(res.leads)) {
+        globalLeads = res.leads;
+        try {
+          localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(res.leads));
+        } catch (e) {}
+        notify();
+        return res.leads;
+      }
+    } catch (e) {
+      console.warn('Could not fetch backend leads:', e.message);
+    }
+    return globalLeads;
+  };
+
   const updateSubscription = async (planId, billingCycle = 'yearly') => {
     const planNames = {
       free: 'FREE Plan (₹0/mo)',
@@ -845,6 +879,8 @@ export function useEstimateStore() {
     captureCustomerLead,
     updateLeadStatus,
     deleteLead,
+    fetchRegisteredUsers,
+    fetchLeads,
     updateSubscription,
     payments: globalPayments,
     submitPayment,

@@ -112,8 +112,15 @@ test('F. An unauthorized / random origin is not allowed and does not crash with 
   assert.notEqual(allowOrigin, '*', 'Wildcard origin must not be returned');
 });
 
-test('G. Local development CORS continues to work (http://localhost:3000 & http://127.0.0.1:3000)', async () => {
-  for (const origin of ['http://localhost:3000', 'http://127.0.0.1:3000']) {
+test('G. Local development & Render alias CORS work as expected', async () => {
+  const testOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
+    'https://buildiqo-ai.onrender.com'
+  ];
+  for (const origin of testOrigins) {
     const res = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'OPTIONS',
       headers: {
@@ -127,3 +134,4 @@ test('G. Local development CORS continues to work (http://localhost:3000 & http:
     assert.equal(res.headers.get('access-control-allow-origin'), origin);
   }
 });
+

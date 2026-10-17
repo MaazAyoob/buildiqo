@@ -20,6 +20,7 @@ import {
   LogOut,
   ShieldCheck
 } from 'lucide-react';
+import { BuildiqoLogo } from '../common/BuildiqoLogo';
 import { useEstimateStore, formatCurrency, formatNumber } from '../../store/useEstimateStore';
 
 export function AppSidebar({ currentRoute, setRoute, onOpenSavedModal, collapsed, setCollapsed }) {
@@ -51,23 +52,14 @@ export function AppSidebar({ currentRoute, setRoute, onOpenSavedModal, collapsed
             className="flex items-center space-x-3 text-left focus:outline-none group overflow-hidden"
             title="Buildiqo.AI Home"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20 shrink-0 group-hover:scale-105 transition-transform">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="leading-tight">
-                <div className="flex items-center space-x-1.5">
-                  <span className="font-black text-[#172033] text-base tracking-tight group-hover:text-blue-600 transition-colors">
-                    Buildiqo<span className="text-blue-600">.AI</span>
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 bg-blue-50 text-blue-700 border border-blue-200 rounded">
-                    PRO
-                  </span>
-                </div>
-                <span className="text-[10px] text-[#64748B] font-semibold tracking-wide block">
-                  Construction Intelligence
-                </span>
-              </div>
+            {collapsed ? (
+              <BuildiqoLogo variant="mark" className="w-8 h-8 shrink-0 group-hover:scale-105 transition-transform" />
+            ) : (
+              <BuildiqoLogo 
+                variant="horizontal" 
+                className="h-9 group-hover:scale-[1.02] transition-transform" 
+                markClassName="w-8 h-8 shrink-0" 
+              />
             )}
           </button>
 
@@ -280,44 +272,6 @@ export function AppSidebar({ currentRoute, setRoute, onOpenSavedModal, collapsed
               </button>
             </div>
           </div>
-
-          {/* Operations & Admin (Restricted strictly to authorized admin actively viewing admin console) */}
-          {currentUser?.isAdmin && (currentRoute === 'admin' || currentRoute === 'leads') && (
-            <div>
-              {!collapsed && (
-                <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-[#94A3B8] block mb-1">
-                  Admin Console
-                </span>
-              )}
-              <div className="space-y-1">
-                <button
-                  onClick={() => setRoute('admin')}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    isActive('admin')
-                      ? 'bg-[#FFFBEB] text-amber-800 font-extrabold border-r-2 border-amber-600 shadow-2xs'
-                      : 'text-[#475569] hover:bg-[#FFFBEB]/70 hover:text-amber-800'
-                  }`}
-                  title="Pricing Admin Desk"
-                >
-                  <Sliders className="w-4 h-4 shrink-0 text-amber-600" />
-                  {!collapsed && <span>Material Rates Desk</span>}
-                </button>
-
-                <button
-                  onClick={() => setRoute('leads')}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    isActive('leads')
-                      ? 'bg-[#FFFBEB] text-amber-800 font-extrabold border-r-2 border-amber-600 shadow-2xs'
-                      : 'text-[#475569] hover:bg-[#FFFBEB]/70 hover:text-amber-800'
-                  }`}
-                  title="Inquiries & Leads CRM"
-                >
-                  <Inbox className="w-4 h-4 shrink-0 text-orange-600" />
-                  {!collapsed && <span>Inquiries CRM</span>}
-                </button>
-              </div>
-            </div>
-          )}
 
         </nav>
       </div>

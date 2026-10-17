@@ -30,8 +30,11 @@ const PORT = process.env.PORT || 5000;
 // Configurable CORS allowlist
 const defaultAllowedOrigins = [
   'https://buildiqo-frontend.onrender.com',
+  'https://buildiqo-ai.onrender.com',
   'http://localhost:3000',
-  'http://127.0.0.1:3000'
+  'http://127.0.0.1:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001'
 ];
 
 const envFrontendOrigins = (process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || '')
@@ -80,6 +83,21 @@ app.get('/api/health', (req, res) => {
     message: 'Buildiqo.AI Backend is running',
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'pending_connection'
+  });
+});
+
+// Structured global error handling middleware (prevents leaking stack traces / HTML error pages)
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  const status = (typeof err.status === 'number' && err.status >= 400 && err.status < 600)
+    ? err.status
+    : ((typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) ? err.statusCode : 500);
+  
+  res.status(status).json({
+    success: false,
+    error: err.message || 'An unexpected internal server error occurred.'
   });
 });
 

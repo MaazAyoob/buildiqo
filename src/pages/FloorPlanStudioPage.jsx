@@ -145,6 +145,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
   const [cadExtractStage, setCadExtractStage] = useState('');
   const [cadExtractResult, setCadExtractResult] = useState(null);
   const [cadError, setCadError] = useState(null);
+  const [isDraggingCad, setIsDraggingCad] = useState(false);
 
   // Apply to Project Confirmation Modal State
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
@@ -463,11 +464,34 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
   };
 
   // CAD Import Processing
+  const processSelectedCadFile = (file) => {
+    if (!file) return;
+    const lowerName = file.name.toLowerCase();
+    const isDxf = lowerName.endsWith('.dxf');
+    const isDwg = lowerName.endsWith('.dwg');
+    const isPdf = lowerName.endsWith('.pdf');
+
+    if (!isDxf && !isDwg && !isPdf) {
+      setCadError(`Unsupported file format "${file.name}". Please upload an AutoCAD .dxf, .dwg, or vector .pdf floor plan file.`);
+      setCadFile(null);
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      setCadError(`File "${file.name}" exceeds the 25 MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`);
+      setCadFile(null);
+      return;
+    }
+
+    setCadFile(file);
+    setCadError(null);
+    setCadExtractResult(null);
+  };
+
   const handleCadFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setCadFile(file);
-      setCadError(null);
+      processSelectedCadFile(file);
     }
   };
 
@@ -841,25 +865,71 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                 {/* File Dropzone */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingCad(true);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingCad(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingCad(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingCad(false);
+                    const file = e.dataTransfer?.files?.[0];
+                    if (file) {
+                      processSelectedCadFile(file);
+                    }
+                  }}
                   className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-                    cadFile
-                      ? 'border-cyan-500 bg-cyan-50/20'
+                    isDraggingCad
+                      ? 'border-cyan-600 bg-cyan-100/50 scale-[1.01]'
+                      : cadFile
+                      ? 'border-cyan-500 bg-cyan-50/30'
                       : 'border-slate-300 hover:border-cyan-500 bg-slate-50 hover:bg-cyan-50/30'
                   }`}
                   id="cad-dropzone"
                 >
-                  <Upload className="w-8 h-8 text-cyan-600 mx-auto mb-2" />
-                  <span className="text-xs font-bold text-slate-800 block">
-                    {cadFile ? cadFile.name : 'Click to browse or drop CAD file'}
-                  </span>
-                  <span className="text-[10px] text-slate-400 block mt-1">
-                    AutoCAD .DXF (recommended), .DWG, or vector .PDF (Max 25 MB)
-                  </span>
+                  <Upload className={`w-8 h-8 mx-auto mb-2 transition-colors ${isDraggingCad || cadFile ? 'text-cyan-600' : 'text-slate-400'}`} />
+                  {cadFile ? (
+                    <div className="space-y-1">
+                      <span className="text-xs font-black text-cyan-900 block truncate">
+                        {cadFile.name}
+                      </span>
+                      <span className="text-[10px] text-cyan-700 font-semibold block">
+                        {(cadFile.size / (1024 * 1024)).toFixed(2)} MB • Ready for parsing
+                      </span>
+                      <span className="text-[10px] text-slate-500 underline hover:text-cyan-700 inline-block mt-1">
+                        Click or drop another file to change
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block">
+                        Click to browse or drop CAD file
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-1">
+                        AutoCAD .DXF (recommended), .DWG, or vector .PDF (Max 25 MB)
+                      </span>
+                    </div>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept=".dxf,.dwg,.pdf"
                     onChange={handleCadFileSelect}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.target.value = null;
+                    }}
                     className="hidden"
                     id="cad-file-input"
                   />

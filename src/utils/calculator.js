@@ -200,19 +200,34 @@ export function calculateEstimation(state, pricingContext = null) {
     
     // Built-up area = carpet area * 1.18 (accounting for walls, circulation, shafts)
     const builtupArea = Math.round(floorCarpet * 1.18);
+    const floorPresetBua = Number(floor.builtupArea) || Number(floor.area) || Number(floor.targetBua) || 0;
 
     return {
       id: floor.id,
       name: floor.name,
       floorNumber: floor.floorNumber,
       carpetArea: floorCarpet,
-      builtupArea: Math.max(builtupArea, floor.targetBua || 0),
+      builtupArea: Math.max(builtupArea, floorPresetBua),
       roomCount
     };
   });
 
   const calculatedTotalBua = floorDetails.reduce((sum, f) => sum + f.builtupArea, 0);
-  const totalBuiltupArea = state.targetBuaInput > 0 ? Number(state.targetBuaInput) : Math.max(calculatedTotalBua, 400);
+  
+  // Total BUA determination
+  let totalBuiltupArea;
+  if (state.useTargetBua && Number(state.targetBuaInput) > 0) {
+    totalBuiltupArea = Number(state.targetBuaInput);
+  } else if (state.useTargetBua === false) {
+    totalBuiltupArea = Math.max(calculatedTotalBua, 400);
+  } else {
+    // When useTargetBua is undefined (such as programmatic test cases or legacy state):
+    if (Number(state.targetBuaInput) > 0 && (calculatedTotalBua === 0 || calculatedTotalBua <= 400 || calculatedTotalBua === Number(state.targetBuaInput))) {
+      totalBuiltupArea = Number(state.targetBuaInput);
+    } else {
+      totalBuiltupArea = Math.max(calculatedTotalBua, 400);
+    }
+  }
   const groundFloorBua = floorDetails[0]?.builtupArea || Math.round(totalBuiltupArea / (floors.length || state.numFloors || 1));
   const coverageLimit = city.id === 'bangalore' ? 0.55 : 0.60;
   const groundCoverageRatio = plotArea > 0 ? (groundFloorBua / plotArea) : 0;

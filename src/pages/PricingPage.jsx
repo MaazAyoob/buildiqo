@@ -14,20 +14,18 @@ import { PaymentModal } from '../components/common/PaymentModal';
 import { BuildiqoLogo } from '../components/common/BuildiqoLogo';
 
 export function PricingPage({ setRoute, isMandatoryGate = false }) {
-  const { subscription, updateSubscription, currentUser, logout } = useEstimateStore();
-  const [subscribedModal, setSubscribedModal] = useState(false);
-  const [selectedPlanName, setSelectedPlanName] = useState('');
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState(null);
+  const { subscription, currentUser, logout } = useEstimateStore();
+  const [salesModalOpen, setSalesModalOpen] = useState(false);
+  const [selectedPlanForSales, setSelectedPlanForSales] = useState(null);
 
   const handleSelectPlan = (plan) => {
     if (plan.id === 'free') {
-      updateSubscription('free', 'monthly');
-      setSelectedPlanName('FREE Plan');
-      setSubscribedModal(true);
+      if (setRoute) {
+        setRoute('planner');
+      }
     } else {
-      setSelectedPlanForPayment(plan);
-      setPaymentModalOpen(true);
+      setSelectedPlanForSales(plan);
+      setSalesModalOpen(true);
     }
   };
 
@@ -257,39 +255,41 @@ export function PricingPage({ setRoute, isMandatoryGate = false }) {
         })}
       </div>
 
-      {/* Subscription Success Modal -> Grants Free or Activated App Access */}
-      {subscribedModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-200 shadow-2xl text-center space-y-4 animate-fadeIn">
-            <div className="w-14 h-14 rounded-2xl bg-green-100 text-green-700 mx-auto flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8" />
+      {/* Enterprise & Commercial Inquiry Dialog for Paid Plans */}
+      {salesModalOpen && selectedPlanForSales && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl text-center space-y-4 animate-fadeIn">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white mx-auto flex items-center justify-center shadow-md">
+              <Crown className="w-7 h-7 text-amber-300" />
             </div>
-            <h3 className="text-xl font-black text-slate-900">Subscription Confirmed!</h3>
+            <div>
+              <h3 className="text-xl font-black text-slate-900">{selectedPlanForSales.name} Plan</h3>
+              <p className="text-xs text-blue-600 font-bold mt-0.5">{selectedPlanForSales.price} {selectedPlanForSales.period}</p>
+            </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Your account is now activated with the <strong>{selectedPlanName}</strong>. Step 1 (Plot & Setup) is unlocked for you to explore site parameters and dimensions.
+              Commercial onboarding for <strong>{selectedPlanForSales.name}</strong> is currently facilitated directly by our enterprise engineering team. Automated payment processing is not activated.
             </p>
-            <div className="pt-2">
-              <button
-                onClick={() => { setSubscribedModal(false); setRoute('planner'); }}
-                className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center justify-center space-x-2"
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-mono text-slate-700">
+              Direct Contact: <a href="mailto:sales@buildiqo.ai" className="font-bold text-blue-600 hover:underline">sales@buildiqo.ai</a>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+              <a
+                href={`mailto:sales@buildiqo.ai?subject=Buildiqo.AI%20${encodeURIComponent(selectedPlanForSales.name)}%20Inquiry`}
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center space-x-1.5"
               >
-                <span>Open Cost Planner & Workspace</span>
-                <ArrowRight className="w-4 h-4 text-blue-200" />
+                <span>Email Sales Desk</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+              <button
+                onClick={() => setSalesModalOpen(false)}
+                className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Payment QR Code Modal for Paid Plans */}
-      <PaymentModal
-        isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        selectedPlan={selectedPlanForPayment}
-        onPaymentSubmitted={() => {
-          setPaymentModalOpen(false);
-        }}
-      />
 
     </div>
   );

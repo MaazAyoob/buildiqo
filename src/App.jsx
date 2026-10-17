@@ -34,7 +34,7 @@ export function App() {
     const hash = window.location.hash.replace('#', '').trim().toLowerCase();
     const validRoutes = ['home', 'planner', 'floor-plan', 'dashboard', 'settings', 'report', 'pricing', 'commercial-boq', 'admin', 'leads'];
     if (validRoutes.includes(hash)) {
-      return (!ENABLE_SUBSCRIPTIONS && hash === 'pricing') ? 'planner' : hash;
+      return hash;
     }
     return 'home';
   };
@@ -49,7 +49,7 @@ export function App() {
   const { loadProject, currentUser, subscription, logout } = useEstimateStore();
 
   const setRoute = (route, step) => {
-    const targetRoute = (!ENABLE_SUBSCRIPTIONS && route === 'pricing') ? 'planner' : route;
+    const targetRoute = route;
     setCurrentRouteState(targetRoute);
     setMobileMenuOpen(false);
     if (step) {
@@ -99,7 +99,7 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentRoute, forceAuthScreen]);
 
-  const isPublicRoute = currentRoute === 'home';
+  const isPublicRoute = currentRoute === 'home' || currentRoute === 'pricing';
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'leads';
 
   // 1. Unauthenticated access: Prompt for authentication
@@ -163,7 +163,7 @@ export function App() {
   const isSubscriptionMandatory = ENABLE_SUBSCRIPTIONS && !!currentUser && !currentUser.isAdmin && !subscription?.isPlanConfirmed;
   const effectiveRoute = isSubscriptionMandatory 
     ? (currentRoute !== 'commercial-boq' ? 'pricing' : currentRoute)
-    : (currentRoute === 'pricing' ? 'planner' : currentRoute);
+    : currentRoute;
 
   // ==============================================================
   // CASE 1: PUBLIC LANDING PAGE (Dedicated full-bleed layout)
@@ -179,6 +179,32 @@ export function App() {
         />
         <main className="flex-1 w-full pt-0">
           <LandingPage setRoute={setRoute} />
+        </main>
+        <Footer setRoute={setRoute} />
+        <AIChatbot onNavigateRoute={setRoute} />
+        <SavedEstimatesModal
+          isOpen={isSavedModalOpen}
+          onClose={() => setIsSavedModalOpen(false)}
+          onSelectProject={handleSelectSavedProject}
+        />
+      </div>
+    );
+  }
+
+  // ==============================================================
+  // CASE 1B: PUBLIC PRICING PAGE (Dedicated full-bleed layout with Navbar & Footer)
+  // ==============================================================
+  if (effectiveRoute === 'pricing' && (!currentUser || isPublicRoute)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#F5F7FB] text-[#172033] font-sans selection:bg-blue-600 selection:text-white">
+        <Navbar 
+          currentRoute={effectiveRoute} 
+          setRoute={setRoute} 
+          onOpenSavedModal={() => setIsSavedModalOpen(true)}
+          onOpenAuthModal={() => setForceAuthScreen(true)}
+        />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <PricingPage setRoute={setRoute} isMandatoryGate={false} />
         </main>
         <Footer setRoute={setRoute} />
         <AIChatbot onNavigateRoute={setRoute} />

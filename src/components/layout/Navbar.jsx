@@ -16,7 +16,9 @@ import {
   Compass,
   Sparkles,
   Layers,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import { useEstimateStore, formatCurrency } from '../../store/useEstimateStore';
 import { BuildiqoLogo } from '../common/BuildiqoLogo';
@@ -229,7 +231,20 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
               <span>Commercial BOQ</span>
             </button>
 
-            {/* 4. Projects & Tools Dropdown */}
+            {/* 4. Subscription Pricing */}
+            <button
+              onClick={() => setRoute('pricing')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                currentRoute === 'pricing' 
+                  ? 'bg-[#EEF4FF] text-[#2563EB] font-bold shadow-2xs' 
+                  : 'text-[#475569] hover:text-[#2563EB] hover:bg-[#EEF4FF]'
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
+              <span>Pricing</span>
+            </button>
+
+            {/* 5. Projects & Tools Dropdown */}
             <div className="relative" ref={managementRef}>
               <button
                 onClick={() => {
@@ -362,7 +377,6 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
                       </div>
                     </div>
 
-
                     <button
                       onClick={() => { setRoute('dashboard'); setUserDropdownOpen(false); }}
                       className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
@@ -482,6 +496,16 @@ export function Navbar({ currentRoute, setRoute, onOpenSavedModal, onOpenAuthMod
             >
               <FileSpreadsheet className="w-4 h-4 text-blue-600" />
               <span>Commercial BOQ Editor</span>
+            </button>
+
+            <button
+              onClick={() => { setRoute('pricing'); setMobileMenuOpen(false); }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-2.5 transition-colors ${
+                currentRoute === 'pricing' ? 'bg-blue-600 text-white font-bold shadow-brand' : 'text-slate-800 hover:bg-slate-100'
+              }`}
+            >
+              <Crown className="w-4 h-4 text-amber-500" />
+              <span>Subscription Pricing</span>
             </button>
 
             <button

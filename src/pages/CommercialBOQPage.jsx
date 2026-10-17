@@ -568,7 +568,57 @@ export function CommercialBOQPage({ setRoute }) {
     setBoqData(recalculateLocalBOQ(updated));
   };
 
-  // ================= THREE MARKED BUTTONS: SAVE, EXCEL, PDF =================
+  // ================= FINANCIAL SUMMARY HOOK (PAGE 7 REQUIREMENT) =================
+  const financialSummary = useMemo(() => {
+    if (!boqData) {
+      return {
+        subtotal: 0,
+        materialCost: 0,
+        gstRate: 18,
+        gstAmount: 0,
+        grandTotal: 0,
+        totalItems: 0,
+        materialItemsCount: 0,
+        hasMaterialBreakdown: false
+      };
+    }
+
+    let totalItems = 0;
+    let materialCost = 0;
+    let materialItemsCount = 0;
+
+    (boqData.sheets || []).forEach(sheet => {
+      if (sheet.isSummarySheet) return;
+      (sheet.sections || []).forEach(sec => {
+        (sec.rows || []).forEach(row => {
+          totalItems += 1;
+          const amt = Number(row.amount) || 0;
+          if (row.materialCode || row.compatibilityStatus === 'COMPATIBLE' || (row.trade && String(row.trade).toLowerCase().includes('material'))) {
+            materialCost += amt;
+            materialItemsCount += 1;
+          }
+        });
+      });
+    });
+
+    const subtotal = Number(boqData.totals?.subtotal) || 0;
+    const gstRate = boqData.totals?.gstRate !== undefined ? Number(boqData.totals.gstRate) : (boqData.gstRate !== undefined ? Number(boqData.gstRate) : 18);
+    const gstAmount = boqData.totals?.gstAmount !== undefined ? Number(boqData.totals.gstAmount) : Math.round(subtotal * (gstRate / 100) * 100) / 100;
+    const grandTotal = boqData.totals?.grandTotal !== undefined ? Number(boqData.totals.grandTotal) : Math.round((subtotal + gstAmount) * 100) / 100;
+
+    return {
+      subtotal,
+      materialCost,
+      materialItemsCount,
+      hasMaterialBreakdown: materialItemsCount > 0,
+      gstRate,
+      gstAmount,
+      grandTotal,
+      totalItems
+    };
+  }, [boqData]);
+
+  // ================= THREE MARKED BUTTONS: SAVE, EXCEL, PDF (PAGE 8) =================
 
   // 1. SAVE BOQ
   const handleSaveBOQ = async () => {
@@ -578,44 +628,13 @@ export function CommercialBOQPage({ setRoute }) {
     setSaveSuccessMsg('');
 
     try {
-      let payload;
-
-      if (calculationMode === 'PACKAGE') {
-        // Mode A Payload
-        payload = {
-          _id: boqData?._id && !boqData._id.startsWith('draft_') ? boqData._id : undefined,
-          mode: 'PACKAGE',
-          title: packageConfig.projectName || 'Package Construction Estimate',
-          fileName: `${(packageConfig.projectName || 'Package_Estimate').replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`,
-          pricingState: packageConfig.pricingState,
-          gstRate: packageConfig.gstRate,
-          packageEstimate: computedPackageEstimate,
-          sheets: [],
-          totals: {
-            subtotal: computedPackageEstimate.estimatedCost,
-            gstRate: computedPackageEstimate.gstRate,
-            gstAmount: computedPackageEstimate.gstAmount,
-            grandTotal: computedPackageEstimate.grandTotal,
-            summaryBreakdown: [
-              {
-                sheetName: 'Package Estimate',
-                sectionCode: 'MODE_A',
-                sectionName: `${computedPackageEstimate.packageName} (${computedPackageEstimate.totalBuiltupArea} sq.ft @ ₹${computedPackageEstimate.ratePerSqFt}/sq.ft)`,
-                subtotal: computedPackageEstimate.estimatedCost
-              }
-            ]
-          }
-        };
-      } else {
-        // Mode B Payload
-        if (!boqData) {
-          throw new Error('No BOQ data to save.');
-        }
-        payload = {
-          ...boqData,
-          mode: 'DETAILED'
-        };
+      if (!boqData) {
+        throw new Error('No BOQ data available to save. Please import or edit a BOQ first.');
       }
+      const payload = {
+        ...boqData,
+        mode: 'DETAILED'
+      };
 
       const res = await apiRequest('/api/commercial-boq/save', {
         method: 'POST',
@@ -647,37 +666,18 @@ export function CommercialBOQPage({ setRoute }) {
     setErrorMsg('');
 
     try {
-      const payload = calculationMode === 'PACKAGE' ? {
-        mode: 'PACKAGE',
-        title: packageConfig.projectName || 'Package Construction Estimate',
-        fileName: `${(packageConfig.projectName || 'Package_Estimate').replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`,
-        pricingState: packageConfig.pricingState,
-        gstRate: packageConfig.gstRate,
-        packageEstimate: computedPackageEstimate,
-        sheets: []
-      } : {
-        boqData
-      };
+      if (!boqData) {
+        throw new Error('No BOQ data available to export. Please import an Excel workbook first.');
+      }
+      const payload = { boqData };
 
-      const token = localStorage.getItem('buildiqo_token');
-      const response = await fetch('/api/commercial-boq/export/excel', {
+      const blob = await apiRequest('/api/commercial-boq/export/excel', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || `Export failed with HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const defaultName = calculationMode === 'PACKAGE' 
-        ? (packageConfig.projectName || 'Package_Estimate') 
-        : (boqData?.fileName || 'Commercial_BOQ');
+      const defaultName = boqData?.fileName || boqData?.title || 'Commercial_BOQ';
       const cleanName = defaultName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
       const url = window.URL.createObjectURL(blob);
@@ -692,6 +692,7 @@ export function CommercialBOQPage({ setRoute }) {
       setSaveSuccessMsg('Excel BOQ downloaded successfully.');
       setTimeout(() => setSaveSuccessMsg(''), 3000);
     } catch (err) {
+      console.error('Export Excel error:', err);
       setErrorMsg(err.message || 'Failed to download Excel export.');
     } finally {
       setIsExporting(false);
@@ -705,41 +706,18 @@ export function CommercialBOQPage({ setRoute }) {
     setErrorMsg('');
 
     try {
-      const payload = calculationMode === 'PACKAGE' ? {
-        mode: 'PACKAGE',
-        title: packageConfig.projectName || 'Package Construction Estimate',
-        fileName: `${(packageConfig.projectName || 'Package_Estimate').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`,
-        pricingState: packageConfig.pricingState,
-        gstRate: packageConfig.gstRate,
-        packageEstimate: computedPackageEstimate,
-        clientInfo: {
-          customerName: packageConfig.clientName,
-          city: packageConfig.pricingState
-        },
-        sheets: []
-      } : {
-        boqData
-      };
+      if (!boqData) {
+        throw new Error('No BOQ data available to export. Please import an Excel workbook first.');
+      }
+      const payload = { boqData };
 
-      const token = localStorage.getItem('buildiqo_token');
-      const response = await fetch('/api/commercial-boq/export/pdf', {
+      const blob = await apiRequest('/api/commercial-boq/export/pdf', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || `Export failed with HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const defaultName = calculationMode === 'PACKAGE' 
-        ? (packageConfig.projectName || 'Package_Estimate') 
-        : (boqData?.fileName || 'Commercial_BOQ');
+      const defaultName = boqData?.fileName || boqData?.title || 'Commercial_BOQ';
       const cleanName = defaultName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
       const url = window.URL.createObjectURL(blob);
@@ -754,6 +732,7 @@ export function CommercialBOQPage({ setRoute }) {
       setSaveSuccessMsg('PDF Report downloaded successfully.');
       setTimeout(() => setSaveSuccessMsg(''), 3000);
     } catch (err) {
+      console.error('Export PDF error:', err);
       setErrorMsg(err.message || 'Failed to download PDF export.');
     } finally {
       setIsExporting(false);
@@ -901,13 +880,11 @@ export function CommercialBOQPage({ setRoute }) {
                   Live QS Engine
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-[#EEF4FF] text-[#2563EB] border border-[#BFDBFE] text-[10px] font-mono font-bold">
-                  {calculationMode === 'PACKAGE' ? 'Mode A: Package Rate' : 'Mode B: Itemized Takeoff'}
+                  Detailed Itemized Takeoff
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#475569] mt-1 font-medium">
-                {calculationMode === 'PACKAGE' 
-                  ? 'Built-up area (SBA) × Selected Package Rate per sq. ft. deterministic calculation engine.'
-                  : 'Multi-discipline Excel workbook import, deterministic trade takeoff & contract editing.'}
+                Multi-discipline Excel workbook import, deterministic trade takeoff &amp; contract editing.
               </p>
             </div>
           </div>
@@ -918,7 +895,7 @@ export function CommercialBOQPage({ setRoute }) {
               <Building2 className="w-4 h-4 text-[#0891B2] shrink-0" />
               <span className="text-[#64748B] font-semibold">Pricing State:</span>
               <select
-                value={calculationMode === 'PACKAGE' ? packageConfig.pricingState : (boqData?.pricingState || 'Karnataka')}
+                value={boqData?.pricingState || 'Karnataka'}
                 onChange={(e) => handleStateChange(e.target.value)}
                 className="bg-transparent font-bold text-[#172033] focus:outline-none cursor-pointer"
               >
@@ -938,49 +915,35 @@ export function CommercialBOQPage({ setRoute }) {
               <FolderOpen className="w-4 h-4 text-[#D97706]" />
               <span>Saved BOQs ({savedBoqsList.length})</span>
             </button>
+
+            {/* Upload New File Action Button (Page 7 Requirement) */}
+            <button
+              onClick={() => {
+                if (boqData && !confirm('Upload a new Excel workbook? Any unsaved edits in current BOQ will be replaced.')) {
+                  return;
+                }
+                fileInputRef.current?.click();
+              }}
+              className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm"
+              title="Upload new commercial Excel workbook (.xlsx / .xls)"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Upload New File</span>
+            </button>
           </div>
         </div>
 
-        {/* Mode Selector Tabs (Mode A vs Mode B) */}
-        <div className="mt-5 pt-4 border-t border-blue-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-2 bg-slate-200/60 p-1 rounded-xl w-fit">
-            <button
-              onClick={() => {
-                setCalculationMode('PACKAGE');
-                localStorage.setItem('buildiqo_active_boq_mode', 'PACKAGE');
-              }}
-              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all flex items-center space-x-2 ${
-                calculationMode === 'PACKAGE'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              <Calculator className="w-3.5 h-3.5" />
-              <span>Mode A: Package Estimate</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setCalculationMode('DETAILED');
-                localStorage.setItem('buildiqo_active_boq_mode', 'DETAILED');
-              }}
-              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all flex items-center space-x-2 ${
-                calculationMode === 'DETAILED'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Mode B: Detailed BOQ</span>
-            </button>
+        {/* Commercial BOQ Mode Header (Detailed BOQ Sole Mode - Page 6) */}
+        <div className="mt-5 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            <span className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-extrabold flex items-center space-x-2 shadow-2xs">
+              <Layers className="w-3.5 h-3.5 text-blue-600" />
+              <span>Detailed Itemized BOQ Workspace</span>
+            </span>
           </div>
 
           <div className="text-[11px] text-slate-500 font-medium">
-            {calculationMode === 'PACKAGE' ? (
-              <span>Formula: <strong>Estimated Cost = Total Built-up Area (SBA) × Selected Package Rate</strong></span>
-            ) : (
-              <span>Formula: <strong>BOQ Subtotal = ∑ (Quantity × Current Unit Rate)</strong></span>
-            )}
+            <span>Formula: <strong>BOQ Subtotal = ∑ (Quantity × Current Unit Rate)</strong></span>
           </div>
         </div>
 
@@ -1001,350 +964,23 @@ export function CommercialBOQPage({ setRoute }) {
         )}
       </div>
 
+      {/* Global File Input for Upload New File */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => {
+          if (e.target.files?.[0]) {
+            handleFileSelect(e.target.files[0]);
+          }
+          e.target.value = null;
+        }}
+        accept=".xlsx,.xls"
+        className="hidden"
+      />
       {/* ========================================================================= */}
-      {/* ======================= MODE A: PACKAGE ESTIMATE ======================= */}
+      {/* ======================== DETAILED COMMERCIAL BOQ ======================= */}
       {/* ========================================================================= */}
-      {calculationMode === 'PACKAGE' && (
-        <div className="space-y-6">
-
-          {/* Action Toolbar for Mode A */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-[#172033]">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-[#64748B]">Active Workflow:</span>
-              <span className="px-2.5 py-1 rounded-lg bg-[#EEF4FF] text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE]">
-                Mode A — Package Construction Cost Engine
-              </span>
-            </div>
-
-            {/* Three Marked Buttons for Mode A */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handleExportExcel}
-                disabled={isExporting}
-                className="px-3.5 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
-                title="Download formatted package estimate Excel workbook"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export Excel</span>
-              </button>
-
-              <button
-                onClick={handleExportPDF}
-                disabled={isExporting}
-                className="px-3.5 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
-                title="Download readable package estimate PDF report"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export PDF</span>
-              </button>
-
-              <button
-                onClick={handleSaveBOQ}
-                disabled={isSaving}
-                className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
-                title="Persist complete package estimate to cloud database"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>{isSaving ? 'Saving...' : 'Save BOQ'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Transparent Calculation Formula Card */}
-          <div className="bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E40AF] text-white rounded-3xl p-6 sm:p-8 shadow-lg border border-blue-400/40 relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-xl">
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-100 bg-white/20 px-2.5 py-0.5 rounded-full border border-white/30 inline-block backdrop-blur-xs">
-                  Package Pricing Model Verified
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                  {formatINR(computedPackageEstimate.estimatedCost)}
-                </h2>
-                <div className="text-xs sm:text-sm text-blue-100 font-mono font-medium">
-                  Estimated Construction Cost = <span className="text-white font-bold">{computedPackageEstimate.totalBuiltupArea.toLocaleString('en-IN')} sq. ft.</span> (SBA) × <span className="text-amber-200 font-bold">{formatINR(computedPackageEstimate.ratePerSqFt)}</span> / sq. ft.
-                </div>
-                <p className="text-[11px] text-blue-200 pt-1">
-                  Read from configured {computedPackageEstimate.packageName}. No double-counting of raw benchmark materials or subcontractor packages.
-                </p>
-              </div>
-
-              {/* Grand Total with GST */}
-              <div className="bg-white/15 backdrop-blur-md rounded-2xl p-5 border border-white/20 min-w-[240px] space-y-2">
-                <div className="flex justify-between text-xs text-blue-100">
-                  <span>Base Cost (SBA × Rate):</span>
-                  <span className="font-mono font-bold text-white">{formatINR(computedPackageEstimate.estimatedCost)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-blue-100 items-center">
-                  <span>GST ({packageConfig.gstRate}%):</span>
-                  <span className="font-mono font-bold text-white">{formatINR(computedPackageEstimate.gstAmount)}</span>
-                </div>
-                <div className="pt-2 border-t border-white/20 flex justify-between text-sm font-black text-amber-200">
-                  <span>Grand Total:</span>
-                  <span className="font-mono text-base text-white">{formatINR(computedPackageEstimate.grandTotal)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Package Configuration & Selector Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Column 1 & 2: Package Choices */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
-                  Select Configured Construction Package
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {Object.entries(TIER_BENCHMARKS).map(([tKey, tInfo]) => {
-                    const isSelected = !packageConfig.isCustomRate && packageConfig.selectedPackage === tKey;
-                    return (
-                      <div
-                        key={tKey}
-                        onClick={() => setPackageConfig(prev => ({ ...prev, selectedPackage: tKey, isCustomRate: false }))}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                          isSelected
-                            ? 'border-blue-600 bg-blue-50/50 shadow-sm ring-2 ring-blue-500/20'
-                            : 'border-slate-200 hover:border-blue-300 bg-white'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                              {tInfo.badge}
-                            </span>
-                            {isSelected && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
-                          </div>
-                          <h4 className="text-xs font-black text-slate-900">{tInfo.name}</h4>
-                          <div className="mt-2 text-base font-black text-slate-900 font-mono">
-                            {formatINR(tInfo.ratePerSqFt)}
-                            <span className="text-[10px] text-slate-500 font-normal"> / sq.ft</span>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
-                          {tInfo.highlights.slice(0, 3).map((h, i) => (
-                            <div key={i} className="truncate">• {h}</div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Custom Package Rate Option (e.g. ₹2,000/sq.ft prompt example) */}
-                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl border">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="customRateCheck"
-                      checked={packageConfig.isCustomRate}
-                      onChange={(e) => setPackageConfig(prev => ({ ...prev, isCustomRate: e.target.checked }))}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="customRateCheck" className="text-xs font-bold text-slate-800 cursor-pointer">
-                      Use Custom Negotiated Package Rate per sq. ft.
-                    </label>
-                  </div>
-
-                  {packageConfig.isCustomRate && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-slate-500 font-semibold">Rate: ₹</span>
-                      <input
-                        type="number"
-                        value={packageConfig.customPackageRate}
-                        onChange={(e) => setPackageConfig(prev => ({ ...prev, customPackageRate: parseFloat(e.target.value) || 0 }))}
-                        className="w-28 p-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900"
-                        placeholder="e.g. 2000"
-                      />
-                      <span className="text-xs text-slate-500">/ sq.ft</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Floor-by-Floor Multi-Floor Breakdown Schedule */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                      Multi-Floor Built-up Area Breakdown (SBA)
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Total Built-up Area is computed across all floors.
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-slate-600 font-semibold">Floors:</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={packageConfig.numFloors}
-                      onChange={(e) => {
-                        const count = Math.max(1, parseInt(e.target.value) || 1);
-                        setPackageConfig(prev => {
-                          const newFloors = [];
-                          const perFloor = Math.round(prev.totalBuiltupArea / count);
-                          for (let i = 0; i < count; i++) {
-                            newFloors.push({
-                              id: `floor-${i}`,
-                              name: i === 0 ? 'Ground Floor' : `${i}th Floor`,
-                              carpetArea: Math.round(perFloor / 1.18),
-                              builtupArea: perFloor,
-                              roomCount: 4
-                            });
-                          }
-                          return { ...prev, numFloors: count, floors: newFloors };
-                        });
-                      }}
-                      className="w-14 p-1 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-center"
-                    />
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-                        <th className="py-2 px-3">#</th>
-                        <th className="py-2 px-3">Floor Level</th>
-                        <th className="py-2 px-3 text-right">Built-up Area (Sq.Ft)</th>
-                        <th className="py-2 px-3 text-right">Pro-rata Cost (INR)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                      {packageConfig.floors.map((fl, idx) => (
-                        <tr key={fl.id || idx}>
-                          <td className="py-2 px-3 text-slate-400">{idx + 1}</td>
-                          <td className="py-2 px-3 font-bold text-slate-900">{fl.name}</td>
-                          <td className="py-2 px-3 text-right font-mono">
-                            <input
-                              type="number"
-                              value={fl.builtupArea || 0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setPackageConfig(prev => {
-                                  const updatedFloors = [...prev.floors];
-                                  updatedFloors[idx] = { ...fl, builtupArea: val };
-                                  const sumBua = updatedFloors.reduce((acc, f) => acc + (f.builtupArea || 0), 0);
-                                  return { ...prev, floors: updatedFloors, totalBuiltupArea: sumBua };
-                                });
-                              }}
-                              className="w-24 p-1 bg-slate-50 border border-slate-200 rounded text-right text-xs font-mono font-bold"
-                            />
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
-                            {formatINR((fl.builtupArea || 0) * computedPackageEstimate.ratePerSqFt)}
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="bg-slate-50/80 font-bold text-slate-900 border-t border-slate-200">
-                        <td className="py-2 px-3" colSpan={2}>Total Built-up Area (SBA)</td>
-                        <td className="py-2 px-3 text-right font-mono text-blue-700">
-                          {packageConfig.totalBuiltupArea.toLocaleString('en-IN')} sq.ft
-                        </td>
-                        <td className="py-2 px-3 text-right font-mono text-blue-900">
-                          {formatINR(computedPackageEstimate.estimatedCost)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Column 3: Project Meta & GST Controls */}
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                  Project Association & Tax Settings
-                </h3>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Project Name</label>
-                    <input
-                      type="text"
-                      value={packageConfig.projectName}
-                      onChange={(e) => setPackageConfig(prev => ({ ...prev, projectName: e.target.value }))}
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Client Name</label>
-                    <input
-                      type="text"
-                      value={packageConfig.clientName}
-                      onChange={(e) => setPackageConfig(prev => ({ ...prev, clientName: e.target.value }))}
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Total Built-up Area (SBA Input)</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={packageConfig.totalBuiltupArea}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setPackageConfig(prev => {
-                            const perFl = Math.round(val / (prev.floors.length || 1));
-                            return {
-                              ...prev,
-                              totalBuiltupArea: val,
-                              floors: prev.floors.map(f => ({ ...f, builtupArea: perFl }))
-                            };
-                          });
-                        }}
-                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-900"
-                      />
-                      <span className="text-xs text-slate-500 shrink-0 font-medium">sq.ft</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Applicable GST Rate</label>
-                    <select
-                      value={packageConfig.gstRate}
-                      onChange={(e) => setPackageConfig(prev => ({ ...prev, gstRate: Number(e.target.value) }))}
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-                    >
-                      <option value={0}>0% (Exempt / Commercial SEZ)</option>
-                      <option value={5}>5% (Affordable Residential)</option>
-                      <option value={12}>12% (Government Works)</option>
-                      <option value={18}>18% (Standard Commercial Works Contract)</option>
-                      <option value={28}>28%</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Separation Notice */}
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 space-y-1">
-                  <div className="flex items-center space-x-1.5 font-bold">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                    <span>Independent Package Rate</span>
-                  </div>
-                  <p className="text-amber-800 leading-tight">
-                    Package estimate is strictly independent from itemized contractor BOQ items. Double-counting is prohibited.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* ======================== MODE B: DETAILED BOQ ========================== */}
-      {/* ========================================================================= */}
-      {calculationMode === 'DETAILED' && (
-        <div className="space-y-6">
+      <div className="space-y-6">
 
           {/* STEP 1: UPLOAD DROPZONE */}
           {viewState === 'upload' && (
@@ -1579,6 +1215,19 @@ export function CommercialBOQPage({ setRoute }) {
               {/* Action Toolbar */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-[#172033]">
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Upload New File Action Button (Page 7) */}
+                  <button
+                    onClick={() => {
+                      if (!confirm('Upload a replacement Excel workbook? Any unsaved edits in current BOQ will be replaced.')) return;
+                      fileInputRef.current?.click();
+                    }}
+                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-[#475569] hover:text-[#172033] border border-[#CBD5E1] text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs"
+                    title="Upload replacement Excel workbook"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Upload New File</span>
+                  </button>
+
                   <button
                     onClick={handleRefreshBenchmarks}
                     disabled={isSaving}
@@ -1650,6 +1299,86 @@ export function CommercialBOQPage({ setRoute }) {
                     <Save className="w-3.5 h-3.5" />
                     <span>{isSaving ? 'Saving...' : 'Save BOQ'}</span>
                   </button>
+                </div>
+              </div>
+
+              {/* 4 Financial Summary Cards Requested by Client (Page 7 Requirement) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. Summary Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">1. Summary (Pre-tax)</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                      {financialSummary.totalItems} items
+                    </span>
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-slate-900 tracking-tight font-mono">
+                    {formatINR(financialSummary.subtotal)}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Pre-tax BOQ subtotal across {boqData.sheets?.length || 1} sheet(s)
+                  </p>
+                </div>
+
+                {/* 2. Material Cost Card */}
+                <div className="bg-white rounded-2xl border border-blue-200 bg-blue-50/30 p-5 shadow-xs relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-700">2. Material Cost</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                      {financialSummary.hasMaterialBreakdown ? `${financialSummary.materialItemsCount} items` : 'Rate Takeoff'}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-blue-800 tracking-tight font-mono">
+                    {financialSummary.hasMaterialBreakdown ? formatINR(financialSummary.materialCost) : formatINR(financialSummary.subtotal)}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {financialSummary.hasMaterialBreakdown 
+                      ? 'Direct material supply takeoff items'
+                      : 'Commercial contract trade materials + labour'}
+                  </p>
+                </div>
+
+                {/* 3. GST Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">3. GST ({financialSummary.gstRate}%)</span>
+                    <select
+                      value={boqData.gstRate !== undefined ? boqData.gstRate : 18}
+                      onChange={(e) => {
+                        const updated = { ...boqData, gstRate: Number(e.target.value) };
+                        setBoqData(recalculateLocalBOQ(updated));
+                      }}
+                      className="text-[10px] bg-slate-100 font-bold text-slate-700 rounded px-1.5 py-0.5 border border-slate-200 cursor-pointer focus:outline-none"
+                    >
+                      <option value={0}>0% GST</option>
+                      <option value={5}>5% GST</option>
+                      <option value={12}>12% GST</option>
+                      <option value={18}>18% GST</option>
+                      <option value={28}>28% GST</option>
+                    </select>
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-slate-900 tracking-tight font-mono">
+                    {formatINR(financialSummary.gstAmount)}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Calculated on taxable subtotal {formatINR(financialSummary.subtotal)}
+                  </p>
+                </div>
+
+                {/* 4. Total Cost Card */}
+                <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-5 shadow-md relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-100">4. Total Cost</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white">
+                      Grand Total
+                    </span>
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-white tracking-tight font-mono">
+                    {formatINR(financialSummary.grandTotal)}
+                  </div>
+                  <p className="text-[11px] text-emerald-100 mt-1">
+                    Final project amount including GST &amp; trade charges
+                  </p>
                 </div>
               </div>
 
@@ -2062,7 +1791,6 @@ export function CommercialBOQPage({ setRoute }) {
           )}
 
         </div>
-      )}
 
       {/* ================= SAVED BOQS MODAL ================= */}
       {savedBoqsModalOpen && (

@@ -202,31 +202,78 @@ export function StepPlotDetails({ state, updateState, estimation }) {
         {/* Custom Plot Dimension Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
           <div>
-            <label className="text-xs font-bold text-[#475569] mb-1.5 block">Width (ft)</label>
+            <label className="text-xs font-bold text-[#475569] mb-1.5 flex items-center justify-between">
+              <span>Width (ft) *</span>
+              <span className="text-[10px] text-[#64748B] font-mono">Feet</span>
+            </label>
             <input
               type="number"
-              value={state.plotWidth || 30}
-              onChange={(e) => updateState({ plotWidth: Number(e.target.value) || 0 })}
+              min="10"
+              max="500"
+              step="1"
+              value={state.plotWidth !== undefined && state.plotWidth !== null ? state.plotWidth : ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateState({ plotWidth: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
+                clearError('dimensions');
+              }}
+              onBlur={() => {
+                if (!state.plotWidth || Number(state.plotWidth) < 10) {
+                  updateState({ plotWidth: 30 });
+                }
+              }}
+              placeholder="30"
               className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 font-mono"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#475569] mb-1.5 block">Length (ft)</label>
+            <label className="text-xs font-bold text-[#475569] mb-1.5 flex items-center justify-between">
+              <span>Length (ft) *</span>
+              <span className="text-[10px] text-[#64748B] font-mono">Feet</span>
+            </label>
             <input
               type="number"
-              value={state.plotLength || 40}
-              onChange={(e) => updateState({ plotLength: Number(e.target.value) || 0 })}
+              min="10"
+              max="500"
+              step="1"
+              value={state.plotLength !== undefined && state.plotLength !== null ? state.plotLength : ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateState({ plotLength: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
+                clearError('dimensions');
+              }}
+              onBlur={() => {
+                if (!state.plotLength || Number(state.plotLength) < 10) {
+                  updateState({ plotLength: 40 });
+                }
+              }}
+              placeholder="40"
               className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 font-mono"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#475569] mb-1.5 block">Road Width (ft)</label>
+            <label className="text-xs font-bold text-[#475569] mb-1.5 flex items-center justify-between">
+              <span>Road Width (ft)</span>
+              <span className="text-[10px] text-[#64748B] font-mono">Feet</span>
+            </label>
             <input
               type="number"
-              value={state.roadWidth || 30}
-              onChange={(e) => updateState({ roadWidth: Number(e.target.value) || 0 })}
+              min="5"
+              max="200"
+              step="1"
+              value={state.roadWidth !== undefined && state.roadWidth !== null ? state.roadWidth : ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateState({ roadWidth: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
+              }}
+              onBlur={() => {
+                if (!state.roadWidth || Number(state.roadWidth) < 5) {
+                  updateState({ roadWidth: 30 });
+                }
+              }}
+              placeholder="30"
               className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 font-mono"
             />
           </div>
@@ -297,7 +344,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[#475569]">Target Built-Up Area (sq.ft)</label>
+              <label className="text-xs font-bold text-[#475569]">
+                Target Built-Up Area (sq.ft)
+              </label>
               <div className="flex items-center space-x-1.5">
                 <input
                   type="checkbox"
@@ -312,14 +361,34 @@ export function StepPlotDetails({ state, updateState, estimation }) {
               </div>
             </div>
 
-            <input
-              type="number"
-              value={state.targetBuaInput || ''}
-              disabled={!state.useTargetBua}
-              onChange={(e) => updateState({ targetBuaInput: Number(e.target.value) || 0 })}
-              placeholder={state.useTargetBua ? 'Enter manual SBA' : 'Calculated automatically from room layout'}
-              className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] placeholder-[#94A3B8] focus:outline-none focus:border-[#2563EB] font-mono disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                min="100"
+                max="50000"
+                step="10"
+                value={state.useTargetBua ? (state.targetBuaInput !== undefined && state.targetBuaInput !== null ? state.targetBuaInput : '') : (estimation.totalBuiltupArea || '')}
+                disabled={!state.useTargetBua}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateState({ targetBuaInput: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
+                }}
+                placeholder={state.useTargetBua ? 'Enter manual SBA' : 'Calculated automatically from room layout'}
+                className={`w-full px-3 py-2 pr-28 text-xs font-bold rounded-xl border font-mono transition-all ${
+                  state.useTargetBua
+                    ? 'bg-white border-[#2563EB] text-[#172033] focus:outline-none focus:ring-2 focus:ring-blue-100'
+                    : 'bg-[#F0F5FF] border-[#BFDBFE] text-[#1E40AF] cursor-not-allowed font-black'
+                }`}
+              />
+              <span className="absolute right-3 top-2 text-[10px] font-bold text-[#64748B] select-none">
+                {state.useTargetBua ? 'sq.ft (Manual)' : 'sq.ft (Auto-calc)'}
+              </span>
+            </div>
+            {!state.useTargetBua && (
+              <span className="text-[10px] text-[#059669] font-medium flex items-center space-x-1">
+                <span>✓ Auto-calculated from room layout ({state.numFloors || 2} floors = {formatNumber(estimation.totalBuiltupArea)} sq.ft SBA)</span>
+              </span>
+            )}
           </div>
         </div>
       </div>

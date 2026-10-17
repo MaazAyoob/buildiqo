@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -175,6 +175,27 @@ router.get('/me', requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
     const subscription = await Subscription.findOne({ userId: user._id });
     res.json({ success: true, user, subscription });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Admin only: List all registered user accounts / registration leads
+router.get('/users', requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    const userIds = users.map(u => u._id);
+    const subscriptions = await Subscription.find({ userId: { $in: userIds } });
+    const subMap = new Map();
+    subscriptions.forEach(s => subMap.set(String(s.userId), s));
+
+    const enrichedUsers = users.map(u => {
+      const uObj = u.toObject();
+      uObj.subscription = subMap.get(String(u._id)) || null;
+      return uObj;
+    });
+
+    res.json({ success: true, users: enrichedUsers });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
