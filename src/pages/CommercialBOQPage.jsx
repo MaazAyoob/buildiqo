@@ -61,6 +61,7 @@ export function CommercialBOQPage({ setRoute }) {
   const [pendingFile, setPendingFile] = useState(null);
   const [inspectedSheets, setInspectedSheets] = useState([]);
   const [selectedSheetNames, setSelectedSheetNames] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Saved BOQs Drawer / Selector
   const [savedBoqsModalOpen, setSavedBoqsModalOpen] = useState(false);
@@ -290,6 +291,23 @@ export function CommercialBOQPage({ setRoute }) {
   // ================= WORKBOOK INSPECT & IMPORT WORKFLOW =================
   const handleFileSelect = async (file) => {
     if (!file) return;
+
+    // Supported formats: .xlsx, .xls
+    const validExtensions = ['.xlsx', '.xls'];
+    const fileName = file.name ? file.name.toLowerCase() : '';
+    const isValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+    if (!isValidExt) {
+      setErrorMsg(`Unsupported file type "${file.name}". Please upload a Microsoft Excel workbook (.xlsx or .xls).`);
+      return;
+    }
+
+    // File size limit: 25 MB
+    const MAX_FILE_SIZE = 25 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMsg(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds the 25 MB limit. Please upload a smaller workbook.`);
+      return;
+    }
+
     setPendingFile(file);
     setErrorMsg('');
 
@@ -367,6 +385,322 @@ export function CommercialBOQPage({ setRoute }) {
     }
   };
 
+  // Bundled offline fallback for TWC Kasthuri Nagar reference BOQ fixture
+  const getBundledTWCReferenceBOQ = () => ({
+    _id: `sample_${Date.now()}`,
+    title: 'TWC Kasthuri Nagar BOQ Final',
+    fileName: 'TWC_KASTHURI_NAGAR_BOQ_Final_3-2-26.xlsx',
+    fileSize: 45000,
+    pricingState: 'Karnataka',
+    gstRate: 18,
+    mode: 'DETAILED',
+    stats: {
+      totalSections: 5,
+      totalRows: 10
+    },
+    sheets: [
+      {
+        name: 'Summary',
+        isSummarySheet: true,
+        sections: []
+      },
+      {
+        name: 'Civil + Interior',
+        isSummarySheet: false,
+        sections: [
+          {
+            code: 'A]',
+            name: 'DEMOLITION WORK',
+            subtotal: 6000,
+            rows: [
+              {
+                id: 'twc_c_1',
+                itemNo: '1)',
+                description: 'Demolition of existing 9 inch brick masonry wall including carting away debris',
+                specification: 'Site specification',
+                make: '',
+                unit: 'Cu.Ft',
+                quantity: 150,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 40,
+                currentRate: 40,
+                amount: 6000,
+                rateSource: 'ORIGINAL',
+                comments: 'Care to be taken near conduits',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              }
+            ]
+          },
+          {
+            code: 'B]',
+            name: 'CONCRETING WORK',
+            subtotal: 266000,
+            rows: [
+              {
+                id: 'twc_c_12',
+                itemNo: '12)',
+                description: 'Providing and constructing RCC lintel including concrete, reinforcement, shuttering and labour',
+                specification: 'OPC 53 grade cement, Fe 500D TMT steel',
+                make: '',
+                unit: 'R.ft',
+                quantity: 40,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 850,
+                currentRate: 850,
+                amount: 34000,
+                rateSource: 'ORIGINAL',
+                comments: 'As per structural drawing',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'COMPOUND_WORK',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              },
+              {
+                id: 'twc_c_13',
+                itemNo: '13)',
+                description: 'Supply of OPC 53 grade cement for site store',
+                specification: 'UltraTech / ACC Gold',
+                make: 'UltraTech',
+                unit: 'Bag',
+                quantity: 100,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 390,
+                currentRate: 390,
+                amount: 39000,
+                rateSource: 'ORIGINAL',
+                comments: 'Direct store delivery',
+                materialCode: 'OPC53_CEMENT',
+                materialName: 'OPC 53 Grade Cement',
+                compatibilityStatus: 'COMPATIBLE',
+                classificationStatus: 'DIRECT_MATERIAL',
+                latestMaterialRate: 390,
+                missingRate: false,
+                missingQuantity: false
+              },
+              {
+                id: 'twc_c_14',
+                itemNo: '14)',
+                description: 'Supply of JSW Fe 550D TMT steel reinforcement',
+                specification: 'JSW Neosteel Fe 550D',
+                make: 'JSW',
+                unit: 'Tonne',
+                quantity: 2,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 72000,
+                currentRate: 72000,
+                amount: 144000,
+                rateSource: 'ORIGINAL',
+                comments: 'Mill test certificate required',
+                materialCode: 'TMT_STEEL_550D',
+                materialName: 'Fe 550D TMT Rebar',
+                compatibilityStatus: 'COMPATIBLE',
+                classificationStatus: 'DIRECT_MATERIAL',
+                latestMaterialRate: 72000,
+                missingRate: false,
+                missingQuantity: false
+              },
+              {
+                id: 'twc_c_15',
+                itemNo: '15)',
+                description: 'Providing and laying 2x2 vitrified flooring tiles',
+                specification: 'Kajaria double charged vitrified',
+                make: 'Kajaria',
+                unit: 'Sq.Ft',
+                quantity: 500,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 98,
+                currentRate: 98,
+                amount: 49000,
+                rateSource: 'ORIGINAL',
+                comments: 'Grouting included',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Plumbing',
+        isSummarySheet: false,
+        sections: [
+          {
+            code: 'M]',
+            name: 'PLUMBING WORK',
+            subtotal: 45600,
+            rows: [
+              {
+                id: 'twc_p_1',
+                itemNo: '1)',
+                description: 'Providing & fixing CPVC pipes 25mm SDR 11',
+                specification: 'Astral / Supreme CPVC',
+                make: 'Astral',
+                unit: 'Rmt',
+                quantity: 120,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 280,
+                currentRate: 280,
+                amount: 33600,
+                rateSource: 'ORIGINAL',
+                comments: 'Concealed in wall',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              },
+              {
+                id: 'twc_p_2',
+                itemNo: '2)',
+                description: 'Supply and fixing Jaquar CP brass bib taps',
+                specification: 'Jaquar Continental',
+                make: 'Jaquar',
+                unit: 'Nos',
+                quantity: 10,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 1200,
+                currentRate: 1200,
+                amount: 12000,
+                rateSource: 'ORIGINAL',
+                comments: 'Chrome finish',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              }
+            ]
+          },
+          {
+            code: 'G]',
+            name: 'OTHER PLUMBING',
+            subtotal: 5000,
+            rows: [
+              {
+                id: 'twc_p_3',
+                itemNo: '3)',
+                description: 'Testing of entire plumbing line with hydraulic pressure test pump',
+                specification: 'IS benchmark',
+                make: '',
+                unit: 'L.S.',
+                quantity: 1,
+                designQuantity: null,
+                siteQuantity: null,
+                quantityBasis: 'quantity',
+                originalRate: 5000,
+                currentRate: 5000,
+                amount: 5000,
+                rateSource: 'ORIGINAL',
+                comments: 'Acceptance test',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Electrical',
+        isSummarySheet: false,
+        hasDesignSiteQty: true,
+        sections: [
+          {
+            code: 'SECTION 1',
+            name: 'CONDUITING & CABLING',
+            subtotal: 32875,
+            rows: [
+              {
+                id: 'twc_e_1',
+                itemNo: '1.1',
+                description: 'Supplying and laying 25mm heavy duty PVC conduit with MS accessories',
+                specification: 'Heavy duty PVC conduit',
+                make: '',
+                unit: 'Rmt',
+                quantity: 220,
+                designQuantity: 200,
+                siteQuantity: 220,
+                quantityBasis: 'siteQuantity',
+                originalRate: 85,
+                currentRate: 85,
+                amount: 18700,
+                rateSource: 'ORIGINAL',
+                comments: '',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              },
+              {
+                id: 'twc_e_2',
+                itemNo: '1.2',
+                description: 'Supplying and drawing 2.5 sqmm FRLS copper wire in conduits',
+                specification: 'FRLS copper wire',
+                make: '',
+                unit: 'Rmt',
+                quantity: 315,
+                designQuantity: 300,
+                siteQuantity: 315,
+                quantityBasis: 'siteQuantity',
+                originalRate: 45,
+                currentRate: 45,
+                amount: 14175,
+                rateSource: 'ORIGINAL',
+                comments: '',
+                materialCode: null,
+                materialName: '',
+                compatibilityStatus: 'INCOMPATIBLE',
+                classificationStatus: 'UNMATCHED',
+                latestMaterialRate: null,
+                missingRate: false,
+                missingQuantity: false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  });
+
   // Load sample reference workbook (TWC Kasthuri Nagar)
   const handleLoadSampleBOQ = async () => {
     setIsUploading(true);
@@ -376,22 +710,29 @@ export function CommercialBOQPage({ setRoute }) {
 
     const stepTimer = setInterval(() => {
       setParsingStep(prev => (prev < parsingSteps.length - 1 ? prev + 1 : prev));
-    }, 400);
+    }, 300);
 
     try {
-      const fixtureRes = await apiRequest('/api/commercial-boq/sample', {
-        method: 'POST'
-      });
+      let data = null;
+      try {
+        const fixtureRes = await apiRequest('/api/commercial-boq/sample', {
+          method: 'POST'
+        });
+        if (fixtureRes?.data) {
+          data = fixtureRes.data;
+        }
+      } catch (networkErr) {
+        console.warn('Backend API unavailable, using bundled reference fixture:', networkErr.message);
+      }
+
+      if (!data) {
+        data = getBundledTWCReferenceBOQ();
+      }
 
       clearInterval(stepTimer);
-      if (fixtureRes?.data) {
-        setBoqData(fixtureRes.data);
-        setCalculationMode('DETAILED');
-        setViewState('summary');
-      } else {
-        setViewState('upload');
-        if (fileInputRef.current) fileInputRef.current.click();
-      }
+      setBoqData(data);
+      setCalculationMode('DETAILED');
+      setViewState('summary');
     } catch (err) {
       clearInterval(stepTimer);
       setErrorMsg('Please select an Excel file from your computer: ' + err.message);
@@ -636,24 +977,36 @@ export function CommercialBOQPage({ setRoute }) {
         mode: 'DETAILED'
       };
 
-      const res = await apiRequest('/api/commercial-boq/save', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
+      try {
+        const res = await apiRequest('/api/commercial-boq/save', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
 
-      if (res?.success && res.data) {
-        setBoqData(prev => ({ ...prev, ...res.data, _id: res.data._id }));
-        localStorage.setItem('buildiqo_active_commercial_boq', JSON.stringify(res.data));
-        localStorage.setItem('buildiqo_active_commercial_boq_id', res.data._id);
-        setSaveSuccessMsg(`BOQ successfully saved (ID: ${res.data._id.slice(-6)}).`);
-        await loadSavedBOQsList();
-        setTimeout(() => setSaveSuccessMsg(''), 4000);
-      } else {
-        throw new Error(res?.error || 'Save failed. Unexpected response from server.');
+        if (res?.success && res.data) {
+          setBoqData(prev => ({ ...prev, ...res.data, _id: res.data._id }));
+          localStorage.setItem('buildiqo_active_commercial_boq', JSON.stringify(res.data));
+          localStorage.setItem('buildiqo_active_commercial_boq_id', res.data._id);
+          setSaveSuccessMsg(`BOQ successfully saved (ID: ${res.data._id.slice(-6)}).`);
+          await loadSavedBOQsList();
+          setTimeout(() => setSaveSuccessMsg(''), 4000);
+          return;
+        }
+      } catch (netErr) {
+        console.warn('Backend save API unavailable, persisting to local workspace storage:', netErr.message);
       }
+
+      // Local workspace storage fallback
+      const localId = boqData._id || `boq_${Date.now()}`;
+      const savedPayload = { ...payload, _id: localId, savedAt: new Date().toISOString() };
+      setBoqData(savedPayload);
+      localStorage.setItem('buildiqo_active_commercial_boq', JSON.stringify(savedPayload));
+      localStorage.setItem('buildiqo_active_commercial_boq_id', localId);
+      setSaveSuccessMsg(`BOQ successfully saved to local workspace (ID: ${localId.slice(-6)}).`);
+      setTimeout(() => setSaveSuccessMsg(''), 4000);
     } catch (err) {
       console.error('Save BOQ error:', err);
-      setErrorMsg(err.message || 'Failed to save BOQ. Please check network connection and retry.');
+      setErrorMsg(err.message || 'Failed to save BOQ.');
     } finally {
       setIsSaving(false);
     }
@@ -671,25 +1024,60 @@ export function CommercialBOQPage({ setRoute }) {
       }
       const payload = { boqData };
 
-      const blob = await apiRequest('/api/commercial-boq/export/excel', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        responseType: 'blob'
-      });
+      try {
+        const blob = await apiRequest('/api/commercial-boq/export/excel', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          responseType: 'blob'
+        });
 
-      const defaultName = boqData?.fileName || boqData?.title || 'Commercial_BOQ';
-      const cleanName = defaultName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const defaultName = boqData?.fileName || boqData?.title || 'Commercial_BOQ';
+        const cleanName = defaultName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${cleanName}_Buildiqo_Edited.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        setSaveSuccessMsg('Excel BOQ downloaded successfully.');
+        setTimeout(() => setSaveSuccessMsg(''), 3000);
+        return;
+      } catch (apiErr) {
+        console.warn('Backend Excel API unavailable, generating client-side CSV export:', apiErr.message);
+      }
+
+      // Client-side CSV export fallback
+      const csvRows = [];
+      csvRows.push(['BUILDIQO.AI — COMMERCIAL BILL OF QUANTITIES (BOQ)']);
+      csvRows.push([`Project: ${boqData?.title || 'Commercial BOQ'}`, `File: ${boqData?.fileName || 'BOQ'}`]);
+      csvRows.push([]);
+      for (const sheet of (boqData?.sheets || [])) {
+        csvRows.push([`SHEET: ${sheet.name}`]);
+        csvRows.push(['Item No', 'Description', 'Specification', 'Unit', 'Quantity', 'Rate (INR)', 'Amount (INR)']);
+        for (const sec of (sheet.sections || [])) {
+          csvRows.push([sec.name || 'Section']);
+          for (const r of (sec.rows || [])) {
+            csvRows.push([r.itemNo || '', `"${(r.description || '').replace(/"/g, '""')}"`, `"${(r.specification || '').replace(/"/g, '""')}"`, r.unit || '', r.quantity || 0, r.currentRate || 0, r.amount || 0]);
+          }
+          csvRows.push(['', 'Section Subtotal', '', '', '', '', sec.subtotal || 0]);
+        }
+        csvRows.push([]);
+      }
+      const csvContent = '\uFEFF' + csvRows.map(r => r.join(',')).join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${cleanName}_Buildiqo_Edited.xlsx`;
+      a.download = `${(boqData?.title || 'Commercial_BOQ').replace(/[^a-zA-Z0-9_-]/g, '_')}_Edited.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-
-      setSaveSuccessMsg('Excel BOQ downloaded successfully.');
+      setSaveSuccessMsg('BOQ export downloaded successfully.');
       setTimeout(() => setSaveSuccessMsg(''), 3000);
     } catch (err) {
       console.error('Export Excel error:', err);
@@ -711,26 +1099,32 @@ export function CommercialBOQPage({ setRoute }) {
       }
       const payload = { boqData };
 
-      const blob = await apiRequest('/api/commercial-boq/export/pdf', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        responseType: 'blob'
-      });
+      try {
+        const blob = await apiRequest('/api/commercial-boq/export/pdf', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          responseType: 'blob'
+        });
 
-      const defaultName = boqData?.fileName || boqData?.title || 'Commercial_BOQ';
-      const cleanName = defaultName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const defaultName = boqData?.fileName || boqData?.title || 'Commercial_BOQ';
+        const cleanName = defaultName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${cleanName}_Buildiqo_Report.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${cleanName}_Buildiqo_Report.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
 
-      setSaveSuccessMsg('PDF Report downloaded successfully.');
-      setTimeout(() => setSaveSuccessMsg(''), 3000);
+        setSaveSuccessMsg('PDF Report downloaded successfully.');
+        setTimeout(() => setSaveSuccessMsg(''), 3000);
+        return;
+      } catch (apiErr) {
+        console.warn('Backend PDF API unavailable, opening browser print dialog:', apiErr.message);
+        window.print();
+      }
     } catch (err) {
       console.error('Export PDF error:', err);
       setErrorMsg(err.message || 'Failed to download PDF export.');
@@ -972,7 +1366,7 @@ export function CommercialBOQPage({ setRoute }) {
           if (e.target.files?.[0]) {
             handleFileSelect(e.target.files[0]);
           }
-          e.target.value = null;
+          e.target.value = '';
         }}
         accept=".xlsx,.xls"
         className="hidden"
@@ -984,24 +1378,43 @@ export function CommercialBOQPage({ setRoute }) {
 
           {/* STEP 1: UPLOAD DROPZONE */}
           {viewState === 'upload' && (
-            <div className="bg-white rounded-3xl border-2 border-dashed border-slate-300 hover:border-blue-400 p-8 sm:p-14 text-center transition-all">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={(e) => handleFileSelect(e.target.files[0])}
-                accept=".xlsx,.xls"
-                className="hidden"
-              />
-
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                const file = e.dataTransfer?.files?.[0];
+                if (file) handleFileSelect(file);
+              }}
+              className={`bg-white rounded-3xl border-2 border-dashed p-8 sm:p-14 text-center transition-all ${
+                isDragging
+                  ? 'border-blue-500 bg-blue-50/50 shadow-md ring-4 ring-blue-100'
+                  : 'border-slate-300 hover:border-blue-400'
+              }`}
+            >
               <div className="max-w-md mx-auto space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+                <div
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors ${
+                    isDragging ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'
+                  }`}
+                >
                   <Upload className="w-8 h-8" />
                 </div>
 
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">Upload Commercial BOQ Excel</h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Auto-detects worksheets (Summary, Civil, Plumbing, Electrical) with Indian currency and diverse column orders.
+                    Drag & drop your Excel workbook here, or click to browse. Auto-detects worksheets (Summary, Civil, Plumbing, Electrical). Max 25 MB.
                   </p>
                 </div>
 

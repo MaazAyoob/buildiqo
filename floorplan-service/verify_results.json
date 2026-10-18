@@ -31,7 +31,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 57.08,
+      "duration_ms": 77.43,
       "floors_data": []
     },
     {
@@ -65,7 +65,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 51.47,
+      "duration_ms": 89.83,
       "floors_data": []
     },
     {
@@ -96,7 +96,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 0.2,
+      "duration_ms": 0.3,
       "floors_data": []
     },
     {
@@ -130,7 +130,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 144.14,
+      "duration_ms": 255.78,
       "floors_data": []
     },
     {
@@ -161,7 +161,7 @@
       "overlap_violations": [],
       "setback_violations": [],
       "min_dim_violations": [],
-      "duration_ms": 0.27,
+      "duration_ms": 0.28,
       "floors_data": []
     }
   ],

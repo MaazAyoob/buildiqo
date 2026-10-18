@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('fs');
+const path = require('path');
 
 test('Planning Modules Package-Based Calculation Regression Suite', async (t) => {
   const { calculatePackageEstimate, calculateEstimation } = await import('../../src/utils/calculator.js');
@@ -339,5 +341,186 @@ test('Planning Modules Package-Based Calculation Regression Suite', async (t) =>
     assert.strictEqual(est.boqItems[0].items.find(i => i.id === 'item-cement').qty, expectedCementBags);
     assert.strictEqual(est.boqItems[0].items.find(i => i.id === 'item-sand').qty, expectedSandCuFt + expectedAggregateCuFt);
     assert.ok(est.materialSummary.length >= 10);
+  });
+
+  // 13. Phase 1 Client Financial Reference Cases (1,800 sq.ft across Standard, Premium, Luxury)
+  await t.test('13. Phase 1 Client Financial Reference Cases (1,800 sq.ft across tiers)', () => {
+    const sba = 1800;
+
+    // Standard: 1,800 sq.ft @ ₹2,250 = Base ₹40,50,000 | GST ₹7,29,000 | Total ₹47,79,000
+    const std = calculatePackageEstimate({ totalBuiltupArea: sba, packageKey: 'standard', gstRate: 18 });
+    assert.strictEqual(std.ratePerSqFt, 2250, 'Standard package rate is ₹2,250/sq.ft');
+    assert.strictEqual(std.estimatedCost, 4050000, 'Standard base cost = 1,800 × ₹2,250 = ₹40,50,000');
+    assert.strictEqual(std.gstAmount, 729000, 'Standard 18% GST = ₹7,29,000');
+    assert.strictEqual(std.grandTotal, 4779000, 'Standard grand total = ₹47,79,000');
+
+    // Premium: 1,800 sq.ft @ ₹2,850 = Base ₹51,30,000 | GST ₹9,23,400 | Total ₹60,53,400
+    const prm = calculatePackageEstimate({ totalBuiltupArea: sba, packageKey: 'premium', gstRate: 18 });
+    assert.strictEqual(prm.ratePerSqFt, 2850, 'Premium package rate is ₹2,850/sq.ft');
+    assert.strictEqual(prm.estimatedCost, 5130000, 'Premium base cost = 1,800 × ₹2,850 = ₹51,30,000');
+    assert.strictEqual(prm.gstAmount, 923400, 'Premium 18% GST = ₹9,23,400');
+    assert.strictEqual(prm.grandTotal, 6053400, 'Premium grand total = ₹60,53,400');
+
+    // Luxury: 1,800 sq.ft @ ₹3,800 = Base ₹68,40,000 | GST ₹12,31,200 | Total ₹80,71,200
+    const lux = calculatePackageEstimate({ totalBuiltupArea: sba, packageKey: 'luxury', gstRate: 18 });
+    assert.strictEqual(lux.ratePerSqFt, 3800, 'Luxury package rate is ₹3,800/sq.ft');
+    assert.strictEqual(lux.estimatedCost, 6840000, 'Luxury base cost = 1,800 × ₹3,800 = ₹68,40,000');
+    assert.strictEqual(lux.gstAmount, 1231200, 'Luxury 18% GST = ₹12,31,200');
+    assert.strictEqual(lux.grandTotal, 8071200, 'Luxury grand total = ₹80,71,200');
+  });
+
+  // 14. Client Area Definition Example (55 × 55 ft plot = 3,025 sq.ft plot, 3,025 sq.ft SBA, 2,117.5 sq.ft carpet area)
+  await t.test('14. Client Area Definition Example (55 × 55 ft plot: SBA = 3,025 sq.ft, Carpet = 2,117.5 sq.ft, with manual override option)', () => {
+    // 14a: Automatic plot-derived SBA: 55 × 55 ft yields SBA = 3,025 sq.ft, Carpet = 2,117.5 sq.ft
+    const stateAuto = {
+      plotWidth: 55,
+      plotLength: 55,
+      tier: 'standard',
+      city: 'Bengaluru',
+      state: 'Karnataka'
+    };
+
+    const estAuto = calculateEstimation(stateAuto, { isBenchmark: true });
+    assert.strictEqual(estAuto.plotArea, 3025, 'Gross plot area = 55 × 55 = 3,025 sq.ft');
+    assert.strictEqual(estAuto.totalBuiltupArea, 3025, 'Total built-up area (SBA) = 3,025 sq.ft (matching 55 × 55 ft)');
+    assert.strictEqual(estAuto.plotCarpetArea, 2117.5, 'Carpet area at 70% of SBA = 2,117.5 sq.ft');
+    assert.strictEqual(estAuto.carpetAreaPercentage, 70, 'Default carpet area percentage benchmark is 70%');
+    assert.strictEqual(estAuto.estimatedCost, 3025 * 2250, 'Standard package base cost = 3,025 × ₹2,250 = ₹68,06,250');
+
+    // 14b: Manual SBA Override to 1,800 sq.ft
+    const stateOverride = {
+      plotWidth: 55,
+      plotLength: 55,
+      useTargetBua: true,
+      targetBuaInput: 1800,
+      tier: 'standard',
+      city: 'Bengaluru',
+      state: 'Karnataka'
+    };
+
+    const estOverride = calculateEstimation(stateOverride, { isBenchmark: true });
+    assert.strictEqual(estOverride.plotArea, 3025, 'Gross plot area remains 3,025 sq.ft');
+    assert.strictEqual(estOverride.totalBuiltupArea, 1800, 'Total built-up area is overridden to 1,800 sq.ft');
+    assert.strictEqual(estOverride.estimatedCost, 1800 * 2250, 'Cost calculated using manual SBA: 1,800 × 2,250 = ₹40,50,000');
+  });
+
+  // 15. Dedicated Planner Report PDF Exporter generates valid A4 document buffer
+  await t.test('15. Dedicated Planner Report PDF Exporter generates valid A4 document buffer', async () => {
+    const { generatePlannerPDF } = require('../services/plannerReportExporter');
+
+    const sampleState = {
+      projectName: 'Green Villa Estate',
+      customerName: 'Maaz Ayoob',
+      plotWidth: 55,
+      plotLength: 55,
+      tier: 'standard',
+      numFloors: 2,
+      floors: [
+        { id: 'f1', name: 'Ground Floor', builtupArea: 900, carpetArea: 630, roomCount: 4 },
+        { id: 'f2', name: 'First Floor', builtupArea: 900, carpetArea: 630, roomCount: 4 }
+      ]
+    };
+
+    const sampleEstimation = {
+      plotArea: 3025,
+      plotCarpetArea: 2117.5,
+      totalBuiltupArea: 1800,
+      gstRate: 18,
+      packageEstimate: {
+        ratePerSqFt: 2250,
+        estimatedCost: 4050000,
+        gstAmount: 729000,
+        grandTotal: 4779000
+      }
+    };
+
+    const pdfBuffer = await generatePlannerPDF(sampleState, sampleEstimation);
+    assert.ok(Buffer.isBuffer(pdfBuffer), 'Returns a valid Node.js Buffer');
+    assert.ok(pdfBuffer.length > 5000, `PDF buffer contains substantial content (${pdfBuffer.length} bytes)`);
+    assert.strictEqual(pdfBuffer.subarray(0, 4).toString(), '%PDF', 'PDF buffer starts with %PDF magic header');
+    try {
+      fs.writeFileSync(path.join(__dirname, '../../scratch/sample_planner_report.pdf'), pdfBuffer);
+    } catch (e) {}
+  });
+
+  // 16. Commercial BOQ PDF Exporter generates valid PDF buffers for Mode A and Mode B
+  await t.test('16. Commercial BOQ PDF Exporter generates valid buffers for Mode A and Mode B (landscape)', async () => {
+    const { exportToPDF } = require('../services/commercialBoqExporter');
+
+    // Mode A: Package Estimate
+    const modeABoq = {
+      mode: 'PACKAGE',
+      title: 'Commercial Business Hub',
+      customerName: 'Enterprise Client',
+      pricingState: 'Karnataka',
+      packageEstimate: {
+        totalBuiltupArea: 1800,
+        ratePerSqFt: 2250,
+        estimatedCost: 4050000,
+        gstRate: 18,
+        gstAmount: 729000,
+        grandTotal: 4779000,
+        numFloors: 2,
+        floors: [
+          { name: 'Ground Floor', builtupArea: 900, carpetArea: 630, roomCount: 3 },
+          { name: 'First Floor', builtupArea: 900, carpetArea: 630, roomCount: 3 }
+        ]
+      }
+    };
+    const modeAPdf = await exportToPDF(modeABoq);
+    assert.ok(Buffer.isBuffer(modeAPdf));
+    assert.strictEqual(modeAPdf.subarray(0, 4).toString(), '%PDF');
+
+    // Mode B: Detailed Multi-section BOQ (Landscape layout)
+    const modeBBoq = {
+      mode: 'DETAILED',
+      title: 'TWC Kasthuri Nagar Detailed Schedule',
+      customerName: 'Bangalore Commercial Client',
+      pricingState: 'Karnataka',
+      totals: {
+        subtotal: 1000000,
+        gstRate: 18,
+        gstAmount: 180000,
+        grandTotal: 1180000
+      },
+      sheets: [
+        {
+          name: 'Civil Works',
+          sections: [
+            {
+              name: 'Substructure & RCC',
+              subtotal: 600000,
+              rows: [
+                {
+                  itemNo: '1.1',
+                  description: 'Earthwork excavation in foundation trenches including dressing and disposal',
+                  specification: 'Up to 2.5m depth in hard gravelly soil as per IS 1200',
+                  unit: 'Cum',
+                  quantity: 120,
+                  currentRate: 350,
+                  amount: 42000
+                },
+                {
+                  itemNo: '1.2',
+                  description: 'Providing and laying reinforced cement concrete M25 grade in footings and columns',
+                  specification: 'Machine batch mixed and vibrated as per IS 456',
+                  unit: 'Cum',
+                  quantity: 50,
+                  currentRate: 7200,
+                  amount: 360000
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+    const modeBPdf = await exportToPDF(modeBBoq);
+    assert.ok(Buffer.isBuffer(modeBPdf));
+    assert.strictEqual(modeBPdf.subarray(0, 4).toString(), '%PDF');
+    assert.ok(modeBPdf.length > 1000, `Mode B PDF buffer length: ${modeBPdf.length} bytes`);
+    try {
+      fs.writeFileSync(path.join(__dirname, '../../scratch/sample_commercial_boq.pdf'), modeBPdf);
+    } catch (e) {}
   });
 });

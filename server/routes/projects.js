@@ -100,11 +100,36 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+const { generatePlannerPDF } = require('../services/plannerReportExporter');
+
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     await Project.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     res.json({ success: true, message: 'Project deleted' });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/projects/export/pdf
+ * Generates and downloads a dedicated professional PDF estimate report
+ */
+router.post('/export/pdf', async (req, res) => {
+  try {
+    const { state, estimation } = req.body;
+    if (!state && !estimation) {
+      return res.status(400).json({ success: false, error: 'No estimation data provided for PDF export.' });
+    }
+
+    const pdfBuffer = await generatePlannerPDF(state || {}, estimation || {});
+    const projectName = (state?.projectName || 'Buildiqo_Estimate').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${projectName}_Estimate_Report.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('Planner PDF export error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

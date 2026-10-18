@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Ruler, 
@@ -8,16 +8,16 @@ import {
   Trees, 
   ShieldCheck, 
   Check, 
-  Plus,
-  Trash2,
-  Building,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  HardHat,
-  Calculator,
-  ArrowRight,
-  TrendingUp
+  Plus, 
+  Trash2, 
+  Building, 
+  CheckCircle2, 
+  AlertCircle, 
+  HelpCircle, 
+  HardHat, 
+  Calculator, 
+  ArrowRight, 
+  TrendingUp 
 } from 'lucide-react';
 import { CITIES, SOIL_TYPES } from '../../data/cities';
 import { INDIAN_STATES, normalizeStateName } from '../../data/states';
@@ -28,6 +28,29 @@ import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useE
 export function StepPlotDetails({ state, updateState, estimation }) {
   const [errors, setErrors] = useState({});
 
+  // Local string states to allow free numeric typing, decimals (e.g. 9.5, 12.5), and backspacing
+  const [localWidth, setLocalWidth] = useState(state.plotWidth !== undefined && state.plotWidth !== null ? String(state.plotWidth) : '30');
+  const [localLength, setLocalLength] = useState(state.plotLength !== undefined && state.plotLength !== null ? String(state.plotLength) : '40');
+  const [localRoadWidth, setLocalRoadWidth] = useState(state.roadWidth !== undefined && state.roadWidth !== null ? String(state.roadWidth) : '30');
+
+  useEffect(() => {
+    if (state.plotWidth !== undefined && state.plotWidth !== null && String(state.plotWidth) !== localWidth) {
+      setLocalWidth(String(state.plotWidth));
+    }
+  }, [state.plotWidth]);
+
+  useEffect(() => {
+    if (state.plotLength !== undefined && state.plotLength !== null && String(state.plotLength) !== localLength) {
+      setLocalLength(String(state.plotLength));
+    }
+  }, [state.plotLength]);
+
+  useEffect(() => {
+    if (state.roadWidth !== undefined && state.roadWidth !== null && String(state.roadWidth) !== localRoadWidth) {
+      setLocalRoadWidth(String(state.roadWidth));
+    }
+  }, [state.roadWidth]);
+
   const plotPresets = [
     { label: '30 × 40', w: 30, l: 40, area: 1200, tag: '1,200 sq.ft' },
     { label: '30 × 50', w: 30, l: 50, area: 1500, tag: '1,500 sq.ft' },
@@ -36,6 +59,8 @@ export function StepPlotDetails({ state, updateState, estimation }) {
   ];
 
   const handlePresetClick = (w, l) => {
+    setLocalWidth(String(w));
+    setLocalLength(String(l));
     updateState({ plotWidth: w, plotLength: l });
     clearError('dimensions');
   };
@@ -78,7 +103,14 @@ export function StepPlotDetails({ state, updateState, estimation }) {
     }
   };
 
-  const currentPlotArea = (state.plotWidth || 30) * (state.plotLength || 40);
+  const currentPlotArea = estimation.plotArea || ((Number(state.plotWidth) || 30) * (Number(state.plotLength) || 40));
+  const displayCarpetArea = estimation.plotCarpetArea !== undefined 
+    ? (Number(estimation.plotCarpetArea) % 1 !== 0 
+        ? Number(estimation.plotCarpetArea).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) 
+        : formatNumber(estimation.plotCarpetArea))
+    : (Number(currentPlotArea * 0.7) % 1 !== 0
+        ? Number(currentPlotArea * 0.7).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+        : formatNumber(Math.round(currentPlotArea * 0.7)));
 
   return (
     <div className="space-y-6 animate-fadeIn text-left text-[#172033]">
@@ -210,17 +242,24 @@ export function StepPlotDetails({ state, updateState, estimation }) {
               type="number"
               min="10"
               max="500"
-              step="1"
-              value={state.plotWidth !== undefined && state.plotWidth !== null ? state.plotWidth : ''}
+              step="any"
+              value={localWidth}
               onChange={(e) => {
                 const val = e.target.value;
-                updateState({ plotWidth: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
-                clearError('dimensions');
+                setLocalWidth(val);
+                if (val !== '') {
+                  const num = parseFloat(val);
+                  if (!isNaN(num) && num > 0) {
+                    updateState({ plotWidth: num });
+                    clearError('dimensions');
+                  }
+                }
               }}
               onBlur={() => {
-                if (!state.plotWidth || Number(state.plotWidth) < 10) {
-                  updateState({ plotWidth: 30 });
-                }
+                const num = parseFloat(localWidth);
+                const finalVal = (!isNaN(num) && num >= 10 && num <= 500) ? num : (isNaN(num) || num < 10 ? 30 : 500);
+                setLocalWidth(String(finalVal));
+                updateState({ plotWidth: finalVal });
               }}
               placeholder="30"
               className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 font-mono"
@@ -236,17 +275,24 @@ export function StepPlotDetails({ state, updateState, estimation }) {
               type="number"
               min="10"
               max="500"
-              step="1"
-              value={state.plotLength !== undefined && state.plotLength !== null ? state.plotLength : ''}
+              step="any"
+              value={localLength}
               onChange={(e) => {
                 const val = e.target.value;
-                updateState({ plotLength: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
-                clearError('dimensions');
+                setLocalLength(val);
+                if (val !== '') {
+                  const num = parseFloat(val);
+                  if (!isNaN(num) && num > 0) {
+                    updateState({ plotLength: num });
+                    clearError('dimensions');
+                  }
+                }
               }}
               onBlur={() => {
-                if (!state.plotLength || Number(state.plotLength) < 10) {
-                  updateState({ plotLength: 40 });
-                }
+                const num = parseFloat(localLength);
+                const finalVal = (!isNaN(num) && num >= 10 && num <= 500) ? num : (isNaN(num) || num < 10 ? 40 : 500);
+                setLocalLength(String(finalVal));
+                updateState({ plotLength: finalVal });
               }}
               placeholder="40"
               className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 font-mono"
@@ -256,22 +302,29 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           <div>
             <label className="text-xs font-bold text-[#475569] mb-1.5 flex items-center justify-between">
               <span>Road Width (ft)</span>
-              <span className="text-[10px] text-[#64748B] font-mono">Feet</span>
+              <span className="text-[10px] text-[#64748B] font-mono">Feet (e.g. 9.5)</span>
             </label>
             <input
               type="number"
-              min="5"
+              min="3"
               max="200"
-              step="1"
-              value={state.roadWidth !== undefined && state.roadWidth !== null ? state.roadWidth : ''}
+              step="any"
+              value={localRoadWidth}
               onChange={(e) => {
                 const val = e.target.value;
-                updateState({ roadWidth: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
+                setLocalRoadWidth(val);
+                if (val !== '') {
+                  const num = parseFloat(val);
+                  if (!isNaN(num) && num > 0) {
+                    updateState({ roadWidth: num });
+                  }
+                }
               }}
               onBlur={() => {
-                if (!state.roadWidth || Number(state.roadWidth) < 5) {
-                  updateState({ roadWidth: 30 });
-                }
+                const num = parseFloat(localRoadWidth);
+                const finalVal = (!isNaN(num) && num >= 3 && num <= 200) ? num : (isNaN(num) || num < 3 ? 30 : 200);
+                setLocalRoadWidth(String(finalVal));
+                updateState({ roadWidth: finalVal });
               }}
               placeholder="30"
               className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-white border border-[#CBD5E1] text-[#172033] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 font-mono"
@@ -298,18 +351,24 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           <div>
             <span className="text-[10px] text-[#64748B] font-sans block font-medium">Gross Plot Area</span>
             <span className="font-bold text-[#172033] text-sm">{formatNumber(currentPlotArea)} sq.ft</span>
+            <span className="text-[9px] text-[#64748B] font-sans block mt-0.5">{state.plotWidth || 30} × {state.plotLength || 40} ft</span>
           </div>
           <div>
-            <span className="text-[10px] text-[#64748B] font-sans block font-medium">Number of Floors</span>
-            <span className="font-bold text-[#172033] text-sm">{state.numFloors || 2} Floors</span>
+            <span className="text-[10px] text-[#64748B] font-sans block font-medium">Carpet Area (70% Basis)</span>
+            <span className="font-bold text-[#059669] text-sm">{displayCarpetArea} sq.ft</span>
+            <span className="text-[9px] text-[#059669] font-sans block mt-0.5">70% of SBA ({formatNumber(estimation.totalBuiltupArea)} × 70%)</span>
           </div>
           <div>
-            <span className="text-[10px] text-[#64748B] font-sans block font-medium">Built-Up Area (SBA)</span>
+            <span className="text-[10px] text-[#64748B] font-sans block font-medium">Constructed Built-Up (SBA)</span>
             <span className="font-bold text-[#2563EB] text-sm">{formatNumber(estimation.totalBuiltupArea)} sq.ft</span>
+            <span className="text-[9px] text-[#2563EB] font-sans block mt-0.5">
+              {state.useTargetBua ? 'Manual SBA Override' : `Auto-calculated (${state.numFloors || 2} Floors)`}
+            </span>
           </div>
           <div>
-            <span className="text-[10px] text-[#64748B] font-sans block font-medium">Carpet Area</span>
-            <span className="font-bold text-[#059669] text-sm">{formatNumber(estimation.totalCarpetArea)} sq.ft</span>
+            <span className="text-[10px] text-[#64748B] font-sans block font-medium">Floor Configuration</span>
+            <span className="font-bold text-[#172033] text-sm">{state.numFloors || 2} Floors</span>
+            <span className="text-[9px] text-[#64748B] font-sans block mt-0.5">G + {(state.numFloors || 2) - 1} Levels</span>
           </div>
         </div>
       </div>
@@ -345,14 +404,19 @@ export function StepPlotDetails({ state, updateState, estimation }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-[#475569]">
-                Target Built-Up Area (sq.ft)
+                Constructed Super Built-Up Area (SBA) / Target BUA (sq.ft)
               </label>
               <div className="flex items-center space-x-1.5">
                 <input
                   type="checkbox"
                   id="targetBuaOverrideCheck"
                   checked={Boolean(state.useTargetBua)}
-                  onChange={(e) => updateState({ useTargetBua: e.target.checked })}
+                  onChange={(e) => updateState({ 
+                    useTargetBua: e.target.checked,
+                    ...(e.target.checked && (!state.targetBuaInput || Number(state.targetBuaInput) === 0) 
+                      ? { targetBuaInput: estimation.totalBuiltupArea || 3025 } 
+                      : {})
+                  })}
                   className="rounded text-[#2563EB] focus:ring-[#2563EB] accent-[#2563EB]"
                 />
                 <label htmlFor="targetBuaOverrideCheck" className="text-[11px] font-bold text-[#64748B] cursor-pointer">
@@ -363,6 +427,9 @@ export function StepPlotDetails({ state, updateState, estimation }) {
 
             <div className="relative">
               <input
+                id="targetBuaInput"
+                name="targetBuaInput"
+                data-testid="target-bua-input"
                 type="number"
                 min="100"
                 max="50000"
@@ -373,7 +440,7 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                   const val = e.target.value;
                   updateState({ targetBuaInput: val === '' ? '' : Math.max(0, parseFloat(val) || 0) });
                 }}
-                placeholder={state.useTargetBua ? 'Enter manual SBA' : 'Calculated automatically from room layout'}
+                placeholder={state.useTargetBua ? 'Enter manual SBA' : 'Calculated automatically from plot dimensions'}
                 className={`w-full px-3 py-2 pr-28 text-xs font-bold rounded-xl border font-mono transition-all ${
                   state.useTargetBua
                     ? 'bg-white border-[#2563EB] text-[#172033] focus:outline-none focus:ring-2 focus:ring-blue-100'
@@ -386,7 +453,7 @@ export function StepPlotDetails({ state, updateState, estimation }) {
             </div>
             {!state.useTargetBua && (
               <span className="text-[10px] text-[#059669] font-medium flex items-center space-x-1">
-                <span>✓ Auto-calculated from room layout ({state.numFloors || 2} floors = {formatNumber(estimation.totalBuiltupArea)} sq.ft SBA)</span>
+                <span>✓ Auto-calculated SBA ({formatNumber(estimation.totalBuiltupArea)} sq.ft = {state.plotWidth || 30} × {state.plotLength || 40} ft)</span>
               </span>
             )}
           </div>

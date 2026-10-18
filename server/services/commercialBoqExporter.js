@@ -319,19 +319,34 @@ function addMaterialIntelligenceSheet(workbook, boq, headerFont, headerFill, reg
   ];
 }
 
+function fmtPdfINR(val, decimals = 2) {
+  const num = Number(val) || 0;
+  return 'Rs. ' + num.toLocaleString('en-IN', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
 /**
  * Generates a clean, multi-page PDF document buffer from a commercial BOQ.
  * Supports:
- * - Mode A (Package Estimate)
- * - Mode B (Detailed BOQ)
- * - Long descriptions with dynamic row height (no truncation or clipping)
+ * - Mode A (Package Estimate) in Portrait A4
+ * - Mode B (Detailed BOQ) in Landscape A4 (762 pt printable width for long descriptions)
+ * - Dynamic row heights without truncation or clipping
  * - Repeated table headers across pages
  * - Page numbering ("Page X of Y")
+ * - Safe typography without broken currency glyphs
  */
 async function exportToPDF(boq) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 40, size: 'A4', bufferPages: true });
+      const isPackageMode = boq.mode === 'PACKAGE' || Boolean(boq.packageEstimate && (!boq.sheets || boq.sheets.length === 0));
+      const layout = isPackageMode ? 'portrait' : 'landscape';
+      const printableWidth = isPackageMode ? 515 : 762;
+      const maxY = isPackageMode ? 740 : 495;
+      const footerY = isPackageMode ? 785 : 540;
+
+      const doc = new PDFDocument({ margin: 40, size: 'A4', layout, bufferPages: true });
       const buffers = [];
 
       doc.on('data', b => buffers.push(b));
@@ -339,10 +354,8 @@ async function exportToPDF(boq) {
         resolve(Buffer.concat(buffers));
       });
 
-      const isPackageMode = boq.mode === 'PACKAGE' || Boolean(boq.packageEstimate && (!boq.sheets || boq.sheets.length === 0));
-
       // Header Banner
-      doc.rect(40, 40, 515, 65).fill('#1E3A8A');
+      doc.rect(40, 40, printableWidth, 65).fill('#1E3A8A');
       doc.fillColor('#FFFFFF').fontSize(18).font('Helvetica-Bold').text('Buildiqo.ai', 55, 52);
       doc.fontSize(10).font('Helvetica').text(
         isPackageMode 
@@ -358,7 +371,7 @@ async function exportToPDF(boq) {
       doc.y = 120;
 
       // Project & Client Metadata Block
-      doc.fillColor('#0F172A').fontSize(13).font('Helvetica-Bold').text(boq.title || 'Construction Estimate Report', 40, doc.y);
+      doc.fillColor('#0F172A').fontSize(13).font('Helvetica-Bold').text(boq.title || 'Commercial Construction Estimate Report', 40, doc.y);
       doc.moveDown(0.2);
 
       const clientName = boq.clientInfo?.customerName || boq.customerName || 'Valued Client';
@@ -372,7 +385,7 @@ async function exportToPDF(boq) {
       if (isPackageMode && boq.packageEstimate) {
         const pkg = boq.packageEstimate;
 
-        doc.rect(40, doc.y, 515, 24).fill('#F1F5F9');
+        doc.rect(40, doc.y, printableWidth, 24).fill('#F1F5F9');
         doc.fillColor('#1E3A8A').fontSize(10).font('Helvetica-Bold').text(
           'PACKAGE CONSTRUCTION COST SUMMARY',
           50,
@@ -385,18 +398,18 @@ async function exportToPDF(boq) {
           ['Total Built-up Area (SBA)', `${(pkg.totalBuiltupArea || 0).toLocaleString('en-IN')} sq.ft`],
           ['Floor Count', `${pkg.numFloors || 1} Floor(s)`],
           ['Selected Construction Package', pkg.packageName || 'Standard Package'],
-          ['Package Rate per sq. ft.', `₹${(pkg.ratePerSqFt || 0).toLocaleString('en-IN')}/sq.ft`],
-          ['Calculation Formula', pkg.formula || `${pkg.totalBuiltupArea} sq.ft × ₹${pkg.ratePerSqFt}/sq.ft`],
-          ['Base Construction Cost (SBA × Rate)', `₹${(pkg.estimatedCost || 0).toLocaleString('en-IN')}`],
-          [`Applicable GST (${pkg.gstRate || 0}%)`, `₹${(pkg.gstAmount || 0).toLocaleString('en-IN')}`],
-          ['Grand Total Investment (Incl. GST)', `₹${(pkg.grandTotal || 0).toLocaleString('en-IN')}`]
+          ['Package Rate per sq. ft.', `${fmtPdfINR(pkg.ratePerSqFt, 0)}/sq.ft`],
+          ['Calculation Formula', pkg.formula || `${pkg.totalBuiltupArea} sq.ft × ${fmtPdfINR(pkg.ratePerSqFt, 0)}/sq.ft`],
+          ['Base Construction Cost (SBA × Rate)', fmtPdfINR(pkg.estimatedCost)],
+          [`Applicable GST (${pkg.gstRate || 0}%)`, fmtPdfINR(pkg.gstAmount)],
+          ['Grand Total Investment (Incl. GST)', fmtPdfINR(pkg.grandTotal)]
         ];
 
         let curY = doc.y;
         for (let i = 0; i < params.length; i++) {
           const isGrand = i === params.length - 1;
           const bg = isGrand ? '#EFF6FF' : (i % 2 === 0 ? '#FFFFFF' : '#F8FAFC');
-          doc.rect(40, curY, 515, 20).fill(bg);
+          doc.rect(40, curY, printableWidth, 20).fill(bg);
           
           doc.fillColor(isGrand ? '#1E3A8A' : '#334155')
              .font(isGrand ? 'Helvetica-Bold' : 'Helvetica')
@@ -418,7 +431,7 @@ async function exportToPDF(boq) {
           doc.fillColor('#1E3A8A').fontSize(10).font('Helvetica-Bold').text('FLOOR-WISE BUILT-UP AREA BREAKDOWN');
           doc.moveDown(0.4);
 
-          doc.rect(40, doc.y, 515, 18).fill('#E2E8F0');
+          doc.rect(40, doc.y, printableWidth, 18).fill('#E2E8F0');
           doc.fillColor('#0F172A').fontSize(8).font('Helvetica-Bold');
           doc.text('#', 50, doc.y + 5);
           doc.text('Floor Name', 80, doc.y + 5);
@@ -429,7 +442,7 @@ async function exportToPDF(boq) {
           let fY = doc.y + 18;
           pkg.floors.forEach((fl, idx) => {
             const bg = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
-            doc.rect(40, fY, 515, 18).fill(bg);
+            doc.rect(40, fY, printableWidth, 18).fill(bg);
             doc.fillColor('#334155').font('Helvetica').fontSize(8);
             doc.text(String(idx + 1), 50, fY + 5);
             doc.text(fl.name || `Floor ${fl.floorNumber}`, 80, fY + 5);
@@ -442,17 +455,17 @@ async function exportToPDF(boq) {
           doc.y = fY + 20;
         }
 
-        renderDisclaimerAndPageNumbers(doc);
+        renderDisclaimerAndPageNumbers(doc, printableWidth, footerY);
         doc.end();
         return;
       }
 
-      // ================= MODE B: DETAILED BOQ PDF =================
-      const colX = [40, 75, 265, 315, 375, 455];
-      const colW = [30, 185, 45, 55, 75, 95];
+      // ================= MODE B: DETAILED BOQ PDF (LANDSCAPE) =================
+      const colX = [40, 75, 410, 465, 545, 655];
+      const colW = [30, 330, 50, 75, 105, 140];
 
       function drawTableHeader(y) {
-        doc.rect(40, y, 515, 18).fill('#1E3A8A');
+        doc.rect(40, y, printableWidth, 18).fill('#1E3A8A');
         doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold');
         doc.text('Item', colX[0], y + 5);
         doc.text('Description & Specification', colX[1], y + 5);
@@ -466,18 +479,18 @@ async function exportToPDF(boq) {
       for (const sheet of (boq.sheets || [])) {
         if (sheet.isSummarySheet) continue;
 
-        if (doc.y > 680) doc.addPage();
+        if (doc.y > maxY - 40) doc.addPage();
 
         doc.fillColor('#1E3A8A').fontSize(11).font('Helvetica-Bold').text(`DISCIPLINE: ${sheet.name.toUpperCase()}`);
         doc.moveDown(0.4);
 
         for (const section of (sheet.sections || [])) {
-          if (doc.y > 690) doc.addPage();
+          if (doc.y > maxY - 30) doc.addPage();
 
           // Section Bar
-          doc.rect(40, doc.y, 515, 18).fill('#E2E8F0');
+          doc.rect(40, doc.y, printableWidth, 18).fill('#E2E8F0');
           doc.fillColor('#0F172A').fontSize(8.5).font('Helvetica-Bold').text(
-            `${section.code ? section.code + ' ' : ''}${section.name} (Subtotal: ₹${(section.subtotal || 0).toLocaleString('en-IN')})`,
+            `${section.code ? section.code + ' ' : ''}${section.name} (Subtotal: ${fmtPdfINR(section.subtotal)})`,
             48,
             doc.y + 5
           );
@@ -496,7 +509,7 @@ async function exportToPDF(boq) {
             const rowHeight = Math.max(16, Math.ceil(textHeight) + 6);
 
             // Page break check
-            if (curY + rowHeight > 760) {
+            if (curY + rowHeight > maxY) {
               doc.addPage();
               doc.fillColor('#1E3A8A').fontSize(9).font('Helvetica-Bold').text(
                 `DISCIPLINE: ${sheet.name.toUpperCase()} (Contd.)`, 40, 45
@@ -505,7 +518,7 @@ async function exportToPDF(boq) {
             }
 
             // Zebra stripe
-            doc.rect(40, curY, 515, rowHeight).fill(curY % 2 === 0 ? '#FFFFFF' : '#F8FAFC');
+            doc.rect(40, curY, printableWidth, rowHeight).fill(curY % 2 === 0 ? '#FFFFFF' : '#F8FAFC');
 
             doc.fillColor('#334155').font('Helvetica').fontSize(7.5);
             doc.text(item.itemNo || '•', colX[0], curY + 4);
@@ -514,8 +527,8 @@ async function exportToPDF(boq) {
             
             const qtyVal = item.quantityBasis === 'designQuantity' ? (item.designQuantity ?? item.quantity) : (item.siteQuantity ?? item.quantity);
             doc.text(String(qtyVal ?? 0), colX[3], curY + 4, { width: colW[3], align: 'right' });
-            doc.text(`₹${(item.currentRate || 0).toLocaleString('en-IN')}`, colX[4], curY + 4, { width: colW[4], align: 'right' });
-            doc.text(`₹${(item.amount || 0).toLocaleString('en-IN')}`, colX[5], curY + 4, { width: colW[5], align: 'right' });
+            doc.text(fmtPdfINR(item.currentRate), colX[4], curY + 4, { width: colW[4], align: 'right' });
+            doc.text(fmtPdfINR(item.amount), colX[5], curY + 4, { width: colW[5], align: 'right' });
 
             curY += rowHeight;
           }
@@ -525,9 +538,9 @@ async function exportToPDF(boq) {
       }
 
       // Final Grand Summary Block
-      if (doc.y > 660) doc.addPage();
+      if (doc.y > maxY - 60) doc.addPage();
       doc.moveDown(0.8);
-      doc.rect(40, doc.y, 515, 2).fill('#1E3A8A');
+      doc.rect(40, doc.y, printableWidth, 2).fill('#1E3A8A');
       doc.moveDown(0.8);
 
       doc.fillColor('#1E3A8A').fontSize(11).font('Helvetica-Bold').text('FINAL COMMERCIAL ABSTRACT SUMMARY');
@@ -539,15 +552,15 @@ async function exportToPDF(boq) {
       const grandTotal = boq.totals ? boq.totals.grandTotal : 0;
 
       const summaryLines = [
-        ['Net BOQ Taxable Subtotal', `₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
-        [`Goods & Services Tax (GST @ ${gstRate}%)`, `₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
-        ['Grand Total Project Cost (All Inclusive)', `₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`]
+        ['Net BOQ Taxable Subtotal', fmtPdfINR(subtotal)],
+        [`Goods & Services Tax (GST @ ${gstRate}%)`, fmtPdfINR(gstAmount)],
+        ['Grand Total Project Cost (All Inclusive)', fmtPdfINR(grandTotal)]
       ];
 
       let sY = doc.y;
       for (let i = 0; i < summaryLines.length; i++) {
         const isGrand = i === summaryLines.length - 1;
-        doc.rect(40, sY, 515, 20).fill(isGrand ? '#EFF6FF' : (i % 2 === 0 ? '#FFFFFF' : '#F8FAFC'));
+        doc.rect(40, sY, printableWidth, 20).fill(isGrand ? '#EFF6FF' : (i % 2 === 0 ? '#FFFFFF' : '#F8FAFC'));
         doc.fillColor(isGrand ? '#1E3A8A' : '#334155')
            .font(isGrand ? 'Helvetica-Bold' : 'Helvetica')
            .fontSize(8.5)
@@ -555,13 +568,13 @@ async function exportToPDF(boq) {
         doc.fillColor(isGrand ? '#1E3A8A' : '#0F172A')
            .font('Helvetica-Bold')
            .fontSize(isGrand ? 10 : 8.5)
-           .text(summaryLines[i][1], 340, sY + (isGrand ? 5 : 6), { width: 200, align: 'right' });
+           .text(summaryLines[i][1], printableWidth - 210, sY + (isGrand ? 5 : 6), { width: 200, align: 'right' });
         sY += 20;
       }
 
       doc.y = sY + 15;
 
-      renderDisclaimerAndPageNumbers(doc);
+      renderDisclaimerAndPageNumbers(doc, printableWidth, footerY);
       doc.end();
     } catch (err) {
       reject(err);
@@ -569,29 +582,30 @@ async function exportToPDF(boq) {
   });
 }
 
-function renderDisclaimerAndPageNumbers(doc) {
+function renderDisclaimerAndPageNumbers(doc, printableWidth = 515, footerY = 805) {
   // Disclaimer Banner at the bottom of the last page
-  if (doc.y > 720) doc.addPage();
-  doc.rect(40, doc.y, 515, 38).fill('#F8FAFC');
+  if (doc.y > footerY - 50) doc.addPage();
+  doc.rect(40, doc.y, printableWidth, 38).fill('#F8FAFC');
   doc.fillColor('#64748B').fontSize(7).font('Helvetica-Oblique').text(
     'Commercial Notice: All figures deterministic and verified against active state baseline contracts. ' +
     'Direct contractor trade items represent all-inclusive execution rates. ' +
     'Raw material benchmark prices are maintained independently for reference and do not override contractor rates.',
     48,
     doc.y + 6,
-    { width: 495 }
+    { width: printableWidth - 20 }
   );
 
   // Repeated page numbering across all pages in buffer
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
+    doc.page.margins.bottom = 0;
     doc.fontSize(7.5).font('Helvetica').fillColor('#94A3B8');
     doc.text(
       `Buildiqo.ai • Page ${i + 1} of ${range.count} • Strict Mathematical Takeoff Engine`,
       40,
-      805,
-      { width: 515, align: 'center' }
+      footerY,
+      { width: printableWidth, align: 'center', lineBreak: false }
     );
   }
 }

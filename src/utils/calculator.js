@@ -45,12 +45,13 @@ export function calculatePackageEstimate({
       const selectedOption = selectedMaterials[cat.id];
 
       if (selectedOption) {
-        if (selectedOption.rateSource === 'UNAVAILABLE' || (selectedOption.unitRate === 0 && selectedOption.rateSource !== 'benchmark_mode')) {
+        const isCustom = Boolean(selectedOption.id && baseOption.id && selectedOption.id !== baseOption.id);
+        if (isCustom && (selectedOption.rateSource === 'UNAVAILABLE' || (selectedOption.unitRate === 0 && selectedOption.rateSource !== 'benchmark_mode'))) {
           isPricingUnavailable = true;
         }
 
         // Only calculate delta if user chose a custom material differing from base package specification
-        if (selectedOption.id && baseOption.id && selectedOption.id !== baseOption.id) {
+        if (isCustom) {
           let qty = 0;
           switch (cat.id) {
             case 'steel':
@@ -183,7 +184,10 @@ export function calculateEstimation(state, pricingContext = null) {
 
   // Plot Area calculation with unit conversion support
   const unitDef = AREA_UNITS.find(u => u.id === state.areaUnit) || AREA_UNITS[0];
-  const plotArea = Math.max(100, Math.round((state.plotLength || 40) * (state.plotWidth || 30)));
+  const plotWidth = Number(state.plotWidth) > 0 ? Number(state.plotWidth) : 30;
+  const plotLength = Number(state.plotLength) > 0 ? Number(state.plotLength) : 40;
+  const plotArea = Math.max(10, Math.round(plotWidth * plotLength * 100) / 100);
+
 
   // Floor space calculations
   let totalCarpetArea = 0;
@@ -200,7 +204,7 @@ export function calculateEstimation(state, pricingContext = null) {
     
     // Built-up area = carpet area * 1.18 (accounting for walls, circulation, shafts)
     const builtupArea = Math.round(floorCarpet * 1.18);
-    const floorPresetBua = Number(floor.builtupArea) || Number(floor.area) || Number(floor.targetBua) || 0;
+    const floorPresetBua = Number(floor.builtupArea) || (floorCarpet > 0 ? builtupArea : (Number(floor.area) || Number(floor.targetBua) || 0));
 
     return {
       id: floor.id,
@@ -214,21 +218,44 @@ export function calculateEstimation(state, pricingContext = null) {
 
   const calculatedTotalBua = floorDetails.reduce((sum, f) => sum + f.builtupArea, 0);
   
-  // Total BUA determination
+  // Total BUA determination:
+  // 1. If explicit manual SBA override is enabled with a positive value, use it.
+  // 2. If targetBuaInput is explicitly provided in state (> 0) without useTargetBua flag, use it.
+  // 3. Default: SBA matches plot dimensions (plotArea), ensuring 55 × 55 ft plot yields 3,025 sq.ft SBA.
   let totalBuiltupArea;
   if (state.useTargetBua && Number(state.targetBuaInput) > 0) {
     totalBuiltupArea = Number(state.targetBuaInput);
-  } else if (state.useTargetBua === false) {
-    totalBuiltupArea = Math.max(calculatedTotalBua, 400);
+  } else if (state.useTargetBua === undefined && Number(state.targetBuaInput) > 0) {
+    totalBuiltupArea = Number(state.targetBuaInput);
   } else {
-    // When useTargetBua is undefined (such as programmatic test cases or legacy state):
-    if (Number(state.targetBuaInput) > 0 && (calculatedTotalBua === 0 || calculatedTotalBua <= 400 || calculatedTotalBua === Number(state.targetBuaInput))) {
-      totalBuiltupArea = Number(state.targetBuaInput);
-    } else {
-      totalBuiltupArea = Math.max(calculatedTotalBua, 400);
-    }
+    // Default dimension-derived SBA matches plot area (e.g. 55 × 55 = 3,025 sq.ft)
+    totalBuiltupArea = plotArea > 0 ? plotArea : (calculatedTotalBua > 0 ? calculatedTotalBua : 400);
   }
-  const groundFloorBua = floorDetails[0]?.builtupArea || Math.round(totalBuiltupArea / (floors.length || state.numFloors || 1));
+
+  // Permissible / Benchmark Carpet Area basis (Default 70% of SBA as specified by client: e.g. 55 × 55 = 3,025 sq.ft -> 2,117.5 sq.ft)
+  const carpetAreaPercentage = Number(state.carpetAreaPercentage) > 0 ? Number(state.carpetAreaPercentage) : 70;
+  const plotCarpetArea = Math.round(totalBuiltupArea * (carpetAreaPercentage / 100) * 10) / 10;
+
+  // Normalized floor details: when custom rooms are not defined, distribute SBA evenly across floors
+  const numFloorsCount = floors.length || state.numFloors || 1;
+  const perFloorBua = Math.round(totalBuiltupArea / numFloorsCount * 10) / 10;
+  const perFloorCarpet = Math.round(perFloorBua * (carpetAreaPercentage / 100) * 10) / 10;
+
+  const normalizedFloorDetails = floors.map((floor, idx) => {
+    if (!state.hasCustomRooms) {
+      return {
+        id: floor.id || `floor-${idx}`,
+        name: floor.name || (idx === 0 ? 'Ground Floor' : `${idx}th Floor`),
+        floorNumber: floor.floorNumber ?? idx,
+        carpetArea: perFloorCarpet,
+        builtupArea: perFloorBua,
+        roomCount: floor.rooms?.length || 4
+      };
+    }
+    return floorDetails[idx];
+  });
+
+  const groundFloorBua = normalizedFloorDetails[0]?.builtupArea || Math.round(totalBuiltupArea / numFloorsCount);
   const coverageLimit = city.id === 'bangalore' ? 0.55 : 0.60;
   const groundCoverageRatio = plotArea > 0 ? (groundFloorBua / plotArea) : 0;
   const coverageCheck = {
@@ -619,11 +646,11 @@ export function calculateEstimation(state, pricingContext = null) {
     packageKey: tier,
     customPackageRate: state.customPackageRate,
     gstRate: state.packageGstRate !== undefined ? state.packageGstRate : (state.gstRatePct ?? 18),
-    floors: floorDetails,
+    floors: normalizedFloorDetails,
     numFloors: state.numFloors || floors.length || 1,
     selectedMaterials,
     pricingStatus,
-    totalCarpetArea,
+    totalCarpetArea: !state.hasCustomRooms ? plotCarpetArea : totalCarpetArea,
     totalBaths,
     totalKitchens
   });
@@ -631,8 +658,12 @@ export function calculateEstimation(state, pricingContext = null) {
   return {
     packageEstimate,
     plotArea,
-    totalCarpetArea,
+    plotCarpetArea,
+    carpetAreaPercentage,
+    dimensionCarpetArea: plotCarpetArea,
+    totalCarpetArea: !state.hasCustomRooms ? plotCarpetArea : totalCarpetArea,
     totalBuiltupArea,
+    floors: normalizedFloorDetails,
     groundFloorBua,
     groundCoverageRatio,
     coverageCheck,

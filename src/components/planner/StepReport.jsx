@@ -12,16 +12,19 @@ import {
   Check, 
   Copy,
   Edit3,
-  HardHat
+  HardHat,
+  Loader2
 } from 'lucide-react';
 import { formatCurrency, formatNumber, useEstimateStore, ENABLE_SUBSCRIPTIONS } from '../../store/useEstimateStore';
 import { ExportOptionsBar } from '../common/ExportOptionsBar';
 import { BuildiqoLogo } from '../common/BuildiqoLogo';
 import { StatusBadge } from '../ui/StatusBadge';
+import { exportToPDF } from '../../utils/exportUtils';
 
 export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep }) {
   const { saveCurrentProject, captureCustomerLead, currentUser, subscription, updateState } = useEstimateStore();
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -40,19 +43,14 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
     }
   };
 
-  const handlePrint = () => {
-    // Automatically capture customer requirement lead in the Website Owner inbox
+  const handlePrint = async () => {
+    if (isExportingPdf) return;
+    setIsExportingPdf(true);
     try {
-      if (captureCustomerLead) {
-        captureCustomerLead({
-          name: currentUser?.name || state?.customerName || ((state?.projectName || 'Project') + ' Homeowner'),
-          email: currentUser?.email || 'customer@buildiqo.ai',
-          phone: currentUser?.phone || '+91 98765 43210',
-          notes: `Customer generated formal IS 456 BOQ PDF Report for ${state?.projectName || 'Project'}. Client: ${state?.customerName || 'N/A'}, Consultant: ${state?.professionalName || 'N/A'}`
-        });
-      }
-    } catch (e) {}
-    window.print();
+      await exportToPDF(state, estimation, captureCustomerLead, currentUser);
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleShare = async () => {
@@ -157,10 +155,15 @@ export function StepReport({ state, estimation, onOpenSavedModal, onNavigateStep
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={handlePrint}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-brand flex items-center space-x-1.5 transition-all active:scale-[0.98]"
+              disabled={isExportingPdf}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-75 text-white shadow-brand flex items-center space-x-1.5 transition-all active:scale-[0.98]"
             >
-              <Printer className="w-4 h-4 text-sky-200" />
-              <span>Print / Save PDF</span>
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 text-sky-200 animate-spin" />
+              ) : (
+                <Printer className="w-4 h-4 text-sky-200" />
+              )}
+              <span>{isExportingPdf ? 'Generating PDF...' : 'Download PDF Report'}</span>
             </button>
 
             <button

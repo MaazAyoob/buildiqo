@@ -2,6 +2,7 @@
  * Buildiqo.ai Export Utilities
  * Generates PDF (print), Excel/CSV BOQ takeoff, AutoCAD DXF floor plan, and WhatsApp shareable summary.
  */
+import { apiRequest } from './apiClient';
 
 // Format currency for text exports
 function fmt(amount) {
@@ -489,20 +490,35 @@ _Designed by Buildiqo.ai Quantity Survey Engine (IS 456:2000)_`;
 }
 
 /**
- * Triggers native print / PDF export and records customer lead
+ * Generates and downloads a dedicated professional PDF estimate report
  */
-export function exportToPDF(state, estimation, captureCustomerLead, currentUser) {
+export async function exportToPDF(state, estimation, captureCustomerLead, currentUser) {
   try {
     if (captureCustomerLead) {
       captureCustomerLead({
         name: currentUser?.name || (state.projectName || 'Homeowner') + ' Customer',
         email: currentUser?.email || 'customer@buildiqo.ai',
         phone: currentUser?.phone || '+91 98765 43210',
-        notes: 'Customer generated formal PDF / Print BOQ report.'
+        notes: 'Customer generated formal PDF BOQ estimate report.'
       });
     }
   } catch (e) {}
-  window.print();
+
+  try {
+    const payload = { state, estimation };
+    const blob = await apiRequest('/api/projects/export/pdf', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      responseType: 'blob'
+    });
+
+    const defaultName = state.projectName || 'Buildiqo_Estimate';
+    const cleanName = defaultName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    triggerBrowserDownload(blob, `${cleanName}_Estimate_Report.pdf`);
+  } catch (err) {
+    console.warn('Dedicated PDF API generation failed, falling back to browser print:', err);
+    window.print();
+  }
 }
 
 // Internal helper to trigger file download in browser
