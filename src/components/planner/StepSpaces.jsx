@@ -88,7 +88,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
         })
       };
     });
-    updateState({ floors: updatedFloors });
+    updateState({ floors: updatedFloors, hasCustomRooms: true });
   };
 
   const handleUpdateRoomName = (roomId, name) => {
@@ -102,7 +102,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
         })
       };
     });
-    updateState({ floors: updatedFloors });
+    updateState({ floors: updatedFloors, hasCustomRooms: true });
   };
 
   const handleDeleteRoom = (roomId) => {
@@ -113,7 +113,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
         rooms: floor.rooms.filter(r => r.id !== roomId)
       };
     });
-    updateState({ floors: updatedFloors });
+    updateState({ floors: updatedFloors, hasCustomRooms: true });
   };
 
   const handleAddRoom = (roomPreset) => {
@@ -133,7 +133,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
         rooms: [...floor.rooms, newRoom]
       };
     });
-    updateState({ floors: updatedFloors });
+    updateState({ floors: updatedFloors, hasCustomRooms: true });
     setIsAddRoomModalOpen(false);
   };
 
@@ -157,7 +157,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
         rooms: [...floor.rooms, newRoom]
       };
     });
-    updateState({ floors: updatedFloors });
+    updateState({ floors: updatedFloors, hasCustomRooms: true });
     setCustomRoomName('');
     setIsAddRoomModalOpen(false);
   };
@@ -284,7 +284,7 @@ export function StepSpaces({ state, updateState, estimation, setRoute }) {
       };
     });
 
-    updateState({ floors: updatedFloors });
+    updateState({ floors: updatedFloors, hasCustomRooms: true });
     setIsDxfReviewModalOpen(false);
     setActiveFloorIndex(targetFloorIndex);
   };

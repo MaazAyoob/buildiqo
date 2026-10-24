@@ -122,9 +122,18 @@ async function generatePlannerPDF(state = {}, estimation = {}) {
       doc.y = fY + 14;
 
       // ================= 4. FLOOR BREAKDOWN TABLE =================
-      const floors = state.floors || [
-        { name: 'Ground Floor', carpetArea: Math.round(carpetArea / numFloors), builtupArea: Math.round(bua / numFloors), roomCount: 4 }
-      ];
+      const rawFloors = (estimation.floors && estimation.floors.length > 0)
+        ? estimation.floors
+        : (estimation.floorDetails && estimation.floorDetails.length > 0)
+          ? estimation.floorDetails
+          : (state.floors || []);
+
+      const floors = rawFloors.map((fl, idx) => ({
+        name: fl.name || (idx === 0 ? 'Ground Floor' : idx === 1 ? '1st Floor' : idx === 2 ? '2nd Floor' : idx === 3 ? '3rd Floor' : `${idx}th Floor`),
+        carpetArea: fl.carpetArea || Math.round((fl.builtupArea || Math.round(bua / numFloors)) * 0.70 * 10) / 10,
+        builtupArea: fl.builtupArea || Math.round(bua / numFloors),
+        roomCount: fl.roomCount || state.floors?.[idx]?.rooms?.length || 4
+      }));
 
       doc.fillColor('#1E3A8A').fontSize(11).font('Helvetica-Bold').text('FLOOR-WISE AREA & ROOM DISTRIBUTION');
       doc.moveDown(0.4);

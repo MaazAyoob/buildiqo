@@ -362,7 +362,7 @@ export function StepPlotDetails({ state, updateState, estimation }) {
             <span className="text-[10px] text-[#64748B] font-sans block font-medium">Constructed Built-Up (SBA)</span>
             <span className="font-bold text-[#2563EB] text-sm">{formatNumber(estimation.totalBuiltupArea)} sq.ft</span>
             <span className="text-[9px] text-[#2563EB] font-sans block mt-0.5">
-              {state.useTargetBua ? 'Manual SBA Override' : `Auto-calculated (${state.numFloors || 2} Floors)`}
+              {state.useTargetBua ? 'Manual SBA Override' : `Auto-calculated (${state.numFloors || 2} Floor${(state.numFloors || 2) > 1 ? 's' : ''})`}
             </span>
           </div>
           <div>
@@ -411,12 +411,17 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                   type="checkbox"
                   id="targetBuaOverrideCheck"
                   checked={Boolean(state.useTargetBua)}
-                  onChange={(e) => updateState({ 
-                    useTargetBua: e.target.checked,
-                    ...(e.target.checked && (!state.targetBuaInput || Number(state.targetBuaInput) === 0) 
-                      ? { targetBuaInput: estimation.totalBuiltupArea || 3025 } 
-                      : {})
-                  })}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    updateState({ 
+                      useTargetBua: checked,
+                      targetBuaInput: checked 
+                        ? (state.targetBuaInput && Number(state.targetBuaInput) > 0 
+                            ? state.targetBuaInput 
+                            : (estimation.totalBuiltupArea || (currentPlotArea * (state.numFloors || 2))))
+                        : ''
+                    });
+                  }}
                   className="rounded text-[#2563EB] focus:ring-[#2563EB] accent-[#2563EB]"
                 />
                 <label htmlFor="targetBuaOverrideCheck" className="text-[11px] font-bold text-[#64748B] cursor-pointer">
@@ -453,7 +458,7 @@ export function StepPlotDetails({ state, updateState, estimation }) {
             </div>
             {!state.useTargetBua && (
               <span className="text-[10px] text-[#059669] font-medium flex items-center space-x-1">
-                <span>✓ Auto-calculated SBA ({formatNumber(estimation.totalBuiltupArea)} sq.ft = {state.plotWidth || 30} × {state.plotLength || 40} ft)</span>
+                <span>✓ Auto-calculated SBA ({formatNumber(estimation.totalBuiltupArea)} sq.ft = {state.plotWidth || 30} × {state.plotLength || 40} ft × {state.numFloors || 2} Floor{(state.numFloors || 2) > 1 ? 's' : ''})</span>
               </span>
             )}
           </div>

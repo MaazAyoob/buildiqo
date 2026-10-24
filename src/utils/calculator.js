@@ -218,44 +218,72 @@ export function calculateEstimation(state, pricingContext = null) {
 
   const calculatedTotalBua = floorDetails.reduce((sum, f) => sum + f.builtupArea, 0);
   
-  // Total BUA determination:
-  // 1. If explicit manual SBA override is enabled with a positive value, use it.
-  // 2. If targetBuaInput is explicitly provided in state (> 0) without useTargetBua flag, use it.
-  // 3. Default: SBA matches plot dimensions (plotArea), ensuring 55 × 55 ft plot yields 3,025 sq.ft SBA.
+  // Authoritative Floor Count
+  const numFloorsCount = Math.max(1, Number(state.numFloors) || (floors?.length || 1));
+
+  // Determine whether explicit manual SBA override is active
+  const isExplicitManualOverride = Boolean(
+    (state.useTargetBua && Number(state.targetBuaInput) > 0) ||
+    (state.useTargetBua === undefined && Number(state.targetBuaInput) > 0)
+  );
+
+  // Determine whether custom differing floor areas or custom room programs are active
+  const hasCustomFloorAreas = Boolean(
+    !isExplicitManualOverride && state.hasCustomRooms && calculatedTotalBua > 0
+  );
+
+  // Authoritative Total SBA/BUA determination:
+  // 1. Explicit manual SBA override is enabled with a positive value:
+  //    Represents total SBA across all floors; do NOT multiply by floor count again.
+  // 2. Programmatic targetBuaInput without useTargetBua flag:
+  //    Maintains backward compatibility with unit tests and API callers.
+  // 3. Custom room / floor spaces explicitly configured:
+  //    Sum of individual floor built-up areas.
+  // 4. Default / Automatic Equal Floor Plate Model:
+  //    Ground-floor footprint equals plot area (plotWidth × plotLength).
+  //    Total SBA = per-floor built-up area × number of floors (G+0 = 1, G+1 = 2, G+2 = 3, G+3 = 4, G+4 = 5).
   let totalBuiltupArea;
-  if (state.useTargetBua && Number(state.targetBuaInput) > 0) {
+  if (isExplicitManualOverride) {
     totalBuiltupArea = Number(state.targetBuaInput);
-  } else if (state.useTargetBua === undefined && Number(state.targetBuaInput) > 0) {
-    totalBuiltupArea = Number(state.targetBuaInput);
+  } else if (hasCustomFloorAreas) {
+    totalBuiltupArea = calculatedTotalBua;
   } else {
-    // Default dimension-derived SBA matches plot area (e.g. 55 × 55 = 3,025 sq.ft)
-    totalBuiltupArea = plotArea > 0 ? plotArea : (calculatedTotalBua > 0 ? calculatedTotalBua : 400);
+    const perFloorFootprint = plotArea > 0 ? plotArea : (calculatedTotalBua > 0 ? Math.round(calculatedTotalBua / numFloorsCount) : 400);
+    totalBuiltupArea = Math.round(perFloorFootprint * numFloorsCount * 100) / 100;
   }
 
-  // Permissible / Benchmark Carpet Area basis (Default 70% of SBA as specified by client: e.g. 55 × 55 = 3,025 sq.ft -> 2,117.5 sq.ft)
+  // Permissible / Benchmark Carpet Area basis (Default 70% of SBA as specified by client)
   const carpetAreaPercentage = Number(state.carpetAreaPercentage) > 0 ? Number(state.carpetAreaPercentage) : 70;
   const plotCarpetArea = Math.round(totalBuiltupArea * (carpetAreaPercentage / 100) * 10) / 10;
 
-  // Normalized floor details: when custom rooms are not defined, distribute SBA evenly across floors
-  const numFloorsCount = floors.length || state.numFloors || 1;
-  const perFloorBua = Math.round(totalBuiltupArea / numFloorsCount * 10) / 10;
+  // Normalized floor details: distribute SBA across floors
+  const perFloorBua = Math.round((totalBuiltupArea / numFloorsCount) * 10) / 10;
   const perFloorCarpet = Math.round(perFloorBua * (carpetAreaPercentage / 100) * 10) / 10;
 
-  const normalizedFloorDetails = floors.map((floor, idx) => {
-    if (!state.hasCustomRooms) {
+  const normalizedFloorDetails = Array.from({ length: numFloorsCount }, (_, idx) => {
+    const existing = floors[idx] || {};
+    const floorName = existing.name || (idx === 0 ? 'Ground Floor' : idx === 1 ? '1st Floor' : idx === 2 ? '2nd Floor' : idx === 3 ? '3rd Floor' : `${idx}th Floor`);
+    if (!hasCustomFloorAreas) {
       return {
-        id: floor.id || `floor-${idx}`,
-        name: floor.name || (idx === 0 ? 'Ground Floor' : `${idx}th Floor`),
-        floorNumber: floor.floorNumber ?? idx,
+        id: existing.id || `floor-${idx}`,
+        name: floorName,
+        floorNumber: existing.floorNumber ?? idx,
         carpetArea: perFloorCarpet,
         builtupArea: perFloorBua,
-        roomCount: floor.rooms?.length || 4
+        roomCount: existing.rooms?.length || 4
       };
     }
-    return floorDetails[idx];
+    return floorDetails[idx] || {
+      id: existing.id || `floor-${idx}`,
+      name: floorName,
+      floorNumber: existing.floorNumber ?? idx,
+      carpetArea: perFloorCarpet,
+      builtupArea: perFloorBua,
+      roomCount: existing.rooms?.length || 4
+    };
   });
 
-  const groundFloorBua = normalizedFloorDetails[0]?.builtupArea || Math.round(totalBuiltupArea / numFloorsCount);
+  const groundFloorBua = normalizedFloorDetails[0]?.builtupArea || perFloorBua;
   const coverageLimit = city.id === 'bangalore' ? 0.55 : 0.60;
   const groundCoverageRatio = plotArea > 0 ? (groundFloorBua / plotArea) : 0;
   const coverageCheck = {
@@ -647,10 +675,10 @@ export function calculateEstimation(state, pricingContext = null) {
     customPackageRate: state.customPackageRate,
     gstRate: state.packageGstRate !== undefined ? state.packageGstRate : (state.gstRatePct ?? 18),
     floors: normalizedFloorDetails,
-    numFloors: state.numFloors || floors.length || 1,
+    numFloors: numFloorsCount,
     selectedMaterials,
     pricingStatus,
-    totalCarpetArea: !state.hasCustomRooms ? plotCarpetArea : totalCarpetArea,
+    totalCarpetArea: !hasCustomFloorAreas ? plotCarpetArea : totalCarpetArea,
     totalBaths,
     totalKitchens
   });
@@ -661,9 +689,10 @@ export function calculateEstimation(state, pricingContext = null) {
     plotCarpetArea,
     carpetAreaPercentage,
     dimensionCarpetArea: plotCarpetArea,
-    totalCarpetArea: !state.hasCustomRooms ? plotCarpetArea : totalCarpetArea,
+    totalCarpetArea: !hasCustomFloorAreas ? plotCarpetArea : totalCarpetArea,
     totalBuiltupArea,
-    floors: normalizedFloorDetails,
+    numFloors: numFloorsCount,
+    floors: packageEstimate.floors,
     groundFloorBua,
     groundCoverageRatio,
     coverageCheck,

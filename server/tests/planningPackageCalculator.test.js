@@ -523,4 +523,524 @@ test('Planning Modules Package-Based Calculation Regression Suite', async (t) =>
       fs.writeFileSync(path.join(__dirname, '../../scratch/sample_commercial_boq.pdf'), modeBPdf);
     } catch (e) {}
   });
+
+  // 17. Bangalore Client Feedback: Floor Count, Built-Up Area & Live Pricing Regression Suite (Cases A - N)
+  await t.test('17. Bangalore Client Feedback: Floor Count, Built-Up Area & Live Pricing Suite (Cases A - N)', async (st) => {
+    const { generatePlannerPDF } = require('../services/plannerReportExporter');
+    const { exportToExcel } = require('../services/commercialBoqExporter');
+
+    // Case A: 55 × 55 ft plot, G+0 (1 floor)
+    await st.test('Case A: 55 × 55 ft plot, G+0 (1 floor)', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 1,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 3025, 'Gross plot area = 55 × 55 = 3,025 sq.ft');
+      assert.strictEqual(est.groundFloorBua, 3025, 'Ground floor footprint = 3,025 sq.ft');
+      assert.strictEqual(est.totalBuiltupArea, 3025, 'Total SBA for G+0 = 1 × 3,025 = 3,025 sq.ft');
+      assert.strictEqual(est.plotCarpetArea, 2117.5, 'Carpet area (70% benchmark) = 2,117.5 sq.ft');
+      assert.strictEqual(est.costPerSqFt, 2250, 'Standard package rate = ₹2,250/sq.ft');
+      assert.strictEqual(est.estimatedCost, 6806250, 'Pre-GST cost = 3,025 × ₹2,250 = ₹68,06,250');
+      assert.strictEqual(est.gst, 1225125, '18% GST = ₹12,25,125');
+      assert.strictEqual(est.grandTotalCost, 8031375, 'Grand total = ₹80,31,375');
+      assert.strictEqual(est.floors.length, 1);
+      assert.strictEqual(est.floors[0].builtupArea, 3025);
+    });
+
+    // Case B: Same plot, G+1 (2 floors)
+    await st.test('Case B: 55 × 55 ft plot, G+1 (2 floors)', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 3025, 'Gross plot area = 3,025 sq.ft');
+      assert.strictEqual(est.groundFloorBua, 3025, 'Ground floor footprint = 3,025 sq.ft');
+      assert.strictEqual(est.totalBuiltupArea, 6050, 'Total SBA for G+1 = 2 × 3,025 = 6,050 sq.ft');
+      assert.strictEqual(est.plotCarpetArea, 4235.0, 'Carpet area (70% benchmark) = 6,050 × 0.7 = 4,235.0 sq.ft');
+      assert.strictEqual(est.costPerSqFt, 2250, 'Standard package rate = ₹2,250/sq.ft');
+      assert.strictEqual(est.estimatedCost, 13612500, 'Pre-GST cost = 6,050 × ₹2,250 = ₹1,36,12,500');
+      assert.strictEqual(est.gst, 2450250, '18% GST = ₹24,50,250');
+      assert.strictEqual(est.grandTotalCost, 16062750, 'Grand total = ₹1,60,62,750');
+      assert.strictEqual(est.floors.length, 2);
+      assert.strictEqual(est.floors[0].builtupArea, 3025);
+      assert.strictEqual(est.floors[1].builtupArea, 3025);
+      assert.strictEqual(est.floors[0].floorCost + est.floors[1].floorCost, est.estimatedCost);
+    });
+
+    // Case C: Same plot, G+2 (3 floors)
+    await st.test('Case C: 55 × 55 ft plot, G+2 (3 floors)', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 3,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 3025);
+      assert.strictEqual(est.totalBuiltupArea, 9075, 'Total SBA for G+2 = 3 × 3,025 = 9,075 sq.ft');
+      assert.strictEqual(est.plotCarpetArea, 6352.5, 'Carpet area = 9,075 × 0.7 = 6,352.5 sq.ft');
+      assert.strictEqual(est.estimatedCost, 20418750, 'Pre-GST cost = 9,075 × ₹2,250 = ₹2,04,18,750');
+      assert.strictEqual(est.gst, 3675375, '18% GST = ₹36,75,375');
+      assert.strictEqual(est.grandTotalCost, 24094125, 'Grand total = ₹2,40,94,125');
+      assert.strictEqual(est.floors.length, 3);
+    });
+
+    // Case D: Same plot, G+3 (4 floors)
+    await st.test('Case D: 55 × 55 ft plot, G+3 (4 floors)', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 4,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 3025);
+      assert.strictEqual(est.totalBuiltupArea, 12100, 'Total SBA for G+3 = 4 × 3,025 = 12,100 sq.ft');
+      assert.strictEqual(est.plotCarpetArea, 8470.0, 'Carpet area = 12,100 × 0.7 = 8,470.0 sq.ft');
+      assert.strictEqual(est.estimatedCost, 27225000, 'Pre-GST cost = 12,100 × ₹2,250 = ₹2,72,25,000');
+      assert.strictEqual(est.gst, 4900500, '18% GST = ₹49,00,500');
+      assert.strictEqual(est.grandTotalCost, 32125500, 'Grand total = ₹3,21,25,500');
+      assert.strictEqual(est.floors.length, 4);
+    });
+
+    // Case E: Same plot, G+4 (5 floors)
+    await st.test('Case E: 55 × 55 ft plot, G+4 (5 floors)', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 5,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 3025);
+      assert.strictEqual(est.totalBuiltupArea, 15125, 'Total SBA for G+4 = 5 × 3,025 = 15,125 sq.ft');
+      assert.strictEqual(est.plotCarpetArea, 10587.5, 'Carpet area = 15,125 × 0.7 = 10,587.5 sq.ft');
+      assert.strictEqual(est.estimatedCost, 34031250, 'Pre-GST cost = 15,125 × ₹2,250 = ₹3,40,31,250');
+      assert.strictEqual(est.gst, 6125625, '18% GST = ₹61,25,625');
+      assert.strictEqual(est.grandTotalCost, 40156875, 'Grand total = ₹4,01,56,875');
+      assert.strictEqual(est.floors.length, 5);
+      assert.ok(est.totalBuiltupArea > 12100, 'G+4 area is strictly greater than G+3');
+    });
+
+    // Case F: Change plot dimensions after selecting multiple floors
+    await st.test('Case F: Change plot dimensions after selecting multiple floors', () => {
+      let state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 3,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      let est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.totalBuiltupArea, 9075);
+
+      // Now user changes plot dimensions to 40 × 60 ft (2,400 sq.ft)
+      state = { ...state, plotWidth: 40, plotLength: 60 };
+      est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 2400, 'Plot area updated to 40 × 60 = 2,400 sq.ft');
+      assert.strictEqual(est.totalBuiltupArea, 7200, 'Total SBA updated to 3 × 2,400 = 7,200 sq.ft');
+      assert.strictEqual(est.estimatedCost, 7200 * 2250, 'Cost updated to 7,200 × ₹2,250 = ₹1,62,00,000');
+    });
+
+    // Case G: Change the package tier after changing floor count
+    await st.test('Case G: Change the package tier after changing floor count', () => {
+      let state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2, // G+1 -> 6,050 sq.ft
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      let est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.costPerSqFt, 2250);
+      assert.strictEqual(est.estimatedCost, 6050 * 2250); // 13,612,500
+
+      // Change to Premium: ₹2,850/sq.ft
+      state = { ...state, tier: 'premium' };
+      est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.totalBuiltupArea, 6050);
+      assert.strictEqual(est.costPerSqFt, 2850);
+      assert.strictEqual(est.estimatedCost, 6050 * 2850, '6,050 × ₹2,850 = ₹1,72,42,500');
+
+      // Change to Luxury: ₹3,800/sq.ft
+      state = { ...state, tier: 'luxury' };
+      est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.totalBuiltupArea, 6050);
+      assert.strictEqual(est.costPerSqFt, 3800);
+      assert.strictEqual(est.estimatedCost, 6050 * 3800, '6,050 × ₹3,800 = ₹2,29,90,000');
+    });
+
+    // Case H: Enable manual SBA override and enter 1,800 sq. ft.
+    await st.test('Case H: Enable manual SBA override and enter 1,800 sq. ft.', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2,
+        useTargetBua: true,
+        targetBuaInput: 1800,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.plotArea, 3025, 'Plot area remains 3,025 sq.ft');
+      assert.strictEqual(est.totalBuiltupArea, 1800, 'Manual override sets total SBA to 1,800 sq.ft');
+      assert.strictEqual(est.estimatedCost, 1800 * 2250, '1,800 × ₹2,250 = ₹40,50,000');
+      assert.strictEqual(est.gst, 729000);
+      assert.strictEqual(est.grandTotalCost, 4779000);
+    });
+
+    // Case I: Change floor count while manual override is active
+    await st.test('Case I: Change floor count while manual override is active (no double multiplication)', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 4, // Changed from 2 to 4 floors while manual override active
+        useTargetBua: true,
+        targetBuaInput: 1800,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.totalBuiltupArea, 1800, 'Total SBA remains strictly 1,800 sq.ft without multiplying by floor count');
+      assert.strictEqual(est.estimatedCost, 1800 * 2250, 'Pre-GST cost remains ₹40,50,000');
+      assert.strictEqual(est.floors.length, 4, '4 floors generated');
+      assert.strictEqual(est.floors[0].builtupArea, 450, 'Each floor allocated 1,800 / 4 = 450 sq.ft');
+    });
+
+    // Case J: Disable manual override and confirm correct automatic recalculation
+    await st.test('Case J: Disable manual override and confirm correct automatic recalculation', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 4,
+        useTargetBua: false, // Override disabled
+        targetBuaInput: 1800,
+        tier: 'standard',
+        city: 'Bengaluru',
+        state: 'Karnataka'
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.totalBuiltupArea, 12100, 'Recalculates automatically to 3,025 × 4 = 12,100 sq.ft');
+      assert.strictEqual(est.estimatedCost, 12100 * 2250, 'Pre-GST cost recalculates to 12,100 × ₹2,250 = ₹2,72,25,000');
+    });
+
+    // Case K: Verify GST, total investment and cost per square foot
+    await st.test('Case K: Verify GST, total investment and cost per square foot', () => {
+      const state = {
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 3,
+        tier: 'standard',
+        gstRatePct: 18
+      };
+      const est = calculateEstimation(state, { isBenchmark: true });
+      const sba = 9075;
+      const expectedBase = sba * 2250; // 20,418,750
+      const expectedGst = Math.round(expectedBase * 0.18); // 3,675,375
+      const expectedGrand = expectedBase + expectedGst; // 24,094,125
+
+      assert.strictEqual(est.totalBuiltupArea, sba);
+      assert.strictEqual(est.estimatedCost, expectedBase);
+      assert.strictEqual(est.gst, expectedGst);
+      assert.strictEqual(est.grandTotalCost, expectedGrand);
+      assert.strictEqual(est.grandTotalCost - est.estimatedCost, est.gst, 'GST is reconciled with zero double-counting');
+      assert.strictEqual(est.costPerSqFt, 2250, 'Denominator for cost per sq.ft is SBA');
+    });
+
+    // Case L: Verify material quantities and BOQ use the same final area
+    await st.test('Case L: Verify material quantities and BOQ use the same final area', () => {
+      const stateG0 = { plotWidth: 55, plotLength: 55, numFloors: 1, tier: 'standard' };
+      const stateG1 = { plotWidth: 55, plotLength: 55, numFloors: 2, tier: 'standard' };
+
+      const estG0 = calculateEstimation(stateG0, { isBenchmark: true });
+      const estG1 = calculateEstimation(stateG1, { isBenchmark: true });
+
+      // Steel tonnes: (sba * 3.85 * 1.05) / 1000
+      const steelG0 = (3025 * 3.85 * 1.05) / 1000;
+      const steelG1 = (6050 * 3.85 * 1.05) / 1000;
+      assert.strictEqual(Number(estG0.boqItems[0].items.find(i => i.id === 'item-steel').qty.toFixed(2)), Number(steelG0.toFixed(2)));
+      assert.strictEqual(Number(estG1.boqItems[0].items.find(i => i.id === 'item-steel').qty.toFixed(2)), Number(steelG1.toFixed(2)));
+
+      // Cement bags: round(sba * 0.42)
+      assert.strictEqual(estG0.boqItems[0].items.find(i => i.id === 'item-cement').qty, Math.round(3025 * 0.42));
+      assert.strictEqual(estG1.boqItems[0].items.find(i => i.id === 'item-cement').qty, Math.round(6050 * 0.42));
+
+      // Cement for G+1 must be exactly double G+0
+      assert.strictEqual(estG1.boqItems[0].items.find(i => i.id === 'item-cement').qty, Math.round(6050 * 0.42));
+    });
+
+    // Case M: Save and reload an estimate and verify its results
+    await st.test('Case M: Save and reload an estimate and verify its results', () => {
+      const originalState = {
+        id: 'proj_bangalore_live_test',
+        projectName: 'Bangalore Multi-Storey Residence',
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        tier: 'standard',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 3 // G+2 (9,075 sq.ft SBA)
+      };
+
+      const originalEstimation = calculateEstimation(originalState, { isBenchmark: true });
+
+      // Simulated saved snapshot (matching saveCurrentProject)
+      const savedSummary = {
+        id: originalState.id,
+        name: originalState.projectName,
+        state: originalState.state,
+        city: originalState.city,
+        tier: originalState.tier,
+        numFloors: originalState.numFloors,
+        totalCost: originalEstimation.grandTotalCost,
+        totalBua: originalEstimation.totalBuiltupArea,
+        ratePerSqFt: originalEstimation.costPerSqFt,
+        stateSnapshot: JSON.parse(JSON.stringify(originalState))
+      };
+
+      // Reload
+      const reloadedState = JSON.parse(JSON.stringify(savedSummary.stateSnapshot));
+      const reloadedEstimation = calculateEstimation(reloadedState, { isBenchmark: true });
+
+      assert.strictEqual(reloadedEstimation.totalBuiltupArea, originalEstimation.totalBuiltupArea, 'Reloaded SBA matches');
+      assert.strictEqual(reloadedEstimation.numFloors, originalEstimation.numFloors, 'Reloaded floor count matches');
+      assert.strictEqual(reloadedEstimation.estimatedCost, originalEstimation.estimatedCost, 'Reloaded base cost matches');
+      assert.strictEqual(reloadedEstimation.grandTotalCost, originalEstimation.grandTotalCost, 'Reloaded grand total matches');
+      assert.strictEqual(reloadedEstimation.costPerSqFt, originalEstimation.costPerSqFt, 'Reloaded rate per sq.ft matches');
+    });
+
+    // Case N: Verify PDF and Excel outputs use the same area, floor count and price as the UI
+    await st.test('Case N: Verify PDF and Excel outputs use the same area, floor count and price as the UI', async () => {
+      const state = {
+        projectName: 'Bangalore Client Residence',
+        customerName: 'Bangalore Client',
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        tier: 'standard',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2 // G+1
+      };
+
+      const est = calculateEstimation(state, { isBenchmark: true });
+      assert.strictEqual(est.totalBuiltupArea, 6050);
+      assert.strictEqual(est.estimatedCost, 13612500);
+
+      // Verify Planner PDF Exporter
+      const pdfBuffer = await generatePlannerPDF(state, est);
+      assert.ok(Buffer.isBuffer(pdfBuffer));
+      assert.strictEqual(pdfBuffer.subarray(0, 4).toString(), '%PDF');
+
+      // Verify Commercial BOQ Excel Exporter for Mode A
+      const modeABoq = {
+        mode: 'PACKAGE',
+        title: state.projectName,
+        pricingState: 'Karnataka',
+        packageEstimate: {
+          totalBuiltupArea: est.totalBuiltupArea,
+          ratePerSqFt: est.costPerSqFt,
+          estimatedCost: est.estimatedCost,
+          gstRate: 18,
+          gstAmount: est.gst,
+          grandTotal: est.grandTotalCost,
+          numFloors: est.numFloors,
+          packageName: 'Standard Package',
+          floors: est.floors
+        }
+      };
+
+      const excelBuffer = await exportToExcel(modeABoq);
+      assert.ok(Buffer.isBuffer(excelBuffer));
+      assert.ok(excelBuffer.length > 2000, 'Excel workbook generated with content');
+    });
+
+    // Case O: Verify ground coverage ratio calculation and Bangalore coverageCheck warning behavior
+    await st.test('Case O: Verify ground coverage ratio calculation and Bangalore coverageCheck advisory behavior', () => {
+      // 1. Automatic equal floor plate model: 100% ground coverage triggers advisory warning for Bangalore (55% limit)
+      const stateBangaloreAuto = {
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2 // G+1 -> 3,025 sq.ft per floor
+      };
+      const estAuto = calculateEstimation(stateBangaloreAuto, { isBenchmark: true });
+      assert.strictEqual(estAuto.plotArea, 3025);
+      assert.strictEqual(estAuto.groundFloorBua, 3025);
+      assert.strictEqual(estAuto.groundCoverageRatio, 1.0, 'Automatic model ground coverage ratio is 100%');
+      assert.strictEqual(estAuto.coverageCheck.limit, 0.55, 'Bengaluru statutory coverage limit is 55%');
+      assert.strictEqual(estAuto.coverageCheck.isOverLimit, true, '100% coverage triggers isOverLimit = true');
+      assert.ok(estAuto.coverageCheck.message.includes('above the 55% planning benchmark'), 'Warning advises consulting architect on setbacks');
+
+      // 2. Setback-compliant footprint via manual override (e.g., 1,500 sq.ft per floor <= 55% of 3,025 = 1,663.75 sq.ft)
+      const stateBangaloreCompliant = {
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2, // G+1
+        useTargetBua: true,
+        targetBuaInput: 3000 // 1,500 sq.ft per floor
+      };
+      const estCompliant = calculateEstimation(stateBangaloreCompliant, { isBenchmark: true });
+      assert.strictEqual(estCompliant.groundFloorBua, 1500);
+      assert.strictEqual(Math.round(estCompliant.groundCoverageRatio * 1000) / 1000, Math.round((1500 / 3025) * 1000) / 1000);
+      assert.ok(estCompliant.groundCoverageRatio < 0.55, 'Coverage ratio is under 55%');
+      assert.strictEqual(estCompliant.coverageCheck.isOverLimit, false, 'Compliant footprint does not trigger over-limit warning');
+      assert.ok(estCompliant.coverageCheck.message.includes('within the 55% planning benchmark'), 'Confirms coverage is within benchmark');
+
+      // 3. Non-Bangalore city (e.g. Hyderabad or Mumbai) uses 60% planning benchmark
+      const stateOtherCity = {
+        city: 'Hyderabad',
+        state: 'Telangana',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 1
+      };
+      const estOther = calculateEstimation(stateOtherCity, { isBenchmark: true });
+      assert.strictEqual(estOther.coverageCheck.limit, 0.60, 'Non-Bangalore cities have 60% coverage benchmark');
+    });
+
+    // Case P: Manual total SBA override of 3,000 sq. ft with G+1 (2 floors) on 55 × 55 ft plot
+    await st.test('Case P: Manual total SBA override of 3,000 sq. ft with G+1 results in 1,500 sq. ft per floor with compliant coverage', () => {
+      const state = {
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2, // G+1 (2 floors total)
+        useTargetBua: true,
+        targetBuaInput: 3000,
+        tier: 'standard'
+      };
+
+      const est = calculateEstimation(state, { isBenchmark: true });
+
+      // 1. Gross plot area
+      assert.strictEqual(est.plotArea, 3025, 'Gross plot area = 55 × 55 = 3,025 sq.ft');
+
+      // 2. Total built-up area (SBA)
+      assert.strictEqual(est.totalBuiltupArea, 3000, 'Total SBA = 3,000 sq.ft (manual override total, not multiplied)');
+
+      // 3. Per-floor built-up area
+      assert.strictEqual(est.floors.length, 2, '2 floor schedules generated');
+      assert.strictEqual(est.floors[0].builtupArea, 1500, 'Ground floor BUA = 3,000 / 2 = 1,500 sq.ft');
+      assert.strictEqual(est.floors[1].builtupArea, 1500, 'First floor BUA = 3,000 / 2 = 1,500 sq.ft');
+
+      // 4. Ground-floor built-up footprint & coverage ratio
+      assert.strictEqual(est.groundFloorBua, 1500, 'Ground-floor footprint is strictly 1,500 sq.ft, never total SBA');
+      const expectedRatio = 1500 / 3025;
+      assert.strictEqual(Math.round(est.groundCoverageRatio * 1000) / 1000, Math.round(expectedRatio * 1000) / 1000);
+      assert.ok(est.groundCoverageRatio < 0.55, 'Ground coverage ratio is ~49.6%, below the 55% Bangalore benchmark');
+      assert.strictEqual(est.coverageCheck.isOverLimit, false, 'Coverage is within legal benchmark');
+
+      // 5. Carpet area benchmark (70% of SBA)
+      assert.strictEqual(est.plotCarpetArea, 2100, 'Total carpet area = 3,000 × 70% = 2,100 sq.ft');
+      assert.strictEqual(est.floors[0].carpetArea, 1050, 'Ground floor carpet = 1,500 × 70% = 1,050 sq.ft');
+      assert.strictEqual(est.floors[1].carpetArea, 1050, 'First floor carpet = 1,500 × 70% = 1,050 sq.ft');
+
+      // 6. Pricing & GST
+      assert.strictEqual(est.costPerSqFt, 2250);
+      assert.strictEqual(est.estimatedCost, 3000 * 2250, 'Pre-GST cost = 3,000 × ₹2,250 = ₹67,50,000');
+      assert.strictEqual(est.gst, Math.round(6750000 * 0.18), '18% GST = ₹12,15,000');
+      assert.strictEqual(est.grandTotalCost, 6750000 + 1215000, 'Grand total = ₹79,65,000');
+    });
+
+    // Case Q: Seamless switching between automatic mode, custom room configurations, and manual override
+    await st.test('Case Q: Seamless switching between automatic mode, custom room configurations, and manual override', () => {
+      // Step A: Initial automatic equal floor plate mode (55 × 55, G+1)
+      const baseState = {
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        plotWidth: 55,
+        plotLength: 55,
+        numFloors: 2,
+        tier: 'standard'
+      };
+      const estAuto = calculateEstimation(baseState, { isBenchmark: true });
+      assert.strictEqual(estAuto.totalBuiltupArea, 6050, 'Step A: Automatic SBA is 6,050 sq.ft');
+      assert.strictEqual(estAuto.groundFloorBua, 3025, 'Step A: Ground footprint is 3,025 sq.ft');
+
+      // Step B: User configures custom rooms on floors (unequal plates: Ground = 1,200 sq.ft, 1st = 800 sq.ft)
+      const customRoomsState = {
+        ...baseState,
+        hasCustomRooms: true,
+        floors: [
+          {
+            id: 'floor-0',
+            name: 'Ground Floor',
+            floorNumber: 0,
+            builtupArea: 1200,
+            rooms: [{ id: 'r1', type: 'living', width: 25, length: 40, count: 1 }]
+          },
+          {
+            id: 'floor-1',
+            name: '1st Floor',
+            floorNumber: 1,
+            builtupArea: 800,
+            rooms: [{ id: 'r2', type: 'master_bed', width: 20, length: 30, count: 1 }]
+          }
+        ]
+      };
+      const estCustom = calculateEstimation(customRoomsState, { isBenchmark: true });
+      assert.strictEqual(estCustom.totalBuiltupArea, 2000, 'Step B: Custom rooms total SBA = 1,200 + 800 = 2,000 sq.ft');
+      assert.strictEqual(estCustom.groundFloorBua, 1200, 'Step B: Ground floor footprint = 1,200 sq.ft');
+      assert.strictEqual(estCustom.floors[0].builtupArea, 1200);
+      assert.strictEqual(estCustom.floors[1].builtupArea, 800);
+      assert.strictEqual(estCustom.estimatedCost, 2000 * 2250, 'Cost uses 2,000 sq.ft = ₹45,00,000');
+
+      // Step C: User activates Manual SBA Override = 3,000 sq.ft while custom rooms exist in state
+      const manualOverrideState = {
+        ...customRoomsState,
+        useTargetBua: true,
+        targetBuaInput: 3000
+      };
+      const estManual = calculateEstimation(manualOverrideState, { isBenchmark: true });
+      assert.strictEqual(estManual.totalBuiltupArea, 3000, 'Step C: Manual override takes precedence = 3,000 sq.ft');
+      assert.strictEqual(estManual.floors[0].builtupArea, 1500, 'Step C: Equal distribution gives 1,500 sq.ft to floor 0');
+      assert.strictEqual(estManual.floors[1].builtupArea, 1500, 'Step C: Equal distribution gives 1,500 sq.ft to floor 1');
+      assert.strictEqual(estManual.groundFloorBua, 1500, 'Step C: Ground footprint is 1,500 sq.ft');
+
+      // Step D: User deactivates Manual SBA Override -> reverts seamlessly to custom room totals
+      const revertedCustomState = {
+        ...manualOverrideState,
+        useTargetBua: false
+      };
+      const estRevertedCustom = calculateEstimation(revertedCustomState, { isBenchmark: true });
+      assert.strictEqual(estRevertedCustom.totalBuiltupArea, 2000, 'Step D: Cleanly reverts to custom rooms total = 2,000 sq.ft');
+      assert.strictEqual(estRevertedCustom.groundFloorBua, 1200, 'Step D: Ground footprint reverts to 1,200 sq.ft');
+      assert.strictEqual(estRevertedCustom.floors[0].builtupArea, 1200);
+      assert.strictEqual(estRevertedCustom.floors[1].builtupArea, 800);
+
+      // Step E: User resets custom rooms -> reverts seamlessly to automatic equal floor plates
+      const revertedAutoState = {
+        ...revertedCustomState,
+        hasCustomRooms: false
+      };
+      const estRevertedAuto = calculateEstimation(revertedAutoState, { isBenchmark: true });
+      assert.strictEqual(estRevertedAuto.totalBuiltupArea, 6050, 'Step E: Reverts cleanly to automatic 6,050 sq.ft');
+      assert.strictEqual(estRevertedAuto.groundFloorBua, 3025, 'Step E: Ground footprint reverts to 3,025 sq.ft');
+    });
+  });
 });
+
