@@ -16,7 +16,7 @@ import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useE
 import { StatusBadge } from '../ui/StatusBadge';
 
 export function StepMaterials({ state, updateState, estimation }) {
-  const { toggleBenchmarkMode, isBenchmarkMode, isSnapshotMode, pricingStatus } = useEstimateStore();
+  const { toggleBenchmarkMode, isBenchmarkMode, isSnapshotMode, pricingStatus, currentUser } = useEstimateStore();
   const [openCategories, setOpenCategories] = useState({
     steel: true,
     cement: true,
@@ -168,9 +168,15 @@ export function StepMaterials({ state, updateState, estimation }) {
                   {tierInfo.badge}
                 </span>
                 <h4 className="text-xs font-extrabold text-slate-900">{tierInfo.name}</h4>
-                <div className="text-slate-900 font-mono tabular-nums font-extrabold text-base mt-1">
-                  {formatCurrency(tierInfo.ratePerSqFt)} <span className="text-[10px] text-slate-400 font-normal">/ sq.ft</span>
-                </div>
+                {currentUser?.isAdmin ? (
+                  <div className="text-slate-900 font-mono tabular-nums font-extrabold text-base mt-1">
+                    {formatCurrency(tierInfo.ratePerSqFt)} <span className="text-[10px] text-slate-400 font-normal">/ sq.ft</span>
+                  </div>
+                ) : (
+                  <div className="text-blue-700 font-bold text-xs mt-1">
+                    Custom Project Estimate
+                  </div>
+                )}
               </div>
               
               <p className="text-[10px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">{tierInfo.desc}</p>

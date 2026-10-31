@@ -7,8 +7,9 @@ const os = require('os');
 const { requireAuth } = require('../middleware/auth');
 
 const { parseDxfFallback } = require('../services/aiFloorplan/cadFallbackParser');
+const { parseFloorplan, inspectDwg } = require('../services/aiFloorplan/multiFormatFloorplanParser');
 
-// Multer storage in memory for streaming to Python service, with 25MB limit
+// Multer storage in memory for streaming to Python service or in-process parsing, with 25MB limit
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -19,13 +20,15 @@ const upload = multer({
     const isDxfExt = /\.dxf$/i.test(originalName);
     const isDwgExt = /\.dwg$/i.test(originalName);
     const isPdfExt = /\.pdf$/i.test(originalName);
+    const isImageExt = /\.(png|jpe?g|webp)$/i.test(originalName);
+    const isSvgExt = /\.svg$/i.test(originalName);
 
-    // 1. Extension validation (.dxf, .dwg, and .pdf)
-    if (!isDxfExt && !isDwgExt && !isPdfExt) {
-      return cb(new Error('Invalid file format. Only AutoCAD .dxf, .dwg, and .pdf floor plan files are supported.'), false);
+    // 1. Extension validation (.dxf, .dwg, .pdf, .png, .jpg, .jpeg, .webp, .svg)
+    if (!isDxfExt && !isDwgExt && !isPdfExt && !isImageExt && !isSvgExt) {
+      return cb(new Error('Invalid file format. Supported floor plan formats: .dxf, .pdf, .png, .jpg, .jpeg, .webp, .svg.'), false);
     }
 
-    // 2. Relaxed CAD & PDF MIME validation
+    // 2. Relaxed CAD, PDF, Image & SVG MIME validation
     const allowedMimes = [
       'application/dxf',
       'application/x-dxf',
@@ -40,6 +43,11 @@ const upload = multer({
       'application/x-dwg',
       'application/pdf',
       'application/x-pdf',
+      'image/png',
+      'image/jpeg',
+      'image/pjpeg',
+      'image/webp',
+      'image/svg+xml',
       'application/octet-stream'
     ];
 
@@ -76,51 +84,59 @@ router.post('/extract', requireAuth, (req, res, next) => {
   if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
     return res.status(400).json({
       success: false,
-      error: 'Uploaded CAD/PDF file is empty.'
+      error: 'Uploaded floor plan file is empty.'
     });
   }
 
   const originalName = req.file.originalname || 'plan.dxf';
   const isDwg = /\.dwg$/i.test(originalName);
   const isPdf = /\.pdf$/i.test(originalName);
-  const ext = isDwg ? '.dwg' : (isPdf ? '.pdf' : '.dxf');
+  const isImage = /\.(png|jpe?g|webp)$/i.test(originalName);
+  const isSvg = /\.svg$/i.test(originalName);
 
-  // Target Python service URL (configurable for production and local development)
-  const floorplanServiceUrl = (process.env.FLOORPLAN_SERVICE_URL || 'http://127.0.0.1:5001').replace(/\/+$/, '');
-  const timeoutMs = parseInt(process.env.FLOORPLAN_SERVICE_TIMEOUT_MS, 10) || 30000;
-
-  // Safe isolated temporary directory outside public web root
-  const tempDir = path.join(os.tmpdir(), 'buildiqo_cad_uploads');
-  if (!fs.existsSync(tempDir)) {
-    try {
-      fs.mkdirSync(tempDir, { recursive: true });
-    } catch (e) {}
-  }
-
-  // Safe UUID-based filename (never trust original filename on the filesystem)
-  const safeRandomName = `cad_${Date.now()}_${Math.random().toString(36).substring(2, 10)}${ext}`;
-  const tempFilePath = path.join(tempDir, safeRandomName);
-
-  let mimeType = 'application/dxf';
-  let endpoint = `${floorplanServiceUrl}/extract/dxf`;
+  // 1. Honest AutoCAD DWG verification: ODA File Converter runtime is not present
   if (isDwg) {
-    endpoint = `${floorplanServiceUrl}/extract/dwg`;
-    mimeType = 'application/acad';
-  } else if (isPdf) {
-    endpoint = `${floorplanServiceUrl}/extract/pdf`;
-    mimeType = 'application/pdf';
+    try {
+      const dwgResult = inspectDwg(req.file.buffer, originalName);
+      return res.status(422).json(dwgResult);
+    } catch (dwgErr) {
+      return res.status(400).json({
+        success: false,
+        error: dwgErr.message || 'Corrupted DWG file.'
+      });
+    }
   }
+
+  // Parse options from body or query
+  const pageIndex = parseInt(req.body?.pageIndex || req.query?.pageIndex, 10) || 0;
+  const unitOverride = req.body?.unitOverride || req.query?.unitOverride || 'auto';
+  const calibration = req.body?.calibration ? (typeof req.body.calibration === 'string' ? JSON.parse(req.body.calibration) : req.body.calibration) : null;
+
+  // 2. Direct handling for Images & SVG via authoritative in-process parser
+  if (isImage || isSvg) {
+    try {
+      const parsedData = parseFloorplan(req.file.buffer, originalName, { pageIndex, calibration, unitOverride });
+      return res.json(parsedData);
+    } catch (parseErr) {
+      return res.status(422).json({
+        success: false,
+        error: parseErr.message || 'Failed to analyze floor plan drawing.'
+      });
+    }
+  }
+
+  // 3. For DXF and PDF: attempt upstream Python microservice, with guaranteed in-process fallback
+  const floorplanServiceUrl = (process.env.FLOORPLAN_SERVICE_URL || 'http://127.0.0.1:5001').replace(/\/+$/, '');
+  const timeoutMs = parseInt(process.env.FLOORPLAN_SERVICE_TIMEOUT_MS, 10) || 10000;
+
+  let mimeType = isPdf ? 'application/pdf' : 'application/dxf';
+  let endpoint = isPdf ? `${floorplanServiceUrl}/extract/pdf` : `${floorplanServiceUrl}/extract/dxf`;
 
   try {
-    // Write buffer to safe temporary file
-    fs.writeFileSync(tempFilePath, req.file.buffer);
-
-    // Prepare multipart form data for Python service
     const fileBlob = new Blob([req.file.buffer], { type: mimeType });
     const formData = new FormData();
     formData.append('file', fileBlob, originalName);
 
-    // Call Python FastAPI service with timeout
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -129,7 +145,7 @@ router.post('/extract', requireAuth, (req, res, next) => {
       headers['X-Floorplan-Service-Token'] = process.env.FLOORPLAN_SERVICE_TOKEN;
     }
 
-    let pyResponse;
+    let pyResponse = null;
     try {
       pyResponse = await fetch(endpoint, {
         method: 'POST',
@@ -138,67 +154,32 @@ router.post('/extract', requireAuth, (req, res, next) => {
         signal: controller.signal
       });
     } catch (fetchErr) {
-      clearTimeout(timer);
-      console.warn(`Upstream Python floor plan service failed (${fetchErr.message}). Checking in-process fallback.`);
-
-      // Resilient fallback for DXF when microservice is cold-starting
-      if (!isDwg && !isPdf) {
-        try {
-          const fallbackData = parseDxfFallback(req.file.buffer.toString('utf8'), originalName);
-          if (fallbackData && fallbackData.rooms.length > 0) {
-            return res.json(fallbackData);
-          }
-        } catch (fbErr) {
-          console.warn('Fallback CAD parser error:', fbErr.message);
-        }
-      }
-
-      if (fetchErr.name === 'AbortError') {
-        return res.status(504).json({
-          success: false,
-          error: `Floor plan extraction timed out after ${timeoutMs / 1000} seconds.`
-        });
-      }
-      return res.status(503).json({
-        success: false,
-        error: 'Floor plan extraction service is currently starting up. Please try again in a few moments.'
-      });
+      console.warn(`Upstream Python floor plan service failed (${fetchErr.message}). Engaging in-process floor plan parser.`);
     } finally {
       clearTimeout(timer);
     }
 
-    const data = await pyResponse.json().catch(() => ({}));
-
-    if (!pyResponse.ok) {
-      return res.status(pyResponse.status || 500).json({
-        success: false,
-        error: data.detail || 'Floor plan extraction failed.'
-      });
+    if (pyResponse && pyResponse.ok) {
+      const data = await pyResponse.json().catch(() => null);
+      if (data && Array.isArray(data.rooms) && data.rooms.length > 0) {
+        return res.json(data);
+      }
     }
 
-    // Response validation: ensure expected normalized contract
-    if (!data || typeof data !== 'object' || !Array.isArray(data.rooms)) {
-      return res.status(502).json({
-        success: false,
-        error: 'Invalid response schema received from floor plan extraction service.'
-      });
-    }
-
-    return res.json(data);
+    // In-process resilient fallback execution for DXF & PDF (including scanned PDFs!)
+    const fallbackResult = parseFloorplan(req.file.buffer, originalName, { pageIndex, unitOverride });
+    return res.json(fallbackResult);
 
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: err.message || 'Internal server error during floor plan extraction.'
-    });
-  } finally {
-    // Guaranteed cleanup of temporary files
-    if (fs.existsSync(tempFilePath)) {
-      try {
-        fs.unlinkSync(tempFilePath);
-      } catch (cleanupErr) {
-        console.warn('Failed to clean temporary CAD file:', cleanupErr.message);
-      }
+    try {
+      // Last-resort fallback attempt
+      const fallbackResult = parseFloorplan(req.file.buffer, originalName, { pageIndex, unitOverride });
+      return res.json(fallbackResult);
+    } catch (fbErr) {
+      return res.status(422).json({
+        success: false,
+        error: fbErr.message || err.message || 'Floor plan extraction failed.'
+      });
     }
   }
 });

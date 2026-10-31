@@ -501,12 +501,17 @@
 
 /* Print specific styles */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
   body {
     background: #ffffff !important;
     background-image: none !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
   }
-  header, nav, footer, .no-print {
+  header, nav, footer, aside, .no-print, [data-no-print], button, canvas, .floating-actions, .chatbot-container {
     display: none !important;
   }
   .print-only {
@@ -514,5 +519,18 @@
   }
   .page-break {
     page-break-after: always;
+    break-after: page;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  table {
+    width: 100% !important;
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
   }
 }

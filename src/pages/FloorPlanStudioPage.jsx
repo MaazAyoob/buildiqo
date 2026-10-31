@@ -40,6 +40,7 @@ import {
 import { extractFloorPlanCAD } from '../services/floorplanService';
 import { renderArchitecturalFloorPlanSvg } from '../utils/floorplanRenderer';
 import { createSampleDxfFile } from '../utils/sampleDxfData';
+import { calibrateExtractionResults } from '../utils/cadParser';
 import {
   getRecentFloorplans,
   addRecentFloorplan,
@@ -138,7 +139,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
   // Studio Workflow Modes (Part 24: Generate vs Import CAD)
   const [activeStudioMode, setActiveStudioMode] = useState('generate'); // 'generate' | 'import_cad'
 
-  // CAD Import State
+  // Multi-Format Architectural Floor Plan Import State
   const [isCadModalOpen, setIsCadModalOpen] = useState(false);
   const [cadFile, setCadFile] = useState(null);
   const [cadExtracting, setCadExtracting] = useState(false);
@@ -146,6 +147,9 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
   const [cadExtractResult, setCadExtractResult] = useState(null);
   const [cadError, setCadError] = useState(null);
   const [isDraggingCad, setIsDraggingCad] = useState(false);
+  const [selectedPdfPage, setSelectedPdfPage] = useState(0);
+  const [calibratedWidth, setCalibratedWidth] = useState(30);
+  const [calibratedLength, setCalibratedLength] = useState(40);
 
   // Apply to Project Confirmation Modal State
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
@@ -463,16 +467,18 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
     setTimeout(() => setApplySuccessMsg(null), 6000);
   };
 
-  // CAD Import Processing
+  // Multi-Format Floor Plan Import Processing
   const processSelectedCadFile = (file) => {
     if (!file) return;
     const lowerName = file.name.toLowerCase();
     const isDxf = lowerName.endsWith('.dxf');
     const isDwg = lowerName.endsWith('.dwg');
     const isPdf = lowerName.endsWith('.pdf');
+    const isImage = /\.(png|jpe?g|webp)$/i.test(lowerName);
+    const isSvg = lowerName.endsWith('.svg');
 
-    if (!isDxf && !isDwg && !isPdf) {
-      setCadError(`Unsupported file format "${file.name}". Please upload an AutoCAD .dxf, .dwg, or vector .pdf floor plan file.`);
+    if (!isDxf && !isDwg && !isPdf && !isImage && !isSvg) {
+      setCadError(`Unsupported file format "${file.name}". Please upload AutoCAD .dxf, PDF (.pdf), Images (.png, .jpg, .webp), or SVG (.svg).`);
       setCadFile(null);
       return;
     }
@@ -486,6 +492,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
     setCadFile(file);
     setCadError(null);
     setCadExtractResult(null);
+    setSelectedPdfPage(0);
   };
 
   const handleCadFileSelect = (e) => {
@@ -495,29 +502,54 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
     }
   };
 
-  const handleRunCadExtraction = async (fileToUse = null, unitToUse = null) => {
+  const handleRunCadExtraction = async (fileToUse = null, unitToUse = null, pageIdx = null) => {
     const targetFile = fileToUse || cadFile;
     if (!targetFile) return;
     setCadExtracting(true);
-    setCadExtractStage('Uploading CAD drawing & verifying format...');
+    setCadExtractStage('Validating file integrity & architectural format...');
     setCadError(null);
     try {
       await ensureSession();
-      setCadExtractStage('Extracting vector polylines, text annotations & layers...');
-      const res = await extractFloorPlanCAD(targetFile, unitToUse || cadUnits);
+      setCadExtractStage('Analyzing architectural boundaries, wall partitions & room outlines...');
+      const targetPage = pageIdx != null ? pageIdx : selectedPdfPage;
+      const res = await extractFloorPlanCAD(targetFile, {
+        unitOverride: unitToUse || cadUnits,
+        pageIndex: targetPage,
+        calibration: { width_ft: calibratedWidth, length_ft: calibratedLength }
+      });
       if (res && res.success) {
         setCadExtractResult(res);
+        if (res.calibration_dimensions) {
+          setCalibratedWidth(res.calibration_dimensions.width_ft);
+          setCalibratedLength(res.calibration_dimensions.length_ft);
+        }
         setCadExtractStage('Extraction & topological validation verified.');
       } else {
-        setCadError(res?.error || 'CAD extraction failed to identify valid room boundaries.');
+        setCadError(res?.error || 'Floor plan extraction failed to identify valid room boundaries.');
       }
     } catch (err) {
-      console.warn('[Studio] CAD parse error:', err);
-      setCadError(err.message || 'Error processing CAD file.');
+      console.warn('[Studio] Floor plan parse error:', err);
+      setCadError(err.message || 'Error processing architectural file.');
     } finally {
       setCadExtracting(false);
       setCadExtractStage('');
     }
+  };
+
+  const handleScaleCalibrate = (newW, newL) => {
+    const w = Math.max(15, parseFloat(newW) || 30);
+    const l = Math.max(15, parseFloat(newL) || 40);
+    setCalibratedWidth(w);
+    setCalibratedLength(l);
+    if (cadExtractResult) {
+      const updated = calibrateExtractionResults(cadExtractResult, w, l);
+      setCadExtractResult(updated);
+    }
+  };
+
+  const handleSelectPdfPage = async (pageIdx) => {
+    setSelectedPdfPage(pageIdx);
+    await handleRunCadExtraction(cadFile, cadUnits, pageIdx);
   };
 
   const handleLoadSampleDxf = async () => {
@@ -2120,15 +2152,16 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL 3: CAD / DXF / DWG / PDF IMPORT MODAL              */}
+      {/* ======================================================== */}
+      {/* MODAL 3: MULTI-FORMAT ARCHITECTURAL FLOOR PLAN IMPORT    */}
       {/* ======================================================== */}
       {isCadModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2">
                 <FileCode className="w-5 h-5 text-cyan-600" />
-                <h3 className="text-base font-black text-slate-900">Import CAD Floor Plan</h3>
+                <h3 className="text-base font-black text-slate-900">Import Architectural Floor Plan</h3>
               </div>
               <button
                 onClick={() => setIsCadModalOpen(false)}
@@ -2139,7 +2172,7 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
             </div>
 
             <p className="text-xs text-slate-500">
-              Upload an AutoCAD <strong>.dxf</strong>, <strong>.dwg</strong>, or vector <strong>.pdf</strong> architectural plan. Buildiqo AI extracts layer polylines, room boundaries, and computes carpet area.
+              Upload an architectural floor plan file (AutoCAD <strong>.dxf</strong>, Vector/Scanned <strong>.pdf</strong>, Images <strong>.png, .jpg, .webp</strong>, or Vector <strong>.svg</strong>). Buildiqo AI identifies room boundaries, wall partitions, and computes carpet area.
             </p>
 
             {cadError && (
@@ -2156,19 +2189,28 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                 >
                   <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                   <span className="text-xs font-bold text-slate-700 block">
-                    {cadFile ? cadFile.name : 'Click to select DXF, DWG, or PDF file'}
+                    {cadFile ? cadFile.name : 'Click or drop DXF, PDF, Image, or SVG file'}
                   </span>
                   <span className="text-[10px] text-slate-400 block mt-1">
-                    Up to 25 MB • Standard architectural layers
+                    Supports DXF • PDF (Vector & Scanned) • PNG/JPG/WEBP • SVG (Up to 25 MB)
                   </span>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".dxf,.dwg,.pdf"
+                    accept=".dxf,.pdf,.png,.jpg,.jpeg,.webp,.svg"
                     onChange={handleCadFileSelect}
                     className="hidden"
                   />
                 </div>
+
+                {cadExtracting && (
+                  <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-xl space-y-1 text-center">
+                    <div className="flex items-center justify-center space-x-2 text-xs font-bold text-cyan-800">
+                      <RefreshCw className="w-4 h-4 animate-spin text-cyan-600" />
+                      <span>{cadExtractStage || 'Analyzing drawing geometry...'}</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Quick Action: Try Sample DXF */}
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -2200,41 +2242,138 @@ export function FloorPlanStudioPage({ setRoute, onOpenSavedModal }) {
                     className="px-4 py-2 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-1.5 disabled:opacity-50 shadow-xs"
                   >
                     <FileCode className={`w-3.5 h-3.5 text-cyan-400 ${cadExtracting ? 'animate-spin' : ''}`} />
-                    <span>{cadExtracting ? 'Extracting Vector Rooms...' : 'Parse CAD Plan'}</span>
+                    <span>{cadExtracting ? 'Analyzing Plan...' : 'Analyze Floor Plan'}</span>
                   </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                {/* Confidence & Overview Banner */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <div className="flex items-center justify-between text-xs font-extrabold text-slate-800">
-                    <span>Detected {cadExtractResult.rooms?.length || 0} Rooms</span>
+                    <div className="flex items-center space-x-2">
+                      <span>Detected {cadExtractResult.rooms?.length || 0} Spaces</span>
+                      {cadExtractResult.confidence === 'HIGH' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          High Precision
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                          Estimated Geometry
+                        </span>
+                      )}
+                    </div>
                     <span className="text-cyan-700 font-black">{cadExtractResult.total_usable_carpet_sqft || 0} sq.ft</span>
                   </div>
-                  <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+
+                  {/* Uncertainty / Scanned Plan Advisory */}
+                  {cadExtractResult.confidence === 'ESTIMATED' && (
+                    <div className="p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
+                      <div className="font-extrabold flex items-center space-x-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span>Scale Calibration Recommended</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-amber-700">
+                        Measurements have been estimated from raster drawing geometry. Use the calibration controls below to adjust the overall building dimensions to match your site plan.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Multi-Page PDF Selector */}
+                  {cadExtractResult.isMultiPage && cadExtractResult.pageCount > 1 && (
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-xl space-y-1">
+                      <span className="text-[11px] font-extrabold text-blue-900 block">
+                        Multi-Page PDF ({cadExtractResult.pageCount} Pages Available)
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {Array.from({ length: cadExtractResult.pageCount }, (_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleSelectPdfPage(idx)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                              (cadExtractResult.selectedPage || selectedPdfPage + 1) === (idx + 1)
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            Page {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Scale Calibration Section */}
+                  {(cadExtractResult.requires_scale_calibration || cadExtractResult.confidence === 'ESTIMATED') && (
+                    <div className="p-2.5 bg-white border border-slate-200 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                        <span>Calibrate Building Envelope</span>
+                        <span className="text-[10px] text-slate-400">Scales all rooms proportionally</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">Width (ft)</label>
+                          <input
+                            type="number"
+                            value={calibratedWidth}
+                            onChange={(e) => handleScaleCalibrate(e.target.value, calibratedLength)}
+                            className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-800 focus:bg-white focus:border-cyan-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">Length (ft)</label>
+                          <input
+                            type="number"
+                            value={calibratedLength}
+                            onChange={(e) => handleScaleCalibrate(calibratedWidth, e.target.value)}
+                            className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-800 focus:bg-white focus:border-cyan-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Detected Rooms List */}
+                  <div className="max-h-44 overflow-y-auto space-y-1 pr-1">
                     {cadExtractResult.rooms?.map((r, i) => (
-                      <div key={i} className="flex justify-between text-[11px] p-1.5 bg-white rounded-lg border border-slate-100">
-                        <span className="font-semibold text-slate-700">{r.name}</span>
-                        <span className="font-bold text-slate-900">{r.width_ft || r.width} × {r.length_ft || r.length} ft</span>
+                      <div key={i} className="flex justify-between items-center text-[11px] p-2 bg-white rounded-lg border border-slate-100 shadow-2xs">
+                        <div>
+                          <span className="font-bold text-slate-800 block">{r.name}</span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-wider">{r.type}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-slate-900 block">{r.width_ft || r.width} × {r.length_ft || r.length} ft</span>
+                          <span className="text-[10px] text-cyan-700 font-extrabold">{r.area_sqft || r.area} sq.ft</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-2 pt-2">
+                <div className="flex justify-between items-center pt-2">
                   <button
                     onClick={() => setCadExtractResult(null)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
                   >
-                    Back
+                    Re-Upload
                   </button>
-                  <button
-                    onClick={() => handleApplyCadToStudio(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-black bg-cyan-700 hover:bg-cyan-800 text-white flex items-center space-x-1.5"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-cyan-200" />
-                    <span>Render in Viewport</span>
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleApplyCadToStudio(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 flex items-center space-x-1.5 shadow-2xs"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-cyan-600" />
+                      <span>Preview in Viewport</span>
+                    </button>
+                    <button
+                      onClick={() => handleApplyCadToStudio(true)}
+                      className="px-4 py-2 rounded-xl text-xs font-black bg-cyan-700 hover:bg-cyan-800 text-white flex items-center space-x-1.5 shadow-xs"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-200" />
+                      <span>Apply to Current Project</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

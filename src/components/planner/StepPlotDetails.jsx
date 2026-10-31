@@ -26,6 +26,7 @@ import { BUILDING_TYPES, CONSTRUCTION_TYPES, AREA_UNITS } from '../../data/defau
 import { formatCurrency, formatNumber, useEstimateStore } from '../../store/useEstimateStore';
 
 export function StepPlotDetails({ state, updateState, estimation }) {
+  const { currentUser } = useEstimateStore();
   const [errors, setErrors] = useState({});
 
   // Local string states to allow free numeric typing, decimals (e.g. 9.5, 12.5), and backspacing
@@ -470,10 +471,10 @@ export function StepPlotDetails({ state, updateState, estimation }) {
         <div className="flex items-center justify-between pb-2 border-b border-[#F1F5F9]">
           <h3 className="text-xs font-black uppercase tracking-wider text-[#172033] flex items-center space-x-2">
             <Sparkles className="w-4 h-4 text-[#D97706]" />
-            <span>4. Construction Package Tier &amp; Rate per sq.ft</span>
+            <span>4. Construction Package Tier{currentUser?.isAdmin ? ' & Rate per sq.ft' : ''}</span>
           </h3>
           <span className="text-[10px] font-mono text-[#2563EB] font-semibold bg-[#EEF4FF] px-2 py-0.5 rounded border border-[#BFDBFE]">
-            Formula: Estimated Cost = SBA × Package Rate
+            {currentUser?.isAdmin ? 'Formula: Estimated Cost = SBA × Package Rate' : 'Custom Project Estimation'}
           </span>
         </div>
 
@@ -502,10 +503,16 @@ export function StepPlotDetails({ state, updateState, estimation }) {
                     {isSelected && <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />}
                   </div>
                   <h4 className="text-sm font-black text-[#172033]">{tInfo.name}</h4>
-                  <div className="mt-2 text-xl font-black font-mono text-[#2563EB]">
-                    {formatCurrency(tInfo.ratePerSqFt)}
-                    <span className="text-xs text-[#64748B] font-normal"> / sq.ft</span>
-                  </div>
+                  {currentUser?.isAdmin ? (
+                    <div className="mt-2 text-xl font-black font-mono text-[#2563EB]">
+                      {formatCurrency(tInfo.ratePerSqFt)}
+                      <span className="text-xs text-[#64748B] font-normal"> / sq.ft</span>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-xs font-bold font-sans text-[#2563EB] bg-blue-50/80 px-2.5 py-1.5 rounded-lg border border-blue-200/60 inline-block">
+                      Custom Project Estimate
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t border-[#E2E8F0] space-y-1 text-[11px] text-[#64748B]">

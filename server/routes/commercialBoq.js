@@ -493,7 +493,7 @@ router.post('/export/pdf', async (req, res) => {
  * GET /api/commercial-boq/:id/export/excel
  * Generates and downloads styled Excel export by document ID
  */
-router.get('/:id/export/excel', async (req, res) => {
+router.get('/:id/export/excel', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     if (!id || id.startsWith('draft_') || !/^[0-9a-fA-F]{24}$/.test(id)) {
@@ -503,6 +503,14 @@ router.get('/:id/export/excel', async (req, res) => {
     const boq = await CommercialBOQ.findById(id);
     if (!boq) {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
+    }
+
+    // User ownership check
+    if (boq.userId) {
+      const currentUserId = req.user ? (req.user._id || req.user.id).toString() : null;
+      if (boq.userId.toString() !== currentUserId && !req.user?.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Unauthorized access to this BOQ.' });
+      }
     }
 
     const excelBuffer = await exportToExcel(boq);
@@ -521,7 +529,7 @@ router.get('/:id/export/excel', async (req, res) => {
  * GET /api/commercial-boq/:id/export/pdf
  * Generates and downloads styled PDF export by document ID
  */
-router.get('/:id/export/pdf', async (req, res) => {
+router.get('/:id/export/pdf', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     if (!id || id.startsWith('draft_') || !/^[0-9a-fA-F]{24}$/.test(id)) {
@@ -531,6 +539,14 @@ router.get('/:id/export/pdf', async (req, res) => {
     const boq = await CommercialBOQ.findById(id);
     if (!boq) {
       return res.status(404).json({ success: false, error: 'Commercial BOQ not found.' });
+    }
+
+    // User ownership check
+    if (boq.userId) {
+      const currentUserId = req.user ? (req.user._id || req.user.id).toString() : null;
+      if (boq.userId.toString() !== currentUserId && !req.user?.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Unauthorized access to this BOQ.' });
+      }
     }
 
     const pdfBuffer = await exportToPDF(boq);

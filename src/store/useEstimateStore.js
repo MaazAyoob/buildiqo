@@ -28,9 +28,14 @@ export function getInitialState() {
   return INITIAL_PROJECT_STATE;
 }
 
-export function getSavedProjects() {
+export function getSavedStorageKey(userId) {
+  return userId ? `buildiqo_ai_saved_list_${userId}` : 'buildiqo_ai_saved_list_guest';
+}
+
+export function getSavedProjects(userId = null) {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_SAVED);
+    const key = getSavedStorageKey(userId || globalAuth?.id || globalAuth?._id);
+    const saved = localStorage.getItem(key);
     if (saved) return JSON.parse(saved);
   } catch (e) {}
   return [];
@@ -190,7 +195,10 @@ function notify() {
   }));
   try {
     localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(globalState));
-    localStorage.setItem(STORAGE_KEY_SAVED, JSON.stringify(globalSaved));
+    const currentUid = globalAuth?.id || globalAuth?._id;
+    localStorage.setItem(getSavedStorageKey(currentUid), JSON.stringify(globalSaved));
+    // Clear legacy unnamespaced key to prevent cross-account leakage
+    localStorage.removeItem(STORAGE_KEY_SAVED);
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(globalSettings));
     if (globalAuth) {
       localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(globalAuth));
@@ -265,10 +273,12 @@ export function useEstimateStore() {
             stateSnapshot: p.stateSnapshot,
             pricingSnapshot: p.pricingSnapshot
           }));
-          if (mapped.length > 0) {
-            globalSaved = mapped;
-            notify();
+          globalSaved = mapped;
+          const currentUid = globalAuth?.id || globalAuth?._id;
+          if (currentUid) {
+            localStorage.setItem(getSavedStorageKey(currentUid), JSON.stringify(mapped));
           }
+          notify();
         }
 
         // Fetch payments
@@ -350,6 +360,34 @@ export function useEstimateStore() {
             ? { ...res.subscription, isPlanConfirmed: true, status: 'active' }
             : res.subscription;
         }
+
+        // Immediately fetch authenticated user's projects to enforce strict isolation
+        const uid = res.user.id || res.user._id;
+        try {
+          const projRes = await apiRequest('/api/projects');
+          if (projRes.success && Array.isArray(projRes.projects)) {
+            globalSaved = projRes.projects.map(p => ({
+              id: p._id || p.id,
+              name: p.name,
+              state: p.state || p.stateSnapshot?.state || 'Karnataka',
+              city: p.city,
+              tier: p.tier,
+              totalCost: p.totalCost,
+              totalBua: p.totalBua,
+              ratePerSqFt: p.ratePerSqFt,
+              numFloors: p.numFloors,
+              savedAt: p.createdAt || p.updatedAt,
+              stateSnapshot: p.stateSnapshot,
+              pricingSnapshot: p.pricingSnapshot
+            }));
+          } else {
+            globalSaved = [];
+          }
+        } catch (projErr) {
+          globalSaved = getSavedProjects(uid);
+        }
+        localStorage.setItem(getSavedStorageKey(uid), JSON.stringify(globalSaved));
+
         notify();
         // Fetch approved rates for current user session
         fetchApprovedRates(globalState.state || 'Karnataka');
@@ -378,6 +416,20 @@ export function useEstimateStore() {
             ? { ...res.subscription, isPlanConfirmed: true, status: 'active' }
             : res.subscription;
         }
+
+        // Newly registered users see an empty project list
+        const uid = res.user.id || res.user._id;
+        globalSaved = [];
+        globalActiveSnapshot = null;
+        globalIsSnapshotMode = false;
+        globalState = {
+          ...INITIAL_PROJECT_STATE,
+          id: `proj_${Date.now()}`,
+          projectName: 'My Dream Residence'
+        };
+        localStorage.removeItem(STORAGE_KEY_ACTIVE);
+        localStorage.setItem(getSavedStorageKey(uid), JSON.stringify([]));
+
         notify();
         return { success: true, user: globalAuth };
       }
@@ -469,7 +521,24 @@ export function useEstimateStore() {
 
   const logout = () => {
     localStorage.removeItem('buildiqo_token');
+    const prevUserId = globalAuth?.id || globalAuth?._id;
+    if (prevUserId) {
+      try {
+        localStorage.setItem(getSavedStorageKey(prevUserId), JSON.stringify(globalSaved));
+      } catch (e) {}
+    }
+    // Clear project data from memory & storage to prevent cross-account leak
     globalAuth = null;
+    globalSaved = [];
+    globalActiveSnapshot = null;
+    globalIsSnapshotMode = false;
+    globalState = {
+      ...INITIAL_PROJECT_STATE,
+      id: `proj_${Date.now()}`,
+      projectName: 'My Dream Residence'
+    };
+    localStorage.removeItem(STORAGE_KEY_ACTIVE);
+    localStorage.removeItem(STORAGE_KEY_SAVED);
     globalSub = {
       ...globalSub,
       isPlanConfirmed: false
